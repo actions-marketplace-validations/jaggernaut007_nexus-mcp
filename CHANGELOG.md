@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- `nexus-mcp-ci eval [PATH|URL] [--example]`: a free, offline check that compares Nexus-MCP with
+  Grep and Read on questions made from your own code. It calls no LLM and sends nothing. The
+  result is a verdict, a table by kind of question, and a "Data in this run" block. Runs are saved
+  under `~/.nexus-mcp/evals/` (`eval list`, `eval show <id>`). On this repo's `src/nexus_mcp`
+  (53 files, 30 questions) the token proxy reads 1,446 tokens against 5,339 for Grep and Read.
+  On the 18-file bundled example, Grep and Read use fewer tokens, and the verdict says so.
+- `nexus-mcp-ci data where | clear | export-memories`: list every place Nexus-MCP stores data,
+  delete it (a dry run unless `--yes`), and export memories first. `clear` refuses a folder that
+  is not a Nexus-MCP store.
+- `NEXUS_OFFLINE=1` blocks the embedding model download. Hugging Face telemetry is off by default.
+- `python -m nexus_mcp` starts the server.
+- A test that proves the quick tier opens no network connection.
+
 ## [2.1.0] - 2026-10-28
 
 ### Breaking Changes
