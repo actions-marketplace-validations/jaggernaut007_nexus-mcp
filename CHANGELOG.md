@@ -52,6 +52,9 @@ All notable changes to this project will be documented in this file.
   gave "Strong fit": 849 median tokens to the right file against 8,519 for Grep and Read
   (90% fewer), right file first 75% against 38%, top 3 88% against 70%, search 357 ms against
   2,018 ms. Indexing took 25 minutes on a laptop. Added to `benchmarks/published/results.json`.
+- `eval https://github.com/pallets/click` (91 files, the first real run of the URL path): "Strong
+  fit", 1,203 median tokens against 21,765 (94% fewer), right file first 90% against 27%. The
+  homepage results table now shows each quick-tier run too.
 - PyPI metadata: new description, keywords, classifiers and project URLs. README links are
   absolute, so they work on PyPI and Glama.
 

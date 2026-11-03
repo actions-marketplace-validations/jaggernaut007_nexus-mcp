@@ -50,11 +50,12 @@ claude mcp add nexus-mcp -- nexus-mcp-ci
 
 Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per project, 3 runs each, version 2.1.0 (2026-10-28). The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28). Search hit@1 on the four retrieval suites: `jobscout` 0.81, `nexus_mcp` 0.80, `shop_repo` 0.50, `flask` 0.64.
 
-`nexus-mcp-ci eval` (the free offline check, no LLM) on 2 projects:
+`nexus-mcp-ci eval` (the free offline check, no LLM) on 3 projects:
 
 | Project | Verdict | Median tokens to the right file | Right file first |
 |---|---|---:|---:|
 | [Chromium base/](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) (3,638 files) | Strong fit | 8,519 → **849** | 38% → 75% |
+| [pallets/click](https://github.com/pallets/click) (91 files) | Strong fit | 21,765 → **1,203** | 27% → 90% |
 | Nexus-MCP source (53 files) | Likely fit | 5,339 → **1,366** | 70% → 93% |
 
 All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) · [JSON](https://jaggernaut007.github.io/nexus-mcp/benchmarks.json) · [CSV](https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv).

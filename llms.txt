@@ -68,6 +68,7 @@ Source of truth: https://jaggernaut007.github.io/nexus-mcp/benchmarks.json (upda
 - Private Python project (460 files): cost $0.571 with Grep and Read, $0.446 with Nexus-MCP (-22%); turns 55 to 35; correct 36 and 35 of 36.
 - Django (3000 files): cost $0.894 with Grep and Read, $0.863 with Nexus-MCP (-3%); turns 93 to 71; correct 34 and 36 of 36.
 - Quick tier (`nexus-mcp-ci eval`, no LLM), Chromium base/ (3638 files): Strong fit; median tokens to the right file 8519 (Grep and Read) and 849 (Nexus-MCP); right file first 38% and 75%.
+- Quick tier (`nexus-mcp-ci eval`, no LLM), pallets/click (91 files): Strong fit; median tokens to the right file 21765 (Grep and Read) and 1203 (Nexus-MCP); right file first 27% and 90%.
 - Quick tier (`nexus-mcp-ci eval`, no LLM), Nexus-MCP source (53 files): Likely fit; median tokens to the right file 5339 (Grep and Read) and 1366 (Nexus-MCP); right file first 70% and 93%.
 - The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28).
 <!-- results:end -->

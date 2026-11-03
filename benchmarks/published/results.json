@@ -52,6 +52,16 @@
       "nexus": {"hit_at_1": 0.75, "hit_at_3": 0.88, "median_tokens": 849}
     },
     {
+      "project": "pallets/click",
+      "url": "https://github.com/pallets/click",
+      "files": 91,
+      "date": "2026-11-03",
+      "questions": 30,
+      "verdict": "Strong fit",
+      "grep": {"hit_at_1": 0.27, "hit_at_3": 0.63, "median_tokens": 21765},
+      "nexus": {"hit_at_1": 0.90, "hit_at_3": 1.0, "median_tokens": 1203}
+    },
+    {
       "project": "Nexus-MCP source",
       "files": 53,
       "date": "2026-11-03",

@@ -103,6 +103,13 @@ def site_block(data: Dict) -> str:
         f"{total_correct(data, 'nexus').split(' of ')[0]} · {total_correct(data, 'baseline')}"
         "</span></td></tr>"
     )
+    for q in data["quick_tier"]:
+        g, n = q["grep"]["median_tokens"], q["nexus"]["median_tokens"]
+        rows.append(
+            f"<tr><td>{html.escape(q['project'])}, {q['files']:,} files: tokens to the right "
+            f'file (<code>eval</code>, no LLM)</td><td><span class="pill">{g:,} → {n:,}'
+            "</span></td></tr>"
+        )
     return "\n".join("            " + row for row in rows)
 
 

@@ -299,7 +299,7 @@
           </li>
           <li>
             <h3>Read the verdict</h3>
-            <p>"Strong fit", "Likely fit" or "Weak fit", with the tokens an agent needs to reach the right file. On the Nexus-MCP source: 1,366 median tokens against 5,339, and the right file first in 93% of questions against 70%. On a tiny project Grep and Read win, and the report says so.</p>
+            <p>"Strong fit", "Likely fit" or "Weak fit", with the tokens an agent needs to reach the right file. On Chromium's <code>base/</code> (3,638 files): "Strong fit", 849 median tokens against 8,519, and the right file first in 75% of questions against 38%. On the Nexus-MCP source: 1,366 against 5,339. On a tiny project Grep and Read win, and the report says so. <a href="benchmarks.html">All results</a>.</p>
           </li>
           <li>
             <h3>Adopt, measure the real cost, or share</h3>
@@ -454,6 +454,9 @@
             <tr><td>Django, 3,000 files: turns</td><td><span class="pill">93 → 71</span></td></tr>
             <tr><td>Django: cost</td><td><span class="pill muted">−3%</span></td></tr>
             <tr><td>Correct answers: Nexus, then Grep and Read</td><td><span class="pill muted">71 · 70 of 72</span></td></tr>
+            <tr><td>Chromium base/, 3,638 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">8,519 → 849</span></td></tr>
+            <tr><td>pallets/click, 91 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">21,765 → 1,203</span></td></tr>
+            <tr><td>Nexus-MCP source, 53 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">5,339 → 1,366</span></td></tr>
             <!-- results:end -->
           </tbody>
         </table>
