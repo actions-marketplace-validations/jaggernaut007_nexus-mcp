@@ -42,6 +42,16 @@
   },
   "quick_tier": [
     {
+      "project": "Chromium base/",
+      "url": "https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base",
+      "files": 3638,
+      "date": "2026-11-03",
+      "questions": 40,
+      "verdict": "Strong fit",
+      "grep": {"hit_at_1": 0.38, "hit_at_3": 0.70, "median_tokens": 8519},
+      "nexus": {"hit_at_1": 0.75, "hit_at_3": 0.88, "median_tokens": 849}
+    },
+    {
       "project": "Nexus-MCP source",
       "files": 53,
       "date": "2026-11-03",

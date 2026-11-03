@@ -111,7 +111,8 @@ src/nexus_mcp/
 ├── middleware/
 │   └── audit.py           # Audit logging with correlation IDs + field redaction
 └── persistence/
-    └── store.py               # SQLite graph persistence
+│   └── store.py               # SQLite graph persistence
+└── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021)
 benchmarks/                # Token-efficiency benchmark harness (ADR-018)
 evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1); docs/EVALS.md
 self_test/
@@ -137,6 +138,8 @@ pytest -m "not slow"       # Skip performance benchmarks
 ruff check .               # Lint
 nexus-mcp-ci               # Run server
 python self_test/demo_mcp.py  # Run self-test demo (the 8 tools and the Python API)
+nexus-mcp-ci eval --example   # Adopter eval on the Nexus-MCP source (free, offline)
+python scripts/publish_results.py  # Regenerate every published benchmark number
 claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 ```
 
@@ -159,6 +162,8 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 - Tool consolidation 15→10 (`graph`/`map`/`memory`), action-aware permission categories — [ADR-017](docs/adr/ADR-017-tool-consolidation.md)
 - Token-efficiency benchmark harness (`benchmarks/`) — [ADR-018](docs/adr/ADR-018-token-efficiency-benchmark.md)
 - Call-edge resolution: static, name-based, precision first, rebuilt after each index — [ADR-019](docs/adr/ADR-019-call-edge-resolution.md)
+- Adopter evaluation in the package (`eval`), ground truth from the parser — [ADR-020](docs/adr/ADR-020-adopter-evaluation.md)
+- One source for published numbers; opt-in sharing, no telemetry — [ADR-021](docs/adr/ADR-021-results-publishing-and-sharing.md)
 
 ## Gotchas
 

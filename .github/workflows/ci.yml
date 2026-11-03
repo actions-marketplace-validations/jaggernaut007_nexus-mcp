@@ -32,5 +32,10 @@ jobs:
       - name: Published benchmark numbers are current
         run: uv run python scripts/publish_results.py --check
 
+      # argparse help text differs between Python versions, so check on one.
+      - name: CLI reference is current
+        if: matrix.python-version == '3.12'
+        run: uv run python scripts/gen_cli_docs.py --check
+
       - name: Test
         run: uv run pytest -v -m "not slow"

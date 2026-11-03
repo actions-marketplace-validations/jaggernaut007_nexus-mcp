@@ -207,6 +207,22 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
   (25 prompts, `mcp-only`, Tool Search on, one run each). See docs/EVALS.md.
 - [ ] Phase E: benchmark smoke run, then the full run (needs a second go-ahead).
 
+## Adopter Evaluation — 2026-11-03 (PRs #14 to #18, stacked)
+- [x] PR 1 (#14): `nexus-mcp-ci eval` quick tier (free, offline), `data where|clear|export-memories`,
+  `NEXUS_OFFLINE`, no-network test. `--example` is the Nexus-MCP source: "Likely fit",
+  1,366 against 5,339 median tokens.
+- [x] PR 2 (#15): `eval --agent` (Claude, Codex experimental), presets, cost gate, `eval doctor`.
+- [x] PR 3 (#16): `benchmarks/published/results.json` drives every published number; CI `--check`.
+- [x] PR 4 (#17): `eval share`, issue form, `community-results.yml`; security review fixed.
+- [x] PR 5: evaluate-first calls to action, plugin skill and agent, `server.json`, docs index and pages.
+- [ ] One paid agent-tier run (needs the owner's OK: it sends code to Anthropic).
+- [ ] Owner steps: create the `eval-result` and `eval-accepted` labels; allow Actions to open PRs;
+  publish to the MCP Registry at the next release; set the repo topics; re-claim on Glama;
+  submit to Context7.
+- [ ] Not built from the plan: `benchmarks/runner.py --repo-path/--generate`,
+  `evals/retrieval --root --generate`, `check_docs.py`, lychee link check, `status` storage field,
+  CONFIGURATION.md, FAQ.md, RELEASING.md, the site data-flow SVG.
+
 ## Discoverability & Setup Audit — 2026-09-23
 - [x] Audited agent-facing surfaces (tool descriptions, README, `llms.txt`,
   `llms-full.txt`, `docs/USAGE_GUIDE.md`, plugin skill, marketplace manifests)

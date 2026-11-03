@@ -7,6 +7,7 @@ date-released: 2026-10-28
 license: PolyForm-Noncommercial-1.0.0
 url: "https://github.com/jaggernaut007/Nexus-MCP"
 repository-code: "https://github.com/jaggernaut007/Nexus-MCP"
+repository-artifact: "https://pypi.org/project/nexus-mcp-ci/"
 authors:
   - family-names: Jagannath
     given-names: Shreyas
@@ -26,6 +27,9 @@ keywords:
   - rustworkx
   - lancedb
   - onnx-runtime
+  - claude-code
+  - token-efficiency
+  - benchmark
 abstract: >-
   Nexus-MCP is a unified, local-first MCP server that combines hybrid search
   (vector + BM25), a static code graph with call edges, and persistent

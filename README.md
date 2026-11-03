@@ -7,11 +7,24 @@
 [![CI](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml/badge.svg)](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml)
 [![Glama MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/card.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
 
-**Hybrid search + code graph + semantic memory in a single local MCP server. About 90 MB idle and 460 MB with the embedding model loaded ([measurements](docs/MEMORY.md)).**
+**Hybrid search + code graph + semantic memory in a single local MCP server. About 90 MB idle and 460 MB with the embedding model loaded ([measurements](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/MEMORY.md)).**
 
-Nexus-MCP is a code intelligence server for the [Model Context Protocol](https://modelcontextprotocol.io). It gives AI agents precise, token-efficient answers about your codebase without cloud dependencies: no API keys, no data egress, no subscriptions.
+<!-- mcp-name: io.github.jaggernaut007/nexus-mcp -->
 
+Nexus-MCP is a local code-intelligence MCP server for Claude Code, Codex, Cursor and any [Model Context Protocol](https://modelcontextprotocol.io) client. It gives AI agents precise, token-efficient answers about your codebase without cloud dependencies: no API keys, no data egress, no subscriptions.
+
+**Not sure yet? Measure it on your own code first.** It is free, runs offline, calls no LLM and takes a few minutes:
+
+```bash
+uvx nexus-mcp-ci eval            # the current folder
+uvx nexus-mcp-ci eval --example  # or the Nexus-MCP source, if you have no project at hand
 ```
+
+You get a verdict ("Strong fit", "Likely fit" or "Weak fit") and the tokens an agent needs to reach the right file, with and without Nexus-MCP. Nothing leaves your machine. See [Evaluate on your project](#evaluate-on-your-project).
+
+**Ready?**
+
+```bash
 pip install nexus-mcp-ci
 claude mcp add nexus-mcp -- nexus-mcp-ci
 ```
@@ -26,7 +39,14 @@ claude mcp add nexus-mcp -- nexus-mcp-ci
 | [Django](https://github.com/django/django) (3,000 files) | $0.894 → $0.863 (**-3%**) | 93 → 71 | 34 → 36 of 36 |
 
 Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per project, 3 runs each, version 2.1.0 (2026-10-28). The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28). Search hit@1 on the four retrieval suites: `jobscout` 0.81, `nexus_mcp` 0.80, `shop_repo` 0.50, `flask` 0.64.
-`nexus-mcp-ci eval --example` (the Nexus-MCP source, 53 files, no LLM): 5,339 → 1,366 median tokens to reach the right file, right file first 70% → 93%.
+
+`nexus-mcp-ci eval` (the free offline check, no LLM) on 2 projects:
+
+| Project | Verdict | Median tokens to the right file | Right file first |
+|---|---|---:|---:|
+| [Chromium base/](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) (3,638 files) | Strong fit | 8,519 → **849** | 38% → 75% |
+| Nexus-MCP source (53 files) | Likely fit | 5,339 → **1,366** | 70% → 93% |
+
 All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) · [JSON](https://jaggernaut007.github.io/nexus-mcp/benchmarks.json) · [CSV](https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv).
 <!-- results:end -->
 
@@ -42,6 +62,61 @@ edges.
 
 The north star of the project is lower token use with the same accuracy. It is measured, not
 estimated: see [Token efficiency](#token-efficiency) and `benchmarks/`.
+
+---
+
+## Evaluate on your project
+
+Decide with your own numbers. The quick check is free, offline and calls no LLM:
+
+```bash
+uvx nexus-mcp-ci eval                                   # the current folder
+uvx nexus-mcp-ci eval path/to/project                   # another folder
+uvx nexus-mcp-ci eval https://github.com/pallets/flask  # a public repo (shallow clone)
+uvx nexus-mcp-ci eval --example                         # the Nexus-MCP source, offline
+```
+
+It asks about 30 questions made from your own code and compares Grep and Read with one
+Nexus-MCP search. The right answer is the file that defines the symbol, from the parser, never
+from the Nexus-MCP ranking. On this repo's source (53 files) it gave "Likely fit": 1,366
+median tokens to reach the right file against 5,339, and the right file first in 93% of
+questions against 70%. On Chromium's `base/` (3,638 files of C++, Java and Python) it gave
+"Strong fit": 849 median tokens against 8,519 (90% fewer), and the right file first in 75% of
+questions against 38%. On a tiny project Grep and Read win, and the report says so.
+
+Want the real agent cost? The agent tier runs your own Claude Code or Codex login on tasks from
+your code, with and without Nexus-MCP. It shows the cost first and asks:
+
+```bash
+nexus-mcp-ci eval --agent claude                       # Claude Sonnet
+nexus-mcp-ci eval --preset efficient --agent claude:haiku,claude:sonnet
+```
+
+Results are saved in `~/.nexus-mcp/evals/` (`eval list`, `eval show <id>`). `eval share <id>`
+posts the numbers (no code, no paths) to the community table, only after you say yes. Full
+guide: [docs/EVALUATE.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md). In Claude Code, the plugin adds
+`/nexus-mcp:evaluate`.
+
+---
+
+## Privacy and Data
+
+Your code stays on your machine. The server makes no network calls and has no telemetry.
+
+- **In:** the package from PyPI, and the embedding model from Hugging Face once (set
+  `NEXUS_OFFLINE=1` after that). `eval <url>` also runs a `git clone`.
+- **Out:** nothing, unless you run `eval --agent` (prompts and code go to Anthropic or OpenAI
+  through your own CLI) or `eval share` (numbers only). Both ask first.
+- **Stored:** the index, memories and graph in `<project>/.nexus/` (it holds code: add it to
+  `.gitignore`), the model in `~/.cache/huggingface/`, eval results in `~/.nexus-mcp/evals/`.
+
+```bash
+nexus-mcp-ci data where              # every location and its size
+nexus-mcp-ci data clear --all        # dry run; add --yes to delete
+```
+
+Every location, the shell commands that do the same, and the uninstall steps:
+[docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md).
 
 ---
 
@@ -92,7 +167,7 @@ The nexus-mcp server is connected. For questions about how this codebase works:
 - Use plain grep or read when you already know the file or the exact string.
 ```
 
-The full routing guide is in [docs/AGENT_ROUTING.md](docs/AGENT_ROUTING.md).
+The full routing guide is in [docs/AGENT_ROUTING.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/AGENT_ROUTING.md).
 
 ---
 
@@ -164,12 +239,12 @@ search("how does auth work")
 
 | Layer | Technology | Decision Rationale |
 |-------|-----------|-------------------|
-| **Vector store** | LanceDB | mmap disk-backed → ~20–50 MB overhead vs ChromaDB's in-memory model. Native Tantivy FTS means one store for both vector and BM25. ([ADR-002](docs/adr/ADR-002-lancedb-over-chromadb.md)) |
-| **Embeddings** | bge-small-en | Lightweight (384-dim, no trust_remote_code). Lazy-load/unload keeps RAM flat after indexing. ([ADR-003](docs/adr/ADR-003-onnx-runtime-over-pytorch.md)) |
-| **Graph engine** | rustworkx PyDiGraph | Rust-backed, O(1) node lookup, PageRank + centrality algorithms. Thread-safe with RLock. ([ADR-006](docs/adr/ADR-006-rustworkx-graph-engine.md)) |
-| **Symbol parser** | tree-sitter 0.21.3 | 25+ languages, incremental parsing, AST-level symbol extraction with metadata. Parallel via ThreadPool. ([ADR-005](docs/adr/ADR-005-dual-parser-strategy.md)) |
-| **Graph parser** | ast-grep | Structural matching for containment and import edges (call edges are resolved after indexing; inheritance edges are not extracted yet). Sequential run for graph consistency. ([ADR-005](docs/adr/ADR-005-dual-parser-strategy.md)) |
-| **Chunking** | Symbol-based | One chunk per function/class. Deterministic SHA256 IDs prevent duplicate inserts. ([ADR-008](docs/adr/ADR-008-code-chunk-strategy.md)) |
+| **Vector store** | LanceDB | mmap disk-backed → ~20–50 MB overhead vs ChromaDB's in-memory model. Native Tantivy FTS means one store for both vector and BM25. ([ADR-002](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-002-lancedb-over-chromadb.md)) |
+| **Embeddings** | bge-small-en | Lightweight (384-dim, no trust_remote_code). Lazy-load/unload keeps RAM flat after indexing. ([ADR-003](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-003-onnx-runtime-over-pytorch.md)) |
+| **Graph engine** | rustworkx PyDiGraph | Rust-backed, O(1) node lookup, PageRank + centrality algorithms. Thread-safe with RLock. ([ADR-006](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-006-rustworkx-graph-engine.md)) |
+| **Symbol parser** | tree-sitter 0.21.3 | 25+ languages, incremental parsing, AST-level symbol extraction with metadata. Parallel via ThreadPool. ([ADR-005](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-005-dual-parser-strategy.md)) |
+| **Graph parser** | ast-grep | Structural matching for containment and import edges (call edges are resolved after indexing; inheritance edges are not extracted yet). Sequential run for graph consistency. ([ADR-005](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-005-dual-parser-strategy.md)) |
+| **Chunking** | Symbol-based | One chunk per function/class. Deterministic SHA256 IDs prevent duplicate inserts. ([ADR-008](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-008-code-chunk-strategy.md)) |
 | **Persistence** | SQLite + LanceDB | Graph in SQLite (warm-start recovery), vectors+FTS in LanceDB, mtimes in JSON. Zero-config. |
 | **MCP framework** | FastMCP 2.0 | Stdio transport, automatic tool registration, schema generation. |
 
@@ -257,13 +332,13 @@ Run `benchmarks/` on your own project before you rely on it.
 ## The 8 Tools
 
 **v2.1.0 breaking change:** `explain` and `health` are removed from the MCP tool list, and
-several rarely used parameters are removed from the schemas (see [CHANGELOG](CHANGELOG.md)).
+several rarely used parameters are removed from the schemas (see [CHANGELOG](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md)).
 `find_symbol` now returns the code with callers and callees.
 
 **v2.0.0 breaking change:** `find_callers`/`find_callees`/`impact` merged into
 `graph`, `overview`/`architecture` merged into `map`, and `remember`/`recall`/`forget`
-merged into `memory` — see [CHANGELOG](CHANGELOG.md) for the old→new mapping and
-[ADR-017](docs/adr/ADR-017-tool-consolidation.md) for why. Fewer, richer tools route
+merged into `memory` — see [CHANGELOG](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md) for the old→new mapping and
+[ADR-017](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-017-tool-consolidation.md) for why. Fewer, richer tools route
 better under MCP Tool Search than many thin ones.
 
 ### Discovery & Indexing
@@ -472,6 +547,24 @@ The Python package defaults to `bge-small-en`. The `Dockerfile`, `smithery.yaml`
 
 ## Comparison
 
+### vs. other code-intelligence MCP servers
+
+Features only, from each project's own documentation. We make no performance claims about
+other tools: run `nexus-mcp-ci eval` on your code instead.
+
+| Feature | Nexus-MCP | Serena | claude-context |
+|---|:---:|:---:|:---:|
+| How it finds code | hybrid: vectors + BM25 | language servers (LSP) | hybrid: vectors + BM25 |
+| Where the index lives | local LanceDB | none (live LSP) | a vector database (Milvus or Zilliz Cloud) |
+| Embeddings | local model, no API key | none | an embedding provider (OpenAI by default; Ollama possible) |
+| Call graph | static, 6 languages | LSP references | no |
+| Project memory | yes | yes | no |
+| Edits code | no (read only) | yes | no |
+| Measure it on your repo | `nexus-mcp-ci eval` | — | — |
+
+Other servers in this space include codebase-memory-mcp, code-graph-rag, code-index-mcp and
+ast-grep-mcp. Check each project's docs. Corrections to this table are welcome.
+
 ### vs. Other MCP Servers
 
 | Feature | Nexus-MCP | Sourcegraph MCP | Greptile MCP | GitHub MCP | tree-sitter MCP |
@@ -610,38 +703,43 @@ Expected output: the 8 tools and the Python API exercised with pass/fail per too
 
 ## Architecture Decision Records
 
-Key decisions are documented in [docs/adr/](docs/adr/):
+Key decisions are documented in [docs/adr/](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/):
 
 | ADR | Decision |
 |-----|----------|
-| [ADR-001](docs/adr/ADR-001-single-mcp-consolidation.md) | Merge two MCP servers into one |
-| [ADR-002](docs/adr/ADR-002-lancedb-over-chromadb.md) | LanceDB over ChromaDB |
-| [ADR-003](docs/adr/ADR-003-onnx-runtime-over-pytorch.md) | ONNX Runtime over PyTorch for embeddings |
-| [ADR-004](docs/adr/ADR-004-bge-small-default-model.md) | bge-small-en as default embedding model |
-| [ADR-005](docs/adr/ADR-005-dual-parser-strategy.md) | Dual parser: tree-sitter + ast-grep |
-| [ADR-006](docs/adr/ADR-006-rustworkx-graph-engine.md) | rustworkx for graph algorithms |
-| [ADR-007](docs/adr/ADR-007-lancedb-schema-design.md) | 12-column PyArrow schema for LanceDB |
-| [ADR-008](docs/adr/ADR-008-code-chunk-strategy.md) | Symbol-based chunking with deterministic IDs |
-| [ADR-009](docs/adr/ADR-009-indexing-pipeline-architecture.md) | 8-step indexing pipeline |
-| [ADR-010](docs/adr/ADR-010-graph-tools-api-design.md) | Graph tools API: serialization, ambiguity handling |
-| [ADR-011](docs/adr/ADR-011-hardening-decisions.md) | Graceful shutdown, corruption recovery, JSON logging |
-| [ADR-012](docs/adr/ADR-012-tool-permission-model.md) | READ/MUTATE/WRITE permission categories |
-| ~~[ADR-013](docs/adr/ADR-013-pydantic-schemas.md)~~ | Pydantic v2 I/O schemas — superseded by ADR-016 (never wired in, deleted) |
-| [ADR-014](docs/adr/ADR-014-rate-limiting.md) | Token-bucket rate limiting (off by default) |
-| [ADR-015](docs/adr/ADR-015-auto-watch-and-staleness-detection.md) | Auto-watch + throttled staleness detection |
-| [ADR-016](docs/adr/ADR-016-remove-unused-pydantic-schemas.md) | Removal of unused Pydantic schemas (supersedes ADR-013) |
-| [ADR-017](docs/adr/ADR-017-tool-consolidation.md) | Tool consolidation 15→10, action-aware permission categories |
-| [ADR-018](docs/adr/ADR-018-token-efficiency-benchmark.md) | Token-efficiency benchmark harness (`benchmarks/`) |
+| [ADR-001](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-001-single-mcp-consolidation.md) | Merge two MCP servers into one |
+| [ADR-002](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-002-lancedb-over-chromadb.md) | LanceDB over ChromaDB |
+| [ADR-003](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-003-onnx-runtime-over-pytorch.md) | ONNX Runtime over PyTorch for embeddings |
+| [ADR-004](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-004-bge-small-default-model.md) | bge-small-en as default embedding model |
+| [ADR-005](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-005-dual-parser-strategy.md) | Dual parser: tree-sitter + ast-grep |
+| [ADR-006](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-006-rustworkx-graph-engine.md) | rustworkx for graph algorithms |
+| [ADR-007](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-007-lancedb-schema-design.md) | 12-column PyArrow schema for LanceDB |
+| [ADR-008](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-008-code-chunk-strategy.md) | Symbol-based chunking with deterministic IDs |
+| [ADR-009](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-009-indexing-pipeline-architecture.md) | 8-step indexing pipeline |
+| [ADR-010](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-010-graph-tools-api-design.md) | Graph tools API: serialization, ambiguity handling |
+| [ADR-011](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-011-hardening-decisions.md) | Graceful shutdown, corruption recovery, JSON logging |
+| [ADR-012](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-012-tool-permission-model.md) | READ/MUTATE/WRITE permission categories |
+| ~~[ADR-013](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-013-pydantic-schemas.md)~~ | Pydantic v2 I/O schemas — superseded by ADR-016 (never wired in, deleted) |
+| [ADR-014](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-014-rate-limiting.md) | Token-bucket rate limiting (off by default) |
+| [ADR-015](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-015-auto-watch-and-staleness-detection.md) | Auto-watch + throttled staleness detection |
+| [ADR-016](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-016-remove-unused-pydantic-schemas.md) | Removal of unused Pydantic schemas (supersedes ADR-013) |
+| [ADR-017](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-017-tool-consolidation.md) | Tool consolidation 15→10, action-aware permission categories |
+| [ADR-018](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-018-token-efficiency-benchmark.md) | Token-efficiency benchmark harness (`benchmarks/`) |
 
 ---
 
 ## Documentation
 
-- [Installation Guide](docs/INSTALLATION.md) — Prerequisites, client-specific setup, troubleshooting
-- [Architecture](docs/ARCHITECTURE.md) — Data flow, component design, memory budget analysis
-- [Usage Guide](docs/USAGE_GUIDE.md) — Full tool reference with examples
-- [Developer Guide](docs/DEVELOPER_GUIDE.md) — Contributing, adding tools/engines/languages
-- [Research Notes](docs/RESEARCH.md) — Library evaluations and technology deep-dives
+Start at the [docs index](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/README.md).
+
+- [Evaluate on your project](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md) — The free offline check, the agent tier, saving and sharing results
+- [Privacy and data](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md) — What goes in and out, where data is stored, how to remove it
+- [Benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) — Every published number, with JSON and CSV
+- [Installation Guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/INSTALLATION.md) — Prerequisites, client-specific setup, troubleshooting
+- [Architecture](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/ARCHITECTURE.md) — Data flow, component design, memory budget analysis
+- [Usage Guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/USAGE_GUIDE.md) — Full tool reference with examples
+- [Developer Guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/DEVELOPER_GUIDE.md) — Contributing, adding tools/engines/languages
+- [Research Notes](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/RESEARCH.md) — Library evaluations and technology deep-dives
 
 ---
 
@@ -652,12 +750,12 @@ Nexus-MCP consolidates two earlier open-source projects:
 - **[CodeGrok MCP](https://github.com/shreyasjagannath/CodeGrok_mcp)** by [rdondeti](https://github.com/rdondeti) (Ravitez Dondeti, MIT) — Contributed the symbol extraction pipeline, embedding service, parallel indexer, core data models, and memory retrieval system.
 - **[code-graph-mcp](https://github.com/entrepeneur4lyf/code-graph-mcp)** by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) — Contributed the ast-grep structural parser, rustworkx graph engine, complexity analysis, and relationship extraction.
 
-Source files retain "Ported from" attribution in their module docstrings. See [ADR-001](docs/adr/ADR-001-single-mcp-consolidation.md) for the consolidation rationale.
+Source files retain "Ported from" attribution in their module docstrings. See [ADR-001](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-001-single-mcp-consolidation.md) for the consolidation rationale.
 
 ---
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](LICENSE). Free to use, copy, modify, and distribute for any noncommercial purpose. Commercial use requires a separate license — contact Shreyas Jagannath to inquire.
+[PolyForm Noncommercial License 1.0.0](https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE). Free to use, copy, modify, and distribute for any noncommercial purpose. Commercial use requires a separate license — contact Shreyas Jagannath to inquire.
 
 Versions published before 2.0.1 (0.1.0, 0.1.1, 2.0.0) remain available under their original MIT terms for anyone who obtained them under that license.
