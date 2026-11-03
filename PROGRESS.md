@@ -210,8 +210,8 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
 ## Adopter Evaluation — 2026-11-03 (PRs #14 to #18, stacked)
 - [x] PR 1 (#14): `nexus-mcp-ci eval` quick tier (free, offline), `data where|clear|export-memories`,
   `NEXUS_OFFLINE`, no-network test. `--example` is the Nexus-MCP source: "Likely fit",
-  1,366 against 5,339 median tokens. Real repos: Chromium `base/` (3,638 files) "Strong fit",
-  849 against 8,519; pallets/click (91 files, URL path) "Strong fit", 1,203 against 21,765.
+  1,234 against 5,385 median tokens. Real repos: Chromium `base/` (3,638 files) "Strong fit",
+  950 against 17,998; pallets/click (91 files, URL path) "Strong fit", 1,301 against 24,774.
 - [x] PR 2 (#15): `eval --agent` (Claude, Codex experimental), presets, cost gate, `eval doctor`.
 - [x] PR 3 (#16): `benchmarks/published/results.json` drives every published number; CI `--check`.
 - [x] PR 4 (#17): `eval share`, issue form, `community-results.yml`; security review fixed.
@@ -222,8 +222,11 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
   submit to Context7.
 - [x] `check_docs.py` and the offline lychee link check in CI; CONFIGURATION.md (generated),
   FAQ.md, RELEASING.md. CI runs on every PR, and all five PRs are green.
-- [ ] Not built from the plan: `benchmarks/runner.py --repo-path/--generate`,
-  `evals/retrieval --root --generate`, `status` storage field, the site data-flow SVG.
+- [x] Site data-flow SVG (PR 5). PR 6: `benchmarks/runner.py --repo-path/--generate`,
+  `evals/retrieval --root --generate`.
+- Decided 2026-11-03: no `storage` field in `status`. It cost +23 tokens per call (175 → 198)
+  and lowered nothing, so the north-star rule drops it. `nexus-mcp-ci data where` and
+  docs/PRIVACY.md answer "where is my data?" instead.
 
 ## Discoverability & Setup Audit — 2026-09-23
 - [x] Audited agent-facing surfaces (tool descriptions, README, `llms.txt`,

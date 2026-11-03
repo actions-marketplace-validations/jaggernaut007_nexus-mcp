@@ -74,14 +74,14 @@
       "questions": 40,
       "verdict": "Strong fit",
       "grep": {
-        "hit_at_1": 0.38,
-        "hit_at_3": 0.7,
-        "median_tokens": 8519
+        "hit_at_1": 0.4,
+        "hit_at_3": 0.58,
+        "median_tokens": 17998
       },
       "nexus": {
-        "hit_at_1": 0.75,
-        "hit_at_3": 0.88,
-        "median_tokens": 849
+        "hit_at_1": 0.7,
+        "hit_at_3": 0.9,
+        "median_tokens": 950
       }
     },
     {
@@ -94,29 +94,29 @@
       "grep": {
         "hit_at_1": 0.27,
         "hit_at_3": 0.63,
-        "median_tokens": 21765
+        "median_tokens": 24774
       },
       "nexus": {
-        "hit_at_1": 0.9,
+        "hit_at_1": 0.97,
         "hit_at_3": 1.0,
-        "median_tokens": 1203
+        "median_tokens": 1301
       }
     },
     {
       "project": "Nexus-MCP source",
-      "files": 53,
+      "files": 59,
       "date": "2026-11-03",
       "questions": 30,
       "verdict": "Likely fit",
       "grep": {
         "hit_at_1": 0.7,
         "hit_at_3": 0.97,
-        "median_tokens": 5339
+        "median_tokens": 5385
       },
       "nexus": {
         "hit_at_1": 0.93,
-        "hit_at_3": 1.0,
-        "median_tokens": 1366
+        "hit_at_3": 0.97,
+        "median_tokens": 1234
       }
     }
   ]

@@ -8,9 +8,8 @@ Run `uvx nexus-mcp-ci eval` in the project folder. It is free, runs offline and 
 It compares Nexus-MCP with Grep and Read on about 30 questions made from your code and prints
 "Strong fit", "Likely fit" or "Weak fit". See [EVALUATE.md](EVALUATE.md).
 
-Measured: Chromium `base/` (3,638 files) 849 against 8,519 median tokens to reach the right
-file; pallets/click (91 files) 1,203 against 21,765; the Nexus-MCP source (53 files) 1,366
-against 5,339.
+Measured: Chromium `base/` (3,638 files) 950 against 17,998 median tokens to reach the right
+file; pallets/click (91 files) 1,301 against 24,774; the Nexus-MCP source (59 files) 1,234 against 5,385.
 
 ## Does my code leave my machine?
 

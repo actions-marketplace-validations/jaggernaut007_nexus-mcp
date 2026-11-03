@@ -51,11 +51,18 @@ def _relative(filepath: str, root: Path) -> str:
         return filepath
 
 
+def _bare(name: str) -> str:
+    """`Class.method` -> `method`; a plain name stays as it is."""
+    return name.rsplit(".", 1)[-1]
+
+
 def _candidates(rows: Sequence[Dict[str, Any]], root: Path) -> List[Dict[str, Any]]:
     """Symbols that make a fair question: source code, one definition, a usable name."""
+    # Compare bare names: `Graph.get_edges` and `Engine.get_edges` in two files make the
+    # question "get edges" fit both files, so neither has one right answer.
     files_by_name: Dict[str, set] = {}
     for row in rows:
-        files_by_name.setdefault(row["symbol_name"], set()).add(row["filepath"])
+        files_by_name.setdefault(_bare(row["symbol_name"]), set()).add(row["filepath"])
     out = []
     for row in rows:
         name = row.get("symbol_name") or ""
@@ -64,7 +71,7 @@ def _candidates(rows: Sequence[Dict[str, Any]], root: Path) -> List[Dict[str, An
         if name.startswith("__") or len(name) < 3:
             continue
         rel = _relative(row["filepath"], root)
-        if is_test_path(rel) or len(files_by_name[name]) > 1:
+        if is_test_path(rel) or len(files_by_name[_bare(name)]) > 1:
             continue
         out.append({**row, "rel": rel})
     out.sort(key=lambda r: (r["rel"], r.get("line_start", 0), r["symbol_name"]))

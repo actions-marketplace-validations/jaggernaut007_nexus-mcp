@@ -107,8 +107,62 @@ def load_task_suite(path: Path) -> Dict[str, Any]:
 
 
 def repo_dir_for(suite: Dict[str, Any]) -> Path:
-    """Local clone directory for a suite's repo, under benchmarks/repos/."""
-    return REPOS_DIR / suite["repo"]["name"]
+    """Local directory of a suite's repo: `repo.path` (--repo-path), else benchmarks/repos/."""
+    path = suite["repo"].get("path")
+    return Path(path) if path else REPOS_DIR / suite["repo"]["name"]
+
+
+def git_head(path: Path) -> str:
+    """The commit of a local repo, or "local" for a folder that is not a git checkout."""
+    proc = subprocess.run(
+        ["git", "-C", str(path), "rev-parse", "HEAD"], capture_output=True, text=True, timeout=30
+    )
+    return proc.stdout.strip() if proc.returncode == 0 else "local"
+
+
+def use_repo_path(suite: Dict[str, Any], repo_path: Path) -> Dict[str, Any]:
+    """Point a suite at a local folder instead of benchmarks/repos/<name>."""
+    repo_path = repo_path.resolve()
+    suite["repo"] = {**suite.get("repo", {}), "path": str(repo_path), "pin": git_head(repo_path)}
+    suite["repo"].setdefault("name", repo_path.name)
+    return suite
+
+
+def generate_suite(repo_path: Path, count: int, seed: int = 7) -> Dict[str, Any]:
+    """A task suite made from the folder's own symbols, as `nexus-mcp-ci eval` makes them.
+
+    The ground truth is the file that defines each symbol, from the parser, never from a
+    Nexus-MCP ranking. Builds a throwaway index to read the symbols (the model must be cached
+    or downloadable).
+    """
+    import shutil
+    import tempfile
+
+    from nexus_mcp.evaluate import agent
+
+    repo_path = repo_path.resolve()
+    tmp = Path(tempfile.mkdtemp(prefix="nexus-bench-generate-"))
+    try:
+        rows = agent.build_index(repo_path, tmp)["rows"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    tasks = [
+        {
+            "id": f"gen-{q.id}",
+            "category": q.kind,
+            "prompt": agent.make_prompt(q.query),
+            "ground_truth": {
+                "relevant_files": [q.relevant],
+                "must_mention_files": [q.relevant],
+                "facts": [{"any_of": [q.symbol.split(".")[-1]]}],
+            },
+        }
+        for q in agent.pick_tasks(rows, repo_path, count, seed)
+    ]
+    if not tasks:
+        raise ValueError(f"No usable tasks in {repo_path}: too few documented symbols")
+    suite = {"repo": {"name": repo_path.name}, "defaults": {"max_budget_usd": 1.0}, "tasks": tasks}
+    return use_repo_path(suite, repo_path)
 
 
 WARM_UP_PROMPT = "Reply with the single word: ready. Do not call a tool."
@@ -378,7 +432,17 @@ def main(argv: Optional[List[str]] = None) -> int:
     when the usage limit stopped the run; the same command resumes it.
     """
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--tasks", required=True, help="Path to a task suite YAML file")
+    parser.add_argument("--tasks", help="Path to a task suite YAML file")
+    parser.add_argument(
+        "--repo-path", type=Path, default=None,
+        help="Run on this local folder instead of benchmarks/repos/<name>. The nexus "
+        "conditions index it on first use unless it already has an index",
+    )
+    parser.add_argument(
+        "--generate", type=int, default=0, metavar="N",
+        help="Make N tasks from the --repo-path folder's own symbols (no --tasks needed). "
+        "The suite is saved to results/generated-<folder>.yaml for reruns",
+    )
     parser.add_argument(
         "--conditions", default=",".join(DEFAULT_CONDITIONS), help="Comma-separated conditions"
     )
@@ -408,7 +472,20 @@ def main(argv: Optional[List[str]] = None) -> int:
     )
     args = parser.parse_args(argv)
 
-    suite = load_task_suite(Path(args.tasks))
+    if args.generate and not args.repo_path:
+        parser.error("--generate needs --repo-path")
+    if not args.generate and not args.tasks:
+        parser.error("give --tasks, or --repo-path with --generate N")
+    if args.generate:
+        suite = generate_suite(args.repo_path, args.generate)
+        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        saved = RESULTS_DIR / f"generated-{suite['repo']['name']}.yaml"
+        saved.write_text(yaml.safe_dump(suite, sort_keys=False))
+        print(f"Generated {len(suite['tasks'])} tasks: {saved}", file=sys.stderr)
+    else:
+        suite = load_task_suite(Path(args.tasks))
+        if args.repo_path:
+            suite = use_repo_path(suite, args.repo_path)
     condition_names = cond.expand_conditions(
         [c.strip() for c in args.conditions.split(",") if c.strip()],
         [m.strip() for m in args.embedding_models.split(",") if m.strip()],
