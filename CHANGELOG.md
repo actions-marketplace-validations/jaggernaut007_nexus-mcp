@@ -20,6 +20,19 @@ All notable changes to this project will be documented in this file.
 - `NEXUS_OFFLINE=1` blocks the embedding model download. Hugging Face telemetry is off by default.
 - `python -m nexus_mcp` starts the server.
 - A test that proves the quick tier opens no network connection.
+- `nexus-mcp-ci eval --agent claude[:model][,codex[:model]]`: the opt-in paid tier. It runs
+  Claude Code or Codex (experimental) on tasks made from your code, with `baseline` (Grep, Glob
+  and Read), `mcp` (the server) and `nexus` (the server and its skill). One index is shared by
+  every run. It shows a cost estimate and asks first, and it stops starting runs at `--max-usd`
+  (default $5). Presets: `quick`, `matrix` and `efficient`. `efficient` names the cheapest model
+  and setup whose accuracy is not below the baseline of the same model.
+- `nexus-mcp-ci eval doctor`: checks ripgrep, the cached model, the `claude` and `codex` CLIs,
+  and the results folder.
+
+### Changed
+
+- `benchmarks/transcript.py` moved to `nexus_mcp.evaluate.transcript`, so the eval CLI ships it.
+  The old module re-exports it.
 
 ## [2.1.0] - 2026-10-28
 

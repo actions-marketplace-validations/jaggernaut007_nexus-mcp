@@ -75,7 +75,67 @@ def render(record: Dict[str, Any], store_path: str) -> str:
         "- Fit looks good? Install: `claude mcp add nexus-mcp -- nexus-mcp-ci` "
         "(Claude Code plugin: `/plugin install nexus-mcp@nexus-mcp`).",
         "- Weak fit? Keep Grep and Read for this project. That is a valid result.",
+        "- Want real agent cost? `nexus-mcp-ci eval --agent claude` (paid, asks first).",
         "",
         data_block(record, store_path),
+    ]
+    return "\n".join(lines) + "\n"
+
+
+def _money(value) -> str:
+    return "-" if value is None else f"${value:.3f}"
+
+
+def _num(value) -> str:
+    return "-" if value is None else f"{value:.0f}"
+
+
+def render_agent(record: Dict[str, Any], store_path: str) -> str:
+    """Markdown for an agent-tier run: one row per model and condition."""
+    rec = record["recommendation"]
+    providers = sorted(
+        {"Anthropic" if s.startswith("claude") else "OpenAI" for s in record["specs"]}
+    )
+    lines = [
+        "# Nexus-MCP eval: agent tier",
+        "",
+        f"Project: `{record['source']['label']}` · {record['repo']['files']} files · "
+        f"{len(record['tasks'])} tasks · spent about ${record['spent_usd']:.2f} "
+        f"(estimate ${record['estimate_usd']:.2f}, cap ${record['max_usd']:.2f})",
+        "",
+    ]
+    if rec.get("spec"):
+        lines.append(
+            f"**Most efficient:** `{rec['spec']}` with `{rec['condition']}`. {rec['reason']}"
+        )
+    else:
+        lines.append(f"**Most efficient:** none. {rec['reason']}")
+    lines += [
+        "",
+        "| Model | Condition | Right file | Median tokens | Median cost | Turns | Seconds "
+        "| Errors |",
+        "|---|---|---:|---:|---:|---:|---:|---:|",
+    ]
+    for row in record["summary"]:
+        acc = "-" if row["accuracy"] is None else _pct(row["accuracy"])
+        lines.append(
+            f"| {row['spec']} | {row['condition']} | {acc} | {_num(row['median_tokens'])} | "
+            f"{_money(row['median_cost_usd'])} | {_num(row['median_turns'])} | "
+            f"{_num(row['median_seconds'])} | {row['errors']} |"
+        )
+    if record.get("skipped"):
+        lines += ["", f"{record['skipped']} runs were skipped: the spend cap was reached."]
+    lines += [
+        "",
+        "Conditions: `baseline` is Grep, Glob and Read only. `mcp` adds the Nexus-MCP server. "
+        "`nexus` adds the server and its routing skill. One run per task has about 20% cost "
+        "noise, so treat small differences as a tie.",
+        "",
+        "## Data in this run",
+        f"- Read: your project files in {record['source']['label']}, by the agent.",
+        f"- Written: this report in `{store_path}` and a temporary index, deleted at exit.",
+        f"- Sent: the prompts and the code the agent read, to {' and '.join(providers)}, "
+        "through your own CLI and login.",
+        "- Remove it all: `nexus-mcp-ci data clear --evals --yes`.",
     ]
     return "\n".join(lines) + "\n"
