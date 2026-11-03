@@ -23,7 +23,7 @@ block. The first run downloads the embedding model once (about 130 MB).
 | `nexus-mcp-ci eval` | the current folder | none (after the model download) |
 | `nexus-mcp-ci eval path/to/project` | that folder | none |
 | `nexus-mcp-ci eval https://github.com/pallets/flask` | a shallow clone of a public repo | `git clone` |
-| `nexus-mcp-ci eval --example` | the installed Nexus-MCP source (53 files) | none |
+| `nexus-mcp-ci eval --example` | the installed Nexus-MCP source (59 files) | none |
 
 Use a local path for private code: it never leaves the machine. Use a public URL when you want a
 result that other people can repeat (the run records the commit).
@@ -51,12 +51,11 @@ Measured results (2026-11-03, 30 to 40 questions each):
 
 | Project | Files | Verdict | Median tokens: Grep and Read → Nexus-MCP | Right file first |
 |---|---:|---|---:|---:|
-| [Chromium `base/`](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) | 3,638 | Strong fit | 8,519 → 849 | 38% → 75% |
-| [pallets/click](https://github.com/pallets/click) | 91 | Strong fit | 21,765 → 1,203 | 27% → 90% |
-| Nexus-MCP source (`--example`) | 53 | Likely fit | 5,339 → 1,366 | 70% → 93% |
+| [Chromium `base/`](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) | 3,638 | Strong fit | 17,998 → 950 | 40% → 70% |
+| [pallets/click](https://github.com/pallets/click) | 91 | Strong fit | 24,774 → 1,301 | 27% → 97% |
+| Nexus-MCP source (`--example`) | 59 | Likely fit | 5,385 → 1,234 | 70% → 93% |
 
-Indexing took about 25 minutes for Chromium `base/`, 67 seconds for click and 27 seconds for the
-Nexus-MCP source, on a laptop. The source of these numbers is
+Indexing took about 25 minutes for Chromium `base/`, 1 to 2 minutes for click and about 1 minute for the Nexus-MCP source, on a laptop. The source of these numbers is
 `benchmarks/published/results.json`.
 
 Question kinds:

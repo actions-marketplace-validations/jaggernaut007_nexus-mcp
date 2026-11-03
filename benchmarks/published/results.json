@@ -48,8 +48,8 @@
       "date": "2026-11-03",
       "questions": 40,
       "verdict": "Strong fit",
-      "grep": {"hit_at_1": 0.38, "hit_at_3": 0.70, "median_tokens": 8519},
-      "nexus": {"hit_at_1": 0.75, "hit_at_3": 0.88, "median_tokens": 849}
+      "grep": {"hit_at_1": 0.40, "hit_at_3": 0.58, "median_tokens": 17998},
+      "nexus": {"hit_at_1": 0.70, "hit_at_3": 0.90, "median_tokens": 950}
     },
     {
       "project": "pallets/click",
@@ -58,17 +58,17 @@
       "date": "2026-11-03",
       "questions": 30,
       "verdict": "Strong fit",
-      "grep": {"hit_at_1": 0.27, "hit_at_3": 0.63, "median_tokens": 21765},
-      "nexus": {"hit_at_1": 0.90, "hit_at_3": 1.0, "median_tokens": 1203}
+      "grep": {"hit_at_1": 0.27, "hit_at_3": 0.63, "median_tokens": 24774},
+      "nexus": {"hit_at_1": 0.97, "hit_at_3": 1.0, "median_tokens": 1301}
     },
     {
       "project": "Nexus-MCP source",
-      "files": 53,
+      "files": 59,
       "date": "2026-11-03",
       "questions": 30,
       "verdict": "Likely fit",
-      "grep": {"hit_at_1": 0.70, "hit_at_3": 0.97, "median_tokens": 5339},
-      "nexus": {"hit_at_1": 0.93, "hit_at_3": 1.0, "median_tokens": 1366}
+      "grep": {"hit_at_1": 0.70, "hit_at_3": 0.97, "median_tokens": 5385},
+      "nexus": {"hit_at_1": 0.93, "hit_at_3": 0.97, "median_tokens": 1234}
     }
   ]
 }

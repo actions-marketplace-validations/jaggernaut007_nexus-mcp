@@ -44,9 +44,9 @@ Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per pr
 
 | Project | Verdict | Median tokens to the right file | Right file first |
 |---|---|---:|---:|
-| [Chromium base/](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) (3,638 files) | Strong fit | 8,519 → **849** | 38% → 75% |
-| [pallets/click](https://github.com/pallets/click) (91 files) | Strong fit | 21,765 → **1,203** | 27% → 90% |
-| Nexus-MCP source (53 files) | Likely fit | 5,339 → **1,366** | 70% → 93% |
+| [Chromium base/](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) (3,638 files) | Strong fit | 17,998 → **950** | 40% → 70% |
+| [pallets/click](https://github.com/pallets/click) (91 files) | Strong fit | 24,774 → **1,301** | 27% → 97% |
+| Nexus-MCP source (59 files) | Likely fit | 5,385 → **1,234** | 70% → 93% |
 
 All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) · [JSON](https://jaggernaut007.github.io/nexus-mcp/benchmarks.json) · [CSV](https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv).
 <!-- results:end -->
@@ -79,13 +79,10 @@ uvx nexus-mcp-ci eval --example                         # the Nexus-MCP source, 
 
 It asks about 30 questions made from your own code and compares Grep and Read with one
 Nexus-MCP search. The right answer is the file that defines the symbol, from the parser, never
-from the Nexus-MCP ranking. On this repo's source (53 files) it gave "Likely fit": 1,366
-median tokens to reach the right file against 5,339, and the right file first in 93% of
+from the Nexus-MCP ranking. On this repo's source (59 files) it gave "Likely fit": 1,234 median tokens to reach the right file against 5,385, and the right file first in 93% of
 questions against 70%. On Chromium's `base/` (3,638 files of C++, Java and Python) it gave
-"Strong fit": 849 median tokens against 8,519 (90% fewer), and the right file first in 75% of
-questions against 38%. On [pallets/click](https://github.com/pallets/click) (91 files, from its
-URL) it gave "Strong fit": 1,203 median tokens against 21,765 (94% fewer), and the right file
-first in 90% of questions against 27%. On a tiny project Grep and Read win, and the report says
+"Strong fit": 950 median tokens against 17,998 (95% fewer), and the right file first in 70% of questions against 40%. On [pallets/click](https://github.com/pallets/click) (91 files, from its
+URL) it gave "Strong fit": 1,301 median tokens against 24,774 (95% fewer), and the right file first in 97% of questions against 27%. On a tiny project Grep and Read win, and the report says
 so.
 
 Want the real agent cost? The agent tier runs your own Claude Code or Codex login on tasks from
