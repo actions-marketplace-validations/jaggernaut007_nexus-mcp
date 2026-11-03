@@ -4,11 +4,13 @@
 import pytest
 
 from benchmarks.conditions import (
+    GITNEXUS_MCP_CONFIG,
     apply_bare_isolation,
     apply_reduced_isolation,
     build_argv,
     build_env,
     build_run,
+    gitnexus_context_path,
     has_api_key,
     load_skill_body,
     strip_frontmatter,
@@ -74,6 +76,35 @@ class TestBuildArgv:
         )
         assert "--plugin-dir" in argv
         assert str(plugin_dir) in argv
+
+    def test_build_argv_gitnexus_uses_its_server_and_context(self, tmp_path):
+        context = tmp_path / "repo.gitnexus-context.md"
+        context.write_text("Use gitnexus query before grep.")
+        argv = build_argv(
+            "gitnexus", "hello", "claude-sonnet-5", 1.0, gitnexus_context=context
+        )
+        idx = argv.index("--mcp-config")
+        assert argv[idx + 1] == str(GITNEXUS_MCP_CONFIG)
+        assert "--strict-mcp-config" in argv
+        idx = argv.index("--append-system-prompt")
+        assert argv[idx + 1] == "Use gitnexus query before grep."
+        assert argv[-1] == "hello"
+
+    def test_build_argv_gitnexus_without_context_raises(self, tmp_path):
+        with pytest.raises(FileNotFoundError):
+            build_argv(
+                "gitnexus", "hello", "claude-sonnet-5", 1.0,
+                gitnexus_context=tmp_path / "missing.md",
+            )
+
+    def test_build_argv_gitnexus_rejects_embedding_model(self, tmp_path):
+        with pytest.raises(ValueError):
+            build_argv("gitnexus@bge-small-en", "hello", "claude-sonnet-5", 1.0)
+
+    def test_gitnexus_context_path_is_beside_the_repo(self, tmp_path):
+        repo = tmp_path / "repos" / "chromium-base"
+        expected = tmp_path / "repos" / "chromium-base.gitnexus-context.md"
+        assert gitnexus_context_path(repo) == expected
 
     def test_build_argv_unknown_condition_raises(self):
         with pytest.raises(ValueError):

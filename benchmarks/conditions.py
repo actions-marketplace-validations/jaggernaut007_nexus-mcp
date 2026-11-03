@@ -13,23 +13,36 @@ from typing import Any, Dict, List, Optional, Tuple
 REPO_ROOT = Path(__file__).resolve().parent.parent
 SKILL_PATH = REPO_ROOT / "plugin" / "skills" / "nexus-mcp" / "SKILL.md"
 NEXUS_MCP_CONFIG = Path(__file__).resolve().parent / "mcp-configs" / "nexus.json"
+GITNEXUS_MCP_CONFIG = Path(__file__).resolve().parent / "mcp-configs" / "gitnexus.json"
 PLUGIN_DIR = REPO_ROOT / "plugin"
 
 BASELINE_TOOLS = "Read,Grep,Glob"
 DISALLOWED_TOOLS = "Edit,Write,NotebookEdit,WebFetch,WebSearch,Task"
 # Headless runs use `dontAsk` plus this allowlist instead of a bypass flag: a
 # tool outside the list is denied (and recorded) rather than silently allowed.
-ALLOWED_TOOLS = "Read,Grep,Glob,ToolSearch,mcp__nexus-mcp__*,mcp__plugin_nexus-mcp_nexus-mcp__*"
+ALLOWED_TOOLS = (
+    "Read,Grep,Glob,ToolSearch,mcp__nexus-mcp__*,mcp__plugin_nexus-mcp_nexus-mcp__*,"
+    "mcp__gitnexus__*"
+)
 
 # `nexus` appends the routing skill to the system prompt; `mcp-only` exposes the
 # same server with no skill, so tool descriptions and server instructions are
-# the only routing signal.
-KNOWN_CONDITIONS = ("baseline", "mcp-only", "nexus", "nexus-plugin")
+# the only routing signal. `gitnexus` is the competitor: its MCP server plus the
+# CLAUDE.md block that `gitnexus analyze` writes, which Claude Code always loads.
+KNOWN_CONDITIONS = ("baseline", "mcp-only", "nexus", "nexus-plugin", "gitnexus")
 # The embedding device of the per-model servers and indexes. Pinned to CPU so every model runs
 # on the same device (the retrieval eval does too) and the CoreML provider is never used.
 BENCH_EMBEDDING_DEVICE = "cpu"
-# These two have no server of ours to configure, so `<name>@<model>` is an error.
-NO_MODEL_CONDITIONS = ("baseline", "nexus-plugin")
+# These have no server of ours to configure, so `<name>@<model>` is an error.
+NO_MODEL_CONDITIONS = ("baseline", "nexus-plugin", "gitnexus")
+
+
+def gitnexus_context_path(repo_dir: Path) -> Path:
+    """The saved GitNexus CLAUDE.md block of a repo: `repos/<name>.gitnexus-context.md`.
+
+    It is kept outside the repo, so the other conditions never load it.
+    """
+    return repo_dir.parent / f"{repo_dir.name}.gitnexus-context.md"
 
 
 def split_condition(name: str) -> Tuple[str, Optional[str]]:
@@ -142,13 +155,15 @@ def build_argv(
     skill_path: Path = SKILL_PATH,
     plugin_dir: Path = PLUGIN_DIR,
     builtin_tools: str = BASELINE_TOOLS,
+    gitnexus_context: Optional[Path] = None,
 ) -> List[str]:
     """Build the full argv for a `claude` invocation under the given condition.
 
     `condition` is one of KNOWN_CONDITIONS, optionally with `@<embedding model>` (the model
     is applied through `mcp_config_path`, not here). Raises ValueError otherwise.
     `builtin_tools` is the `--tools` list; the routing eval adds `ToolSearch`
-    so deferred MCP tools stay discoverable.
+    so deferred MCP tools stay discoverable. The `gitnexus` condition needs
+    `gitnexus_context` (see gitnexus_context_path) and raises FileNotFoundError without it.
     """
     base, embedding_model = split_condition(condition)
     if base not in KNOWN_CONDITIONS or (embedding_model and base in NO_MODEL_CONDITIONS):
@@ -175,6 +190,18 @@ def build_argv(
         ]
     elif condition == "nexus-plugin":
         argv += ["--plugin-dir", str(plugin_dir)]
+    elif condition == "gitnexus":
+        if gitnexus_context is None or not gitnexus_context.exists():
+            raise FileNotFoundError(
+                f"No GitNexus context file at {gitnexus_context}. Run `gitnexus analyze` "
+                "and save its CLAUDE.md block there (see benchmarks/README.md)."
+            )
+        argv += [
+            "--mcp-config",
+            str(GITNEXUS_MCP_CONFIG),
+            "--append-system-prompt",
+            gitnexus_context.read_text(),
+        ]
 
     argv += [prompt]
     return argv
@@ -247,11 +274,12 @@ def build_run(
     tool_search: Optional[bool] = None,
     builtin_tools: str = BASELINE_TOOLS,
     mcp_config_path: Path = NEXUS_MCP_CONFIG,
+    gitnexus_context: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """Build the full (argv, env, isolation_mode) triple for one run."""
     argv = build_argv(
         condition, prompt, model, max_budget_usd, mcp_config_path=mcp_config_path,
-        builtin_tools=builtin_tools,
+        builtin_tools=builtin_tools, gitnexus_context=gitnexus_context,
     )
     # --mcp-config, --tools and similar options take a list of values and swallow a
     # prompt that follows them. Take the prompt off, add the isolation flags, then put

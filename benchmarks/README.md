@@ -101,6 +101,18 @@ on any folder (see `docs/EVALUATE.md`).
   from "does Claude reliably discover the skill," which is a separate
   question. An optional `nexus-plugin` condition (`--plugin-dir plugin/`)
   measures the shipped routing behavior instead, if you want that number too.
+- `gitnexus` — a competitor, for comparison. Same built-in tools, plus the GitNexus MCP
+  server (`benchmarks/mcp-configs/gitnexus.json`, which runs `gitnexus mcp`) and the
+  CLAUDE.md block that `gitnexus analyze` writes, given via `--append-system-prompt`.
+  Claude Code always loads that block for a GitNexus user, so this is the same as the
+  `nexus` condition. Set it up once for each repo:
+  1. Install a pinned release: `npm install -g gitnexus@1.6.12`.
+  2. In the repo, run `GITNEXUS_LBUG_EXTENSION_INSTALL=auto gitnexus analyze .` (the
+     variable gets the full-text search extension).
+  3. Move the `<!-- gitnexus:start -->` block of the new `CLAUDE.md` to
+     `benchmarks/repos/<name>.gitnexus-context.md`.
+  4. Delete the `CLAUDE.md`, `AGENTS.md` and `.claude/` that `analyze` wrote, so the other
+     conditions do not see them.
 
 **Isolation:** each run gets `CLAUDE_CONFIG_DIR` pointed at
 `benchmarks/.claude-bench` (gitignored) plus `--strict-mcp-config` and

@@ -1,5 +1,6 @@
 """Tests for benchmarks.transcript: stream-json event parsing -> RunTrace."""
 
+import json
 from pathlib import Path
 
 from benchmarks.transcript import parse_lines, parse_stream
@@ -41,6 +42,27 @@ def test_parse_lines_baseline_final_answer_and_usage():
 def test_parse_lines_nexus_extracts_result_filepaths():
     trace = parse_lines(_load_lines("nexus_run.jsonl"))
     assert "django/dispatch/dispatcher.py" in trace.nexus_result_files
+
+
+def test_parse_stream_gitnexus_extracts_camelcase_filepaths():
+    result = {
+        "status": "ambiguous",
+        "candidates": [
+            {"name": "RegisterCallback", "filePath": "base/at_exit.h"},
+            {"name": "RegisterCallback", "filePath": "base/at_exit.cc"},
+        ],
+    }
+    events = [
+        {"type": "assistant", "message": {"content": [
+            {"type": "tool_use", "id": "t1", "name": "mcp__gitnexus__context",
+             "input": {"name": "RegisterCallback"}},
+        ]}},
+        {"type": "user", "message": {"content": [
+            {"type": "tool_result", "tool_use_id": "t1", "content": json.dumps(result)},
+        ]}},
+    ]
+    trace = parse_stream(events)
+    assert trace.files_surfaced_nexus == ["base/at_exit.cc", "base/at_exit.h"]
 
 
 def test_parse_lines_nexus_files_surfaced_includes_result_files():

@@ -1,0 +1,180 @@
+repo:
+  name: chromium-base
+  url: https://chromium.googlesource.com/chromium/src
+  pin: d8ebdd25980e38badccc265758aa508e6592000e
+  pinned_date: "2026-11-03"
+  sparse: ["/base/"]
+  why: >-
+    Chromium's base/ library only (4,243 files, mostly C++), from a shallow sparse
+    checkout. A C++ codebase, where GitNexus has a call graph and Nexus-MCP has
+    symbols and search but no call edges (ADR-019).
+
+defaults:
+  max_budget_usd: 1.00
+  timeout_s: 600
+
+# Ground truth was checked with grep against the pinned commit. The first two tasks
+# are the --smoke pair: one search question and one impact question.
+tasks:
+  - id: cr-concept-weakptr-invalidate
+    category: conceptual
+    prompt: >
+      In this repo, where is the logic that invalidates WeakPtrs, and how does it
+      check that a WeakPtr is used on the right sequence? Name the file(s) and the
+      key class and method names, and briefly explain the flow.
+    ground_truth:
+      relevant_files:
+        - base/memory/weak_ptr.cc
+        - base/memory/weak_ptr.h
+      acceptable_extra_files:
+        - base/sequence_checker.h
+        - base/sequence_checker_impl.h
+        - base/sequence_checker_impl.cc
+      facts:
+        - any_of: ["WeakReference::Flag", "Flag::Invalidate", "class Flag"]
+        - any_of: ["sequence_checker", "SequenceChecker", "CalledOnValidSequence",
+                   "DCHECK_CALLED_ON_VALID_SEQUENCE"]
+        - any_of: ["WeakReferenceOwner", "InvalidateWeakPtrs", "WeakPtrFactory"]
+      must_mention_files:
+        - base/memory/weak_ptr.cc
+
+  - id: cr-impact-atexit-registercallback
+    category: impact
+    prompt: >
+      I want to change the signature of AtExitManager::RegisterCallback. Outside of
+      tests, which functions call it directly? List each caller function with its
+      file path.
+    ground_truth:
+      relevant_files:
+        - base/at_exit.cc
+        - base/at_exit.h
+        - base/lazy_instance_helpers.cc
+        - base/metrics/statistics_recorder.cc
+        - base/memory/raw_ptr_asan_service.cc
+      acceptable_extra_files:
+        - base/lazy_instance_helpers.h
+        - base/metrics/statistics_recorder.h
+        - base/memory/raw_ptr_asan_service.h
+        - base/allocator/partition_alloc_support.cc
+      facts:
+        - any_of: ["CompleteLazyInstance"]
+        - any_of: ["InitLogOnShutdownWhileLocked", "InitLogOnShutdown"]
+        - any_of: ["RawPtrAsanService::Configure", "Configure"]
+      must_mention_files:
+        - base/lazy_instance_helpers.cc
+        - base/metrics/statistics_recorder.cc
+        - base/memory/raw_ptr_asan_service.cc
+
+  - id: cr-impact-histogram-bucket-ranges
+    category: impact
+    prompt: >
+      I want to change the signature of Histogram::InitializeBucketRanges (the
+      exponential one, not LinearHistogram's). What calls it directly in non-test
+      code, and what calls those callers? List functions with file paths.
+    ground_truth:
+      relevant_files:
+        - base/metrics/histogram.cc
+        - base/metrics/histogram.h
+      acceptable_extra_files:
+        - base/metrics/bucket_ranges.h
+        - base/metrics/bucket_ranges.cc
+      facts:
+        - any_of: ["CreateRanges"]
+        - any_of: ["Factory::Build", "Build()"]
+      must_mention_files:
+        - base/metrics/histogram.cc
+
+  - id: cr-concept-json-reader-backend
+    category: conceptual
+    prompt: >
+      How does base::JSONReader parse JSON text in this repo? What does it delegate
+      the parsing to, and where is the glue code? Name the file(s).
+    ground_truth:
+      relevant_files:
+        - base/json/json_reader.cc
+        - base/json/json_reader.h
+      acceptable_extra_files:
+        - base/json/json_common.h
+        - base/strings/string_view_rust.h
+      facts:
+        - any_of: ["serde_json_lenient", "serde_json"]
+        - any_of: ["Rust", "rust"]
+      must_mention_files:
+        - base/json/json_reader.cc
+
+  - id: cr-needle-json-max-depth
+    category: needle
+    prompt: >
+      What is the default maximum nesting depth that JSONReader and JSONWriter
+      accept, and in which file is that constant defined? Give the constant name.
+    ground_truth:
+      relevant_files:
+        - base/json/json_common.h
+      acceptable_extra_files:
+        - base/json/json_reader.h
+        - base/json/json_writer.h
+      facts:
+        - any_of: ["kAbsoluteMaxDepth"]
+        - any_of: ["200"]
+      must_mention_files:
+        - base/json/json_common.h
+
+  - id: cr-needle-utf8-to-utf16
+    category: needle
+    prompt: >
+      Where is base::UTF8ToUTF16 defined (the implementation, not only the
+      declaration)? Give the file and say what the std::string_view overload returns.
+    ground_truth:
+      relevant_files:
+        - base/strings/utf_string_conversions.cc
+        - base/strings/utf_string_conversions.h
+      acceptable_extra_files: []
+      facts:
+        - any_of: ["std::u16string", "u16string"]
+      must_mention_files:
+        - base/strings/utf_string_conversions.cc
+
+  - id: cr-arch-task-scheduling
+    category: architecture
+    prompt: >
+      Give an overview of how task scheduling is organized under base/task. Name the
+      two main subsystems (directories), the public entry point for posting a task to
+      the thread pool, and the main implementation class of each subsystem.
+    ground_truth:
+      relevant_files:
+        - base/task/thread_pool.h
+        - base/task/thread_pool/thread_pool_impl.h
+        - base/task/sequence_manager/sequence_manager_impl.h
+      acceptable_extra_files:
+        - base/task/thread_pool/thread_pool_instance.h
+        - base/task/thread_pool/task_tracker.h
+        - base/task/sequence_manager/sequence_manager.h
+        - base/task/task_traits.h
+        - base/task/README.md
+      facts:
+        - any_of: ["thread_pool"]
+        - any_of: ["sequence_manager"]
+        - any_of: ["ThreadPoolImpl"]
+        - any_of: ["SequenceManagerImpl"]
+        - any_of: ["ThreadPool::PostTask", "PostTask"]
+      must_mention_files:
+        - base/task/thread_pool/thread_pool_impl.h
+        - base/task/sequence_manager/sequence_manager_impl.h
+
+  - id: cr-concept-timer-hierarchy
+    category: conceptual
+    prompt: >
+      What is the class hierarchy of the timers in base/timer? Name the base classes
+      and the one-shot and repeating timer classes, with the file that declares them.
+    ground_truth:
+      relevant_files:
+        - base/timer/timer.h
+      acceptable_extra_files:
+        - base/timer/timer.cc
+      facts:
+        - any_of: ["TimerBase"]
+        - any_of: ["DelayTimerBase"]
+        - any_of: ["OneShotTimer"]
+        - any_of: ["RepeatingTimer"]
+      must_mention_files:
+        - base/timer/timer.h

@@ -192,7 +192,7 @@ def warm_up(
         )
     built = cond.build_run(
         condition, WARM_UP_PROMPT, model, WARM_UP_BUDGET_USD, config_dir,
-        mcp_config_path=mcp_config,
+        mcp_config_path=mcp_config, gitnexus_context=cond.gitnexus_context_path(repo_dir),
     )
     proc = subprocess.Popen(
         built["argv"], cwd=str(repo_dir), env=built["env"], stdout=subprocess.DEVNULL,
@@ -238,7 +238,8 @@ def run_once(
         )
 
     built = cond.build_run(
-        condition, prompt, model, max_budget, config_dir, mcp_config_path=mcp_config
+        condition, prompt, model, max_budget, config_dir, mcp_config_path=mcp_config,
+        gitnexus_context=cond.gitnexus_context_path(repo_dir),
     )
     argv, env, isolation_mode = built["argv"], built["env"], built["isolation_mode"]
 
