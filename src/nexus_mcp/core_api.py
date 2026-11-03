@@ -461,21 +461,6 @@ def _relativize_location_str(location: str, root: Path) -> str:
 
 # --- Discovery & indexing ---------------------------------------------------
 
-def _storage_line() -> str:
-    """Where the index lives and its size, as one short string.
-
-    So an agent can answer "where is my data?" without a file search. Only the path and
-    the size: every field of `status` costs tokens on each call (measured +23 tokens on a
-    175-token response, 2026-11-03). `nexus-mcp-ci data where` and docs/PRIVACY.md give the rest.
-    """
-    from nexus_mcp.config import get_settings
-    from nexus_mcp.evaluate.paths import dir_size, human_size
-
-    path = get_settings().storage_path.resolve()
-    size, _ = dir_size(path)
-    return f"{path} ({human_size(size)})"
-
-
 def status() -> dict[str, Any]:
     """Whether a codebase is indexed, index size/engine availability, memory
     usage, and a stale/staleness_warning pair if files changed since the last
@@ -504,8 +489,6 @@ def status() -> dict[str, Any]:
             result["bm25_fts_ready"] = state.bm25_engine._fts_index_created
         if state.graph_engine:
             result["graph"] = state.graph_engine.get_statistics()
-
-        result["storage"] = _storage_line()
 
         staleness = _get_staleness(state)
         result["stale"] = staleness["stale"]

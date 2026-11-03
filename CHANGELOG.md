@@ -63,10 +63,6 @@ All notable changes to this project will be documented in this file.
 - PyPI metadata: new description, keywords, classifiers and project URLs. README links are
   absolute, so they work on PyPI and Glama.
 
-- `status` has a `storage` field: the absolute index folder and its size, so an agent can answer
-  "where is my data?". North-star cost: +23 tokens on a 175-token `status` response (measured
-  on this repo, 2026-11-03). Search is unchanged, so hit@1 is unchanged. The tool description is
-  unchanged, so no session pays for it unless it calls `status`.
 - `benchmarks/runner.py --repo-path PATH` runs the benchmark on any local folder, and
   `--generate N` makes N tasks from its symbols (no YAML to write).
 - `evals/retrieval/run.py --root PATH --generate N` runs the retrieval eval on any folder. On
