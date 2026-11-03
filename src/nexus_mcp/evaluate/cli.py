@@ -28,7 +28,7 @@ def _eval_parser() -> argparse.ArgumentParser:
         nargs="?",
         default=None,
         help="A folder (default: current folder) or a public https:// repo URL, "
-        "or `list` / `show <id>`",
+        "or `list` / `show <id>` / `share <id>` / `doctor`",
     )
     p.add_argument("run_id", nargs="?", default=None, help=argparse.SUPPRESS)
     p.add_argument(
@@ -72,8 +72,43 @@ def _eval_parser() -> argparse.ArgumentParser:
         "--max-usd", type=float, default=5.0, help="Stop starting runs at this spend (default 5)"
     )
     agent.add_argument("--concurrency", type=int, default=3, help="Parallel runs (default 3)")
-    agent.add_argument("--yes", action="store_true", help="Skip the cost question")
+    agent.add_argument(
+        "--yes", action="store_true", help="Skip the question before a paid run or a share"
+    )
     return p
+
+
+def _share(args) -> int:
+    """Show the allow-listed payload of a saved run, then post it only after a yes."""
+    from nexus_mcp.evaluate import share
+
+    if not args.run_id:
+        print("Usage: nexus-mcp-ci eval share <run-id>   (see: nexus-mcp-ci eval list)")
+        return 2
+    try:
+        payload = share.build_payload(store.load(args.run_id))
+    except ValueError as exc:
+        print(exc, file=sys.stderr)
+        return 2
+    print("This is the whole payload. It has no paths, no code and no question text.\n")
+    print(share.issue_body(payload))
+    if args.yes:
+        answer = "y"
+    elif sys.stdin.isatty():
+        answer = input(f"Post it as a public issue on github.com/{share.REPO}? [y/N] ")
+    else:
+        answer = ""
+    if answer.strip().lower() not in ("y", "yes"):
+        print("Not posted. Nothing left this machine.")
+        return 0
+    if share.gh_ready():
+        url = share.post(payload)
+        if url is not None:
+            print(f"Posted: {url}")
+            return 0
+        print("gh could not create the issue.", file=sys.stderr)
+    print(f"Open {share.FORM_URL} and paste the JSON above into the form.")
+    return 0
 
 
 def _agent_choices(args):
@@ -150,6 +185,8 @@ def run_eval(argv: List[str]) -> int:
         print(json.dumps(record, indent=2) if args.json else md.read_text())
         return 0
 
+    if args.source == "share":
+        return _share(args)
     if args.source == "doctor":
         print(doctor.render(doctor.checks()))
         return 0

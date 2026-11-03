@@ -16,10 +16,11 @@ import json
 import re
 import sys
 from pathlib import Path
-from typing import Dict, List
+from typing import Dict, List, Optional
 
 ROOT = Path(__file__).resolve().parent.parent
 DATA = ROOT / "benchmarks" / "published" / "results.json"
+COMMUNITY = ROOT / "site" / "data" / "community-results.json"
 START, END = "<!-- results:start -->", "<!-- results:end -->"
 SITE_URL = "https://jaggernaut007.github.io/nexus-mcp"
 REPO_URL = "https://github.com/jaggernaut007/Nexus-MCP"
@@ -147,7 +148,50 @@ def csv_text(data: Dict) -> str:
     return out.getvalue()
 
 
-def page_html(data: Dict) -> str:
+def load_community() -> List[Dict]:
+    """Shared results that a maintainer accepted (see scripts/ingest_community_result.py)."""
+    return json.loads(COMMUNITY.read_text()) if COMMUNITY.exists() else []
+
+
+def community_html(entries: List[Dict]) -> str:
+    """The community table. Values were validated on ingest; they are escaped again here."""
+    head = (
+        "<h2>Community results</h2>\n<p>Runs shared with <code>nexus-mcp-ci eval share</code> "
+        "and accepted by a maintainer. Numbers only: no code and no private names.</p>\n"
+    )
+    if not entries:
+        return head + "<p>None yet. Yours can be the first.</p>\n"
+    rows = []
+    for e in entries:
+        quick = e.get("quick")
+        if quick:
+            g, n = quick["grep"]["median_tokens"], quick["nexus"]["median_tokens"]
+            detail = f"{html.escape(quick['verdict'])}; tokens {g:,.0f} → {n:,.0f}"
+        else:
+            rec = e.get("agent", {}).get("recommendation", {})
+            detail = f"best: {html.escape(str(rec.get('spec')))} {html.escape(str(rec.get('condition')))}"
+        src = e["source"]
+        project = (
+            f'<a href="{html.escape(src["url"])}">{html.escape(src["url"].split("github.com/")[1])}</a>'
+            if src.get("url")
+            else html.escape(src["kind"])
+        )
+        rows.append(
+            f"<tr><td>#{int(e['issue'])}</td><td>{html.escape(e['created'])}</td>"
+            f"<td>{html.escape(e['tier'])}</td><td>{project}</td>"
+            f"<td>{html.escape(e['repo']['size_band'])}</td>"
+            f"<td>{html.escape(', '.join(e['repo']['languages']))}</td><td>{detail}</td>"
+            f"<td>{html.escape(e['nexus_mcp_ci'])}</td></tr>"
+        )
+    return (
+        head + '<div class="scroll"><table><thead><tr><th>Issue</th><th>Date</th><th>Tier</th>'
+        "<th>Project</th><th>Size</th><th>Languages</th><th>Result</th><th>Version</th>"
+        "</tr></thead><tbody>\n" + "\n".join(rows) + "\n</tbody></table></div>\n"
+    )
+
+
+def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
+    community = load_community() if community is None else community
     m = data["method"]
     rows = []
     for r in data["runs"]:
@@ -229,7 +273,7 @@ code {{ font-size:.9em; }}
 <div class="scroll"><table><thead><tr><th>Retrieval suite</th><th>{html.escape(data["retrieval"]["metric"])}</th></tr></thead><tbody>{suites}</tbody></table></div>
 <h2>Quick tier on the example</h2>
 <p><code>nexus-mcp-ci eval --example</code> on the {html.escape(q["project"])} ({q["files"]} files, {q["questions"]} questions, no LLM): median tokens to reach the right file {q["grep"]["median_tokens"]:,} with Grep and Read and {q["nexus"]["median_tokens"]:,} with Nexus-MCP. Right file first: {q["grep"]["hit_at_1"]:.0%} and {q["nexus"]["hit_at_1"]:.0%}. Verdict: {html.escape(q["verdict"])}.</p>
-<h2>Run it on your own code</h2>
+{community_html(community)}<h2>Run it on your own code</h2>
 <p><code>uvx nexus-mcp-ci eval</code> runs the free offline check on the current folder. <code>uvx nexus-mcp-ci eval --agent claude</code> runs the paid A/B with your own Claude Code login, after it shows the cost.</p>
 <h2>Data</h2>
 <ul>

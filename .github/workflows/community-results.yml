@@ -1,0 +1,57 @@
+name: Community results
+
+# A maintainer adds the `eval-accepted` label to an eval-result issue. This job validates
+# the JSON block against an allow-list and opens a PR that adds it to the community data.
+# The issue body reaches the script only through an environment variable, never inline in
+# a `run:` line, and no code from the payload runs.
+
+on:
+  issues:
+    types: [labeled]
+
+permissions: {}
+
+jobs:
+  ingest:
+    if: github.event.label.name == 'eval-accepted'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      # Pinned to commit SHAs: this job holds a token that can write.
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
+        with:
+          python-version: "3.12"
+
+      - name: Validate the payload and add it
+        env:
+          ISSUE_BODY: ${{ github.event.issue.body }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: python scripts/ingest_community_result.py
+
+      - name: Regenerate the published pages
+        run: |
+          python scripts/publish_results.py
+          python scripts/publish_results.py --check
+
+      - name: Open a pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          branch="community-result-${ISSUE_NUMBER}"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$branch"
+          git add site/
+          git commit -m "chore(community): add eval result from issue #${ISSUE_NUMBER}"
+          git push origin "$branch"
+          # The PR body holds the validated entry. Review this data, not the issue: the issue
+          # author can edit the issue after the label. A PR opened with GITHUB_TOKEN starts
+          # no CI, so the check above is the gate.
+          python scripts/ingest_community_result.py --show "${ISSUE_NUMBER}" > pr-body.md
+          gh pr create --base main --head "$branch" \
+            --title "Community eval result from #${ISSUE_NUMBER}" \
+            --body-file pr-body.md

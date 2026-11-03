@@ -33,6 +33,11 @@ All notable changes to this project will be documented in this file.
   `scripts/publish_results.py` writes the README "Results at a glance" block, the site results
   rows, the llms.txt "Benchmarks" section and `site/benchmarks.{html,json,csv}`. CI runs it with
   `--check` and fails when a generated block is out of date.
+- `nexus-mcp-ci eval share <id>`: shows the allow-listed numbers of a saved run (no paths, no
+  code, no question text, no local project name) and posts them as a GitHub issue only after a
+  yes. Without a logged-in `gh` it prints the issue-form link. A maintainer label
+  (`eval-accepted`) starts `community-results.yml`, which validates the payload and opens a PR
+  that adds it to the community table on `benchmarks.html`. There is no telemetry.
 
 ### Changed
 
