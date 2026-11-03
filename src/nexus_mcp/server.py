@@ -493,9 +493,24 @@ def create_server():
 
 
 def main():
-    """Entry point for nexus-mcp CLI."""
+    """Entry point for nexus-mcp CLI.
+
+    ``eval`` and ``data`` run a command and exit. With no arguments the stdio server
+    starts, as MCP clients expect.
+    """
+    import sys
+
     from nexus_mcp.config import get_settings
+    from nexus_mcp.privacy import apply_privacy_defaults
     from nexus_mcp.state import get_state
+
+    if len(sys.argv) > 1:
+        from nexus_mcp.evaluate.cli import dispatch
+
+        code = dispatch(sys.argv[1:])
+        if code is not None:
+            raise SystemExit(code)
+    apply_privacy_defaults()
 
     settings = get_settings()
     log_level = getattr(logging, settings.log_level.upper(), logging.INFO)
