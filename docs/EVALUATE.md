@@ -47,6 +47,18 @@ Grep and Read used fewer tokens.
 The numbers are a token proxy (characters divided by 4), not a bill. The agent tier below
 measures the real cost.
 
+Measured results (2026-11-03, 30 to 40 questions each):
+
+| Project | Files | Verdict | Median tokens: Grep and Read → Nexus-MCP | Right file first |
+|---|---:|---|---:|---:|
+| [Chromium `base/`](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) | 3,638 | Strong fit | 8,519 → 849 | 38% → 75% |
+| [pallets/click](https://github.com/pallets/click) | 91 | Strong fit | 21,765 → 1,203 | 27% → 90% |
+| Nexus-MCP source (`--example`) | 53 | Likely fit | 5,339 → 1,366 | 70% → 93% |
+
+Indexing took about 25 minutes for Chromium `base/`, 67 seconds for click and 27 seconds for the
+Nexus-MCP source, on a laptop. The source of these numbers is
+`benchmarks/published/results.json`.
+
 Question kinds:
 
 - `concept`: the first sentence of a docstring, with the name removed (Python only).

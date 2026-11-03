@@ -96,7 +96,7 @@
           "name": "How do I test Nexus-MCP on my own code before I install it?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Run uvx nexus-mcp-ci eval in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. On the Nexus-MCP source it measured 1,366 median tokens to reach the right file against 5,339. For real agent cost, nexus-mcp-ci eval --agent claude runs a paid A/B with your own Claude Code login after it shows the cost."
+            "text": "Run uvx nexus-mcp-ci eval in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 849 against 8,519 on Chromium base/ (3,638 files), 1,203 against 21,765 on pallets/click (91 files) and 1,366 against 5,339 on the Nexus-MCP source. For real agent cost, nexus-mcp-ci eval --agent claude runs a paid A/B with your own Claude Code login after it shows the cost."
           }
         },
         {
@@ -299,7 +299,7 @@
           </li>
           <li>
             <h3>Read the verdict</h3>
-            <p>"Strong fit", "Likely fit" or "Weak fit", with the tokens an agent needs to reach the right file. On Chromium's <code>base/</code> (3,638 files): "Strong fit", 849 median tokens against 8,519, and the right file first in 75% of questions against 38%. On the Nexus-MCP source: 1,366 against 5,339. On a tiny project Grep and Read win, and the report says so. <a href="benchmarks.html">All results</a>.</p>
+            <p>"Strong fit", "Likely fit" or "Weak fit", with the tokens an agent needs to reach the right file. On Chromium's <code>base/</code> (3,638 files): "Strong fit", 849 median tokens against 8,519, and the right file first in 75% of questions against 38%. On <code>pallets/click</code> (91 files): "Strong fit", 1,203 against 21,765, right file first 90% against 27%. On the Nexus-MCP source: 1,366 against 5,339. On a tiny project Grep and Read win, and the report says so. <a href="benchmarks.html">All results</a>.</p>
           </li>
           <li>
             <h3>Adopt, measure the real cost, or share</h3>
@@ -558,7 +558,7 @@
           </details>
           <details>
             <summary>How do I test Nexus-MCP on my own code before I install it?</summary>
-            <p>Run <code>uvx nexus-mcp-ci eval</code> in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. On the Nexus-MCP source it measured 1,366 median tokens to reach the right file against 5,339. For real agent cost, <code>nexus-mcp-ci eval --agent claude</code> runs a paid A/B with your own Claude Code login after it shows the cost. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md" rel="noopener">The full guide</a>.</p>
+            <p>Run <code>uvx nexus-mcp-ci eval</code> in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 849 against 8,519 on Chromium <code>base/</code> (3,638 files), 1,203 against 21,765 on <code>pallets/click</code> (91 files) and 1,366 against 5,339 on the Nexus-MCP source. For real agent cost, <code>nexus-mcp-ci eval --agent claude</code> runs a paid A/B with your own Claude Code login after it shows the cost. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md" rel="noopener">The full guide</a>.</p>
           </details>
           <details>
             <summary>How does Nexus-MCP compare with Serena and claude-context?</summary>

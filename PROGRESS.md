@@ -210,7 +210,8 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
 ## Adopter Evaluation — 2026-11-03 (PRs #14 to #18, stacked)
 - [x] PR 1 (#14): `nexus-mcp-ci eval` quick tier (free, offline), `data where|clear|export-memories`,
   `NEXUS_OFFLINE`, no-network test. `--example` is the Nexus-MCP source: "Likely fit",
-  1,366 against 5,339 median tokens.
+  1,366 against 5,339 median tokens. Real repos: Chromium `base/` (3,638 files) "Strong fit",
+  849 against 8,519; pallets/click (91 files, URL path) "Strong fit", 1,203 against 21,765.
 - [x] PR 2 (#15): `eval --agent` (Claude, Codex experimental), presets, cost gate, `eval doctor`.
 - [x] PR 3 (#16): `benchmarks/published/results.json` drives every published number; CI `--check`.
 - [x] PR 4 (#17): `eval share`, issue form, `community-results.yml`; security review fixed.

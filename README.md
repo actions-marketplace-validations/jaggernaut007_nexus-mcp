@@ -83,7 +83,10 @@ from the Nexus-MCP ranking. On this repo's source (53 files) it gave "Likely fit
 median tokens to reach the right file against 5,339, and the right file first in 93% of
 questions against 70%. On Chromium's `base/` (3,638 files of C++, Java and Python) it gave
 "Strong fit": 849 median tokens against 8,519 (90% fewer), and the right file first in 75% of
-questions against 38%. On a tiny project Grep and Read win, and the report says so.
+questions against 38%. On [pallets/click](https://github.com/pallets/click) (91 files, from its
+URL) it gave "Strong fit": 1,203 median tokens against 21,765 (94% fewer), and the right file
+first in 90% of questions against 27%. On a tiny project Grep and Read win, and the report says
+so.
 
 Want the real agent cost? The agent tier runs your own Claude Code or Codex login on tasks from
 your code, with and without Nexus-MCP. It shows the cost first and asks:
