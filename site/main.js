@@ -43,8 +43,9 @@
       .catch(() => {});
   }
 
-  // downloads.json is written by the Pages workflow from pypistats.org. The
-  // browser cannot call pypistats directly (no CORS). A low count reads as
+  // downloads.json is written by the Pages workflow from pepy.tech, with
+  // pypistats.org as the fallback. The browser cannot call either API directly
+  // (an API key, no CORS). A low count reads as
   // anti-proof, so show the lifetime total only from MIN_DOWNLOADS.
   const MIN_DOWNLOADS = 100;
   const downloads = document.querySelector("[data-downloads]");
