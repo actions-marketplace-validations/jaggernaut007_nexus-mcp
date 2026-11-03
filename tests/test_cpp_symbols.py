@@ -230,3 +230,136 @@ class TestQualifiedLookup:
         result = core_api.find_symbol("Flag::Invalidate")
         assert "error" not in result, result
         assert "valid_marker_ = 0" in result["symbols"][0]["code"]
+
+
+# Export and attribute macros in a class head, as in Chromium `base/` headers
+# (`base/timer/timer.h`, `base/memory/weak_ptr.h`, `base/synchronization/lock.h`).
+MACRO_CLASSES_H = """\
+namespace base {
+namespace internal {
+class BASE_EXPORT TimerBase {
+ public:
+  void Stop() { is_running_ = false; }
+  class Delegate {
+   public:
+    void Fire() {}
+  };
+ private:
+  bool is_running_ = false;
+};
+}  // namespace internal
+class BASE_EXPORT DeadlineTimer : public internal::TimerBase {
+ public:
+  DeadlineTimer() = default;
+  void Start() { deadline_started_ = true; }
+};
+class BASE_EXPORT TRIVIAL_ABI WeakReference {
+ public:
+  class BASE_EXPORT Flag {
+   public:
+    void Invalidate() { invalidated_flag_ = true; }
+  };
+  bool IsValid() const { return true; }
+};
+class LOCKABLE BASE_EXPORT Lock {
+ public:
+  void Acquire() EXCLUSIVE_LOCK_FUNCTION() {}
+};
+class COMPONENT_EXPORT(BASE_CLOCK) TickClock final : public Clock {
+ public:
+  int Now() const override { return 0; }
+};
+struct BASE_EXPORT TaskTraits {
+  int priority = 0;
+};
+class URL_PARSER : public Parser {
+ public:
+  void Parse() {}
+};
+}  // namespace base
+"""
+
+
+class TestExportMacros:
+    @pytest.fixture
+    def macro_header(self, tmp_path):
+        path = tmp_path / "timer.h"
+        path.write_text(MACRO_CLASSES_H)
+        return path
+
+    def test_parse_file_class_with_one_export_macro_is_a_class(self, parser, macro_header):
+        syms = dict(_symbols(parser, macro_header))
+        assert syms.get("TimerBase") == SymbolType.CLASS, syms
+        assert syms.get("TimerBase.Stop") == SymbolType.METHOD, syms
+        assert "BASE_EXPORT" not in syms, syms
+
+    def test_parse_file_class_with_two_macros_is_a_class(self, parser, macro_header):
+        syms = dict(_symbols(parser, macro_header))
+        assert syms.get("WeakReference") == SymbolType.CLASS, syms
+        assert syms.get("Lock") == SymbolType.CLASS, syms
+        assert syms.get("Lock.Acquire") == SymbolType.METHOD, syms
+        assert not any("TRIVIAL_ABI" in n for n in syms), syms
+
+    def test_parse_file_class_with_macro_arguments_and_final_is_a_class(
+        self, parser, macro_header
+    ):
+        syms = dict(_symbols(parser, macro_header))
+        assert syms.get("TickClock") == SymbolType.CLASS, syms
+        assert syms.get("TickClock.Now") == SymbolType.METHOD, syms
+        assert not any("COMPONENT_EXPORT" in n or "final" in n for n in syms), syms
+
+    def test_parse_file_class_with_macro_and_base_clause_is_named_after_itself(
+        self, parser, macro_header
+    ):
+        syms = dict(_symbols(parser, macro_header))
+        assert syms.get("DeadlineTimer") == SymbolType.CLASS, syms
+        assert syms.get("DeadlineTimer.Start") == SymbolType.METHOD, syms
+        assert "internal.TimerBase" not in syms, syms
+
+    def test_parse_file_nested_class_in_a_macro_class_has_its_parent(self, parser, macro_header):
+        syms = dict(_symbols(parser, macro_header))
+        assert syms.get("TimerBase.Delegate") == SymbolType.CLASS, syms
+        assert syms.get("TimerBase.Delegate.Fire") == SymbolType.METHOD, syms
+        assert syms.get("WeakReference.Flag") == SymbolType.CLASS, syms
+        assert syms.get("WeakReference.Flag.Invalidate") == SymbolType.METHOD, syms
+
+    def test_parse_file_struct_with_export_macro_is_a_class(self, parser, macro_header):
+        syms = dict(_symbols(parser, macro_header))
+        assert syms.get("TaskTraits") == SymbolType.CLASS, syms
+
+    def test_parse_file_all_caps_class_name_is_not_taken_for_a_macro(self, parser, macro_header):
+        syms = dict(_symbols(parser, macro_header))
+        assert syms.get("URL_PARSER") == SymbolType.CLASS, syms
+
+    def test_parse_file_macro_class_keeps_the_macro_in_its_code(self, parser, macro_header):
+        (sym,) = [
+            s for s in parser.parse_file(str(macro_header)).symbols if s.name == "WeakReference"
+        ]
+        assert sym.type == SymbolType.CLASS
+        assert sym.signature == "class BASE_EXPORT TRIVIAL_ABI WeakReference {"
+        assert sym.line_start == 19
+
+    def test_find_symbol_nested_class_of_a_macro_class(self, macro_header, tmp_path):
+        asyncio.run(_setup_indexed(macro_header.parent, tmp_path / ".nexus"))
+        result = core_api.find_symbol("WeakReference::Flag")
+        assert "error" not in result, result
+        assert result["symbols"][0]["type"] == "class"
+        assert "invalidated_flag_" in result["symbols"][0]["code"]
+
+    def test_parse_file_method_with_annotation_macro_is_named_after_itself(
+        self, parser, tmp_path
+    ):
+        path = tmp_path / "lock.h"
+        path.write_text(
+            "class Lock {\n public:\n"
+            "  void Acquire() EXCLUSIVE_LOCK_FUNCTION() { a(); }\n"
+            "  void Release() UNLOCK_FUNCTION(lock_) { b(); }\n"
+            "  bool Try() const EXCLUSIVE_TRYLOCK_FUNCTION(true) { return c(); }\n"
+            "  void AssertAcquired() const ASSERT_EXCLUSIVE_LOCK() {}\n"
+            "  void Check() { if (ok_) DCHECK(ready_); }\n"
+            "};\n"
+        )
+        syms = dict(_symbols(parser, path))
+        for name in ("Acquire", "Release", "Try", "AssertAcquired", "Check"):
+            assert syms.get(f"Lock.{name}") == SymbolType.METHOD, syms
+        assert not any(n.split(".")[-1].isupper() for n in syms), syms

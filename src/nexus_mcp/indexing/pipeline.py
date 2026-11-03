@@ -39,7 +39,9 @@ SKIP_DIRS: Set[str] = {
 # docstring is also found after a licence or pragma comment, and a package comment after a
 # licence block. 4: C and C++ functions are named from their declarator (`Owner.Method`, not
 # the return type), a C++ `.h` file is parsed as C++, and a forward declaration gives no chunk.
-CHUNK_FORMAT = 4
+# 5: a C++ class with export macros (`class BASE_EXPORT Foo {`) is a class, and a method with
+# an annotation macro (`void f() LOCKS_EXCLUDED(x) {`) is named after itself.
+CHUNK_FORMAT = 5
 
 
 @dataclass

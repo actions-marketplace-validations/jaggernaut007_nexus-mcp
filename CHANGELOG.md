@@ -31,6 +31,19 @@ All notable changes to this project will be documented in this file.
     is not present), and `jobscout` is a private local suite that is not present. No suite
     has C++ code, so the gate shows only that Python retrieval did not fall. A C++ suite
     and a new Chromium benchmark run are still to do.
+  - **Export and annotation macros.** On a Chromium index built from the fix above, about
+    640 top-level classes in `base/` headers were still wrong. Examples are
+    `class BASE_EXPORT TimerBase {` and `class BASE_EXPORT TRIVIAL_ABI WeakReference {`.
+    tree-sitter-cpp read these as function definitions, so `TimerBase` was a function and
+    `DeadlineTimer` was the method `internal.TimerBase`. The methods in their bodies were lost.
+    The parser now masks ALL_CAPS macros in a class head with spaces before the parse. This
+    covers macros with arguments (`COMPONENT_EXPORT(X)`), `final`, base clauses and `struct`.
+    It also masks annotation macros between a parameter list and a body
+    (`void Acquire() EXCLUSIVE_LOCK_FUNCTION() {`). Before, such a method had the name of
+    its macro. Offsets do not change, so names and code still come from the original
+    text. An ALL_CAPS class name (`class URL_PARSER : public Parser {`) is not masked.
+    `CHUNK_FORMAT` is 5. hit@1 in `hybrid-exact` mode, before and after, in one folder:
+    `nexus_mcp` 0.62 and 0.62, `shop_repo` 0.50 and 0.50.
   - Eval note: the chunk text starts with the absolute file path, so the scores depend on
     where the checkout is. The same code gave `shop_repo` 0.50 in one folder and 0.62 in
     another. Compare a before and an after run in the same folder.

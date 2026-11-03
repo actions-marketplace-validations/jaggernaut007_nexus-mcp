@@ -29,6 +29,25 @@ _CPP_HEADER_MARKERS = re.compile(
     rb"|\w::~?\w",
     re.MULTILINE,
 )
+# ALL_CAPS macros between `class`/`struct`/`union` and the class name:
+# `class BASE_EXPORT TRIVIAL_ABI WeakReference {`, `class COMPONENT_EXPORT(X) Foo final : Bar {`.
+# tree-sitter-cpp cannot expand them and reads such a class as a function definition. The
+# lookahead needs a name after the macros and then `{`, `:`, `final` or template arguments,
+# so an ALL_CAPS class name (`class URL_PARSER : public Parser {`) is not taken for a macro.
+_CPP_CLASS_HEAD_MACROS = re.compile(
+    rb"\b(?:class|struct|union)\s+"
+    rb"((?:[A-Z][A-Z0-9_]+(?:\s*\([^()\n]*\))?\s+)+)"
+    rb"(?=[A-Za-z_][\w:]*\s*(?:<[^;{}]*>\s*)?(?:final\b\s*)?[:{])"
+)
+# ALL_CAPS annotation macros between the parameter list and the body of a function:
+# `void Acquire() EXCLUSIVE_LOCK_FUNCTION() {`. Without the mask the function is named after
+# the macro. Only a body (`{`, `= default`, `override`, ...) follows; a declaration that ends
+# in `;` gives no symbol, and `if (x) DCHECK(y);` is left as it is.
+_CPP_FUNCTION_TAIL_MACROS = re.compile(
+    rb"\)\s*(?:(?:const|volatile|noexcept|override|final)\b\s*)*"
+    rb"((?:[A-Z][A-Z0-9_]{2,}(?:\s*\([^()\n]*\))?\s*)+)"
+    rb"(?=\{|=(?!=)|override\b|final\b|const\b|->)"
+)
 # C and C++ declarators that wrap the name of a function (`*f()`, `&f()`, `f() const`).
 _DECLARATOR_WRAPPERS = (
     "function_declarator", "pointer_declarator", "reference_declarator",
@@ -120,7 +139,8 @@ class TreeSitterParser(IParser):
             )
 
         try:
-            tree = parser.parse(content)
+            source = self._mask_cpp_class_macros(content) if language == "cpp" else content
+            tree = parser.parse(source)
             symbols = self._extract_symbols(
                 tree.root_node, content, filepath, language, config
             )
@@ -534,6 +554,25 @@ class TreeSitterParser(IParser):
             if child.type in ("declarator", "function_declarator"):
                 return self._get_node_name(child, content, config)
         return None
+
+    @staticmethod
+    def _mask_cpp_class_macros(content: bytes) -> bytes:
+        """The source with the macros of C++ class heads and function tails replaced by spaces.
+
+        `class BASE_EXPORT Foo {` is parsed as `class             Foo {`, and the macro
+        of `void Acquire() EXCLUSIVE_LOCK_FUNCTION() {` becomes spaces in the same way.
+        The length and the line breaks do not change, so node offsets and line numbers stay
+        valid and the names and code of the symbols are still read from the original source.
+        """
+        def blank(match: "re.Match[bytes]") -> bytes:
+            start, end = match.span(1)
+            head = match.group(0)
+            macros = re.sub(rb"[^\n]", b" ", match.group(1))
+            offset = start - match.start()
+            return head[:offset] + macros + head[offset + (end - start):]
+
+        masked = _CPP_CLASS_HEAD_MACROS.sub(blank, content)
+        return _CPP_FUNCTION_TAIL_MACROS.sub(blank, masked)
 
     def _c_declarator_name(self, node, content: bytes) -> Optional[Tuple[List[str], str]]:
         """The scope and the name of a C or C++ function definition, from its declarator.
