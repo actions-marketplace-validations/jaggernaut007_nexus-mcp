@@ -19,6 +19,7 @@ from nexus_mcp.evaluate import questions, runners, specs
 from nexus_mcp.evaluate.quick import isolated_nexus, read_symbol_rows
 
 TASK_KINDS = ("concept", "described")  # lookup is too easy to need an agent
+FAIL_FAST_AFTER = 2  # failed runs, with no success yet, before the rest are skipped
 
 
 def make_prompt(query: str) -> str:
@@ -102,10 +103,15 @@ def recommend(rows: Sequence[Dict[str, Any]]) -> Dict[str, Any]:
         for r in rows
         if r["accuracy"] is not None
         and r["median_cost_usd"] is not None
+        and r.get("errors", 0) < r.get("runs", 1)  # a setup whose runs all failed is no answer
         and r["accuracy"] >= baseline.get(r["spec"], 0) - 1e-9
     ]
     if not fits:
-        return {"spec": None, "condition": None, "reason": "No run finished with a cost."}
+        return {
+            "spec": None,
+            "condition": None,
+            "reason": "No setup finished a run without an error.",
+        }
     best = min(fits, key=lambda r: (r["median_cost_usd"], -r["accuracy"]))
     base = next(
         (r for r in rows if r["spec"] == best["spec"] and r["condition"] == "baseline"), None
@@ -146,6 +152,7 @@ def run_agent(
             raise RuntimeError("Cancelled. Nothing was sent.")
 
         spent = [0.0]
+        tally = {"ok": 0, "failed": 0, "first_error": ""}
         lock = threading.Lock()
 
         def one(item: Dict[str, Any]) -> Dict[str, Any]:
@@ -153,11 +160,27 @@ def run_agent(
             base = {"spec": spec.label, "condition": condition, "task": task.id}
             with lock:
                 if spent[0] >= max_usd:
-                    return {**base, "skipped": True, "correct": False}
+                    return {**base, "skipped": "spend cap", "correct": False}
+                # Stop early when the first runs all fail: a login or CLI problem would
+                # otherwise repeat for every run.
+                if tally["ok"] == 0 and tally["failed"] >= FAIL_FAST_AFTER:
+                    return {**base, "skipped": "earlier runs failed", "correct": False}
             result = run_fn(spec, condition, make_prompt(task.query), root, storage)
+            cost = result.get("cost_usd")
+            if cost is None:
+                # No reported cost: count the estimate, unless the run failed before any call.
+                cost = 0.0 if result.get("is_error") else specs.run_estimate(spec)
             with lock:
-                spent[0] += result.get("cost_usd") or specs.run_estimate(spec)
-            progress(f"  {spec.label} {condition} {task.id}: done")
+                spent[0] += cost
+                if result.get("is_error"):
+                    tally["failed"] += 1
+                    tally["first_error"] = tally["first_error"] or result.get("error") or "error"
+                else:
+                    tally["ok"] += 1
+            status = (
+                f"error: {result.get('error') or 'unknown'}" if result.get("is_error") else "done"
+            )
+            progress(f"  {spec.label} {condition} {task.id}: {status}")
             correct = answer_correct(result.get("answer", ""), task.relevant)
             return {**base, **result, "correct": correct}
 
@@ -178,6 +201,8 @@ def run_agent(
         "spent_usd": round(spent[0], 4),
         "max_usd": max_usd,
         "skipped": sum(1 for r in runs if r.get("skipped")),
+        "failed": tally["failed"],
+        "error": tally["first_error"] if tally["ok"] == 0 else None,
         "isolation": sorted({r.get("isolation", "") for r in runs if r.get("isolation")}),
         "summary": rows,
         "recommendation": recommend(rows),

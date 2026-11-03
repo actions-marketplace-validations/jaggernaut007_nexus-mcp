@@ -192,16 +192,36 @@ def parse_codex(lines: Iterable[str], model: str) -> Dict[str, Any]:
     }
 
 
+def _last_assistant_text(lines: Iterable[str]) -> str:
+    """The text of the last assistant message: where the CLI puts a login or API error."""
+    text = ""
+    for line in lines:
+        try:
+            event = json.loads(line)
+        except (json.JSONDecodeError, TypeError):
+            continue
+        if isinstance(event, dict) and event.get("type") == "assistant":
+            for block in (event.get("message") or {}).get("content") or []:
+                if isinstance(block, dict) and block.get("type") == "text":
+                    text = block.get("text", "") or text
+    return text
+
+
 def parse_claude(lines: Iterable[str]) -> Dict[str, Any]:
+    lines = list(lines)
     trace = transcript.parse_lines(lines)
-    return {
+    is_error = trace.is_error or not trace.has_result_event
+    out = {
         "answer": trace.final_answer,
         "tokens": trace.total_tokens,
         "cost_usd": trace.total_cost_usd,
         "turns": trace.num_turns,
         "tool_calls": len(trace.tool_calls),
-        "is_error": trace.is_error or not trace.has_result_event,
+        "is_error": is_error,
     }
+    if is_error:
+        out["error"] = (trace.final_answer or _last_assistant_text(lines)).strip()[:300]
+    return out
 
 
 def run(

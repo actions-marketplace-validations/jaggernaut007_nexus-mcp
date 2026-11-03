@@ -104,6 +104,14 @@ def render_agent(record: Dict[str, Any], store_path: str) -> str:
         f"(estimate ${record['estimate_usd']:.2f}, cap ${record['max_usd']:.2f})",
         "",
     ]
+    if record.get("error"):
+        lines += [
+            f"**Every run failed.** The agent CLI said: `{record['error']}`",
+            "",
+            "Fix that first (for a login error, run `claude` and log in again), then rerun. "
+            "Runs that failed before any model call cost nothing.",
+            "",
+        ]
     if rec.get("spec"):
         lines.append(
             f"**Most efficient:** `{rec['spec']}` with `{rec['condition']}`. {rec['reason']}"
@@ -124,7 +132,8 @@ def render_agent(record: Dict[str, Any], store_path: str) -> str:
             f"{_num(row['median_seconds'])} | {row['errors']} |"
         )
     if record.get("skipped"):
-        lines += ["", f"{record['skipped']} runs were skipped: the spend cap was reached."]
+        why = "the first runs failed" if record.get("error") else "the spend cap was reached"
+        lines += ["", f"{record['skipped']} runs were skipped: {why}."]
     lines += [
         "",
         "Conditions: `baseline` is Grep, Glob and Read only. `mcp` adds the Nexus-MCP server. "

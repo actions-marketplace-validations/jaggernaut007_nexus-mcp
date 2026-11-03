@@ -381,3 +381,78 @@ def test_benchmarks_transcript_shim_still_exports_the_parser():
 
     assert shim.parse_lines is runners.transcript.parse_lines
     assert Path(shim.__file__).name == "transcript.py"
+
+
+# --- regressions from the first paid run (an expired CLI login) ------------------------
+
+# The shape of the real `claude -p` output when the login has expired (2026-11-03).
+AUTH_FAIL_LINES = [
+    json.dumps({"type": "system", "subtype": "init", "mcp_servers": []}),
+    json.dumps(
+        {
+            "type": "assistant",
+            "message": {
+                "model": "<synthetic>",
+                "content": [
+                    {
+                        "type": "text",
+                        "text": "Failed to authenticate: OAuth session expired and could "
+                        "not be refreshed",
+                    }
+                ],
+            },
+        }
+    ),
+    json.dumps(
+        {"type": "result", "is_error": True, "total_cost_usd": 0, "num_turns": 1, "usage": {}}
+    ),
+]
+
+
+def test_parse_claude_reports_the_login_error_text():
+    out = runners.parse_claude(AUTH_FAIL_LINES)
+    assert out["is_error"] and out["error"].startswith("Failed to authenticate")
+    assert out["cost_usd"] == 0
+
+
+def _failing_run(spec, condition, prompt, root, storage):
+    return {**runners.parse_claude(AUTH_FAIL_LINES), "seconds": 1.0, "isolation": "reduced"}
+
+
+def test_run_agent_stops_early_and_reports_the_error_when_every_run_fails(project):
+    result = _run_agent(
+        project,
+        specs_=specs.parse_specs("claude:haiku"),
+        conditions=["baseline", "nexus"],
+        tasks=3,
+        concurrency=1,
+        run_fn=_failing_run,
+    )
+    assert result["error"].startswith("Failed to authenticate")
+    assert result["failed"] == agent.FAIL_FAST_AFTER
+    assert result["skipped"] == len(result["runs"]) - agent.FAIL_FAST_AFTER
+    assert result["spent_usd"] == 0  # a zero cost is not replaced by the estimate
+    assert result["recommendation"]["spec"] is None
+
+
+def test_render_agent_shows_the_cli_error(project):
+    from nexus_mcp.evaluate import report
+
+    result = _run_agent(
+        project,
+        specs_=specs.parse_specs("claude:haiku"),
+        conditions=["baseline"],
+        tasks=2,
+        concurrency=1,
+        run_fn=_failing_run,
+    )
+    md = report.render_agent({**result, "source": {"label": "proj"}}, "/tmp/x")
+    assert "Every run failed" in md and "OAuth session expired" in md
+
+
+def test_recommend_skips_a_setup_whose_runs_all_failed():
+    rows = [
+        {**_row("claude:haiku", "baseline", 0.0, 0.0), "runs": 2, "errors": 2},
+        {**_row("claude:haiku", "nexus", 1.0, 0.02), "runs": 2, "errors": 0},
+    ]
+    assert agent.recommend(rows)["condition"] == "nexus"
