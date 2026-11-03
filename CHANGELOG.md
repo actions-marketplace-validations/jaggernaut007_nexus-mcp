@@ -55,6 +55,11 @@ All notable changes to this project will be documented in this file.
 - `eval https://github.com/pallets/click` (91 files, the first real run of the URL path): "Strong
   fit", 1,203 median tokens against 21,765 (94% fewer), right file first 90% against 27%. The
   homepage results table now shows each quick-tier run too.
+- `scripts/check_docs.py` (in CI): versions agree with `pyproject.toml`, every "N tools" claim
+  matches `server.py`, no hand-written test counts, every docs page is in the index, and the
+  generated pages are current. An offline lychee link check runs in CI. New pages:
+  `docs/CONFIGURATION.md` (generated from `config.py` by `scripts/gen_config_docs.py`),
+  `docs/FAQ.md`, `docs/RELEASING.md`. The stale "1,132 tests" counts are removed.
 - PyPI metadata: new description, keywords, classifiers and project URLs. README links are
   absolute, so they work on PyPI and Glama.
 

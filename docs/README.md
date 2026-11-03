@@ -13,7 +13,9 @@ Start with the group that matches what you want to do.
 - [INSTALLATION.md](INSTALLATION.md): prerequisites and setup for each MCP client
 - [USAGE_GUIDE.md](USAGE_GUIDE.md): the 8 tools, with examples and configuration
 - [CLI.md](CLI.md): `nexus-mcp-ci eval` and `nexus-mcp-ci data` (generated)
+- [CONFIGURATION.md](CONFIGURATION.md): every `NEXUS_*` variable, its default and its effect (generated)
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): common problems and their fixes
+- [FAQ.md](FAQ.md): short answers to the questions people ask first
 - [AGENT_ROUTING.md](AGENT_ROUTING.md): how an agent picks the right tool
 
 ## Understand
@@ -28,6 +30,7 @@ Start with the group that matches what you want to do.
 
 - [DEVELOPER_GUIDE.md](DEVELOPER_GUIDE.md): setup, tests, adding tools, engines and languages
 - [CONTRIBUTING.md](../CONTRIBUTING.md): the workflow, the north-star gate and the benchmark rule
+- [RELEASING.md](RELEASING.md): every place a version lives, and the release steps
 - [SECURITY.md](../SECURITY.md): how to report a vulnerability
 
 ## Planning (internal)

@@ -220,9 +220,10 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
 - [ ] Owner steps: create the `eval-result` and `eval-accepted` labels; allow Actions to open PRs;
   publish to the MCP Registry at the next release; set the repo topics; re-claim on Glama;
   submit to Context7.
+- [x] `check_docs.py` and the offline lychee link check in CI; CONFIGURATION.md (generated),
+  FAQ.md, RELEASING.md. CI runs on every PR, and all five PRs are green.
 - [ ] Not built from the plan: `benchmarks/runner.py --repo-path/--generate`,
-  `evals/retrieval --root --generate`, `check_docs.py`, lychee link check, `status` storage field,
-  CONFIGURATION.md, FAQ.md, RELEASING.md, the site data-flow SVG.
+  `evals/retrieval --root --generate`, `status` storage field, the site data-flow SVG.
 
 ## Discoverability & Setup Audit — 2026-09-23
 - [x] Audited agent-facing surfaces (tool descriptions, README, `llms.txt`,
