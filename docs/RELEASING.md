@@ -9,8 +9,15 @@
 - `server.json` (`version`, and the `version` of each package)
 - `plugin/.claude-plugin/plugin.json` (`version`)
 
-Also update by hand: the version in `site/index.html` (hero eyebrow), `benchmarks/published/
-results.json` (`version`), and a new section in `CHANGELOG.md`.
+Also update by hand:
+
+- the version in `site/index.html` (the `softwareVersion` JSON-LD, and the hero eyebrow and its
+  release link);
+- the "New in vX.Y.Z" note above "The 8 Tools" in `README.md` (the PyPI page shows this README);
+- a new section in `CHANGELOG.md`.
+
+Do not change `version` in `benchmarks/published/results.json` unless the live benchmark ran
+again. It names the version that the benchmark measured.
 
 ## Steps
 

@@ -332,6 +332,11 @@ Run `benchmarks/` on your own project before you rely on it.
 
 ## The 8 Tools
 
+**New in v2.2.0 (no breaking change):** `nexus-mcp-ci eval` measures Nexus-MCP on your own
+code ([Evaluate](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md)), and
+`nexus-mcp-ci data` shows and clears every stored file ([Privacy](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md)).
+The MCP tools do not change.
+
 **v2.1.0 breaking change:** `explain` and `health` are removed from the MCP tool list, and
 several rarely used parameters are removed from the schemas (see [CHANGELOG](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md)).
 `find_symbol` now returns the code with callers and callees.

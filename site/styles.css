@@ -92,6 +92,7 @@ h3 { font-size: 1.12rem; font-weight: 600; letter-spacing: -.005em; }
 .hero::before { content: ""; position: absolute; inset: 0; background-image: radial-gradient(var(--line) 1px, transparent 1px); background-size: 22px 22px; mask-image: linear-gradient(180deg, #000 0%, transparent 85%); opacity: .7; pointer-events: none; }
 .hero-grid { position: relative; display: grid; grid-template-columns: 1.02fr 1fr; gap: 56px; align-items: center; }
 .eyebrow { display: inline-flex; align-items: center; gap: 8px; margin: 0 0 22px; font: 500 .8rem var(--mono); color: var(--ink-2); border: 1px solid var(--line); background: var(--card); padding: 6px 12px; border-radius: 999px; }
+.eyebrow a { color: inherit; text-decoration: underline; text-underline-offset: 2px; }
 .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); box-shadow: 0 0 0 4px var(--accent-soft); }
 h1 { font: 400 clamp(2.8rem, 6.4vw, 5rem)/.98 var(--serif); letter-spacing: -.02em; }
 h1 em { color: var(--accent); }
