@@ -228,7 +228,7 @@ def run_eval(argv: List[str]) -> int:
     print(json.dumps({"id": run_id, **record}, indent=2) if args.json else markdown)
     if not args.json:
         print(f"Saved: {run_dir}", file=sys.stderr)
-    return 0
+    return 1 if record.get("error") else 0
 
 
 def run_data(argv: List[str]) -> int:
