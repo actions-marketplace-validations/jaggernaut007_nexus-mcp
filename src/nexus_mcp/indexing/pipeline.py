@@ -37,8 +37,9 @@ SKIP_DIRS: Set[str] = {
 # Raise this when the set of chunks for a file changes, so that an index of an older
 # version is rebuilt. 2: one module chunk for a file that starts with a docstring. 3: that
 # docstring is also found after a licence or pragma comment, and a package comment after a
-# licence block.
-CHUNK_FORMAT = 3
+# licence block. 4: C and C++ functions are named from their declarator (`Owner.Method`, not
+# the return type), a C++ `.h` file is parsed as C++, and a forward declaration gives no chunk.
+CHUNK_FORMAT = 4
 
 
 @dataclass

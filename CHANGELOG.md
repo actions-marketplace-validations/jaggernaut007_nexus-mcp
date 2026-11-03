@@ -4,6 +4,37 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Fixed
+
+- **C++ symbol names.** A benchmark run on Chromium `base/` (commit d8ebdd25) found two
+  defects. The agent then fell back to Glob and Read and used 97.7k tokens, against 50.0k
+  for Grep and Read.
+  - An out-of-line definition was named after its return type.
+    `WeakReference WeakReferenceOwner::GetRef() const` was the function `WeakReference`.
+    C and C++ functions now take their name from the declarator. `GetRef` is a method with
+    the parent `WeakReferenceOwner`. Most `Owner::Method` definitions were not indexed at all.
+    Constructors, destructors (`~Foo`), operators, templates and pointer returns keep their
+    own names. Constructors and destructors are methods.
+  - A `.h` file was parsed as C, so the classes in a C++ header were not found. A `.h`
+    file with C++ syntax (`namespace`, `class X`, `template <`, `public:`, `::`) is now
+    parsed as C++. A nested C++ class has its outer class as parent.
+  - `find_symbol` takes `::` names: `WeakReference::Flag`, `AtExitManager::RegisterCallback`,
+    `Flag::Invalidate`. A namespace prefix is dropped when the full name has no match
+    (`base::WeakPtr` finds `WeakPtr`). The symbol with the whole name comes before a member
+    with the same last part, so `WeakReference` gives the class before its constructor.
+  - A forward declaration (`class Foo;`) no longer gives a class chunk.
+  - `CHUNK_FORMAT` is 4: an older index is rebuilt on the next `index` call.
+  - Retrieval gate, hit@1 in `hybrid-exact` mode, before and after: `nexus_mcp` 0.62 and
+    0.62, `shop_repo` 0.50 and 0.50. hit@5 on `nexus_mcp` went from 0.92 to 0.88, because that
+    suite indexes this source and the change edits it. The chunks of `shop_repo` are
+    identical before and after. `flask` did not run (its checkout `benchmarks/repos/flask`
+    is not present), and `jobscout` is a private local suite that is not present. No suite
+    has C++ code, so the gate shows only that Python retrieval did not fall. A C++ suite
+    and a new Chromium benchmark run are still to do.
+  - Eval note: the chunk text starts with the absolute file path, so the scores depend on
+    where the checkout is. The same code gave `shop_repo` 0.50 in one folder and 0.62 in
+    another. Compare a before and an after run in the same folder.
+
 ## [2.2.0] - 2026-11-03
 
 ### Added

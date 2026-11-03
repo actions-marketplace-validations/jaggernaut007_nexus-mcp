@@ -5,6 +5,7 @@ Supports 9 languages via tree-sitter grammars.
 """
 
 import logging
+import re
 import threading
 import time
 from pathlib import Path
@@ -21,6 +22,22 @@ from nexus_mcp.parsing.language_registry import (
 )
 
 logger = logging.getLogger(__name__)
+
+# A `.h` file with one of these is a C++ header. Chromium and most C++ projects use `.h`.
+_CPP_HEADER_MARKERS = re.compile(
+    rb"^[ \t]*(?:namespace\b|template\s*<|class\s+\w|(?:public|private|protected)\s*:)"
+    rb"|\w::~?\w",
+    re.MULTILINE,
+)
+# C and C++ declarators that wrap the name of a function (`*f()`, `&f()`, `f() const`).
+_DECLARATOR_WRAPPERS = (
+    "function_declarator", "pointer_declarator", "reference_declarator",
+    "parenthesized_declarator", "attributed_declarator",
+)
+_DECLARATOR_NAMES = (
+    "identifier", "field_identifier", "destructor_name", "operator_name", "type_identifier",
+)
+_C_FAMILY = ("c", "cpp")
 
 
 class TreeSitterParser(IParser):
@@ -85,6 +102,11 @@ class TreeSitterParser(IParser):
                 error=f"Error reading file: {e}",
                 parse_time=time.time() - start_time,
             )
+
+        if language == "c" and file_path.suffix.lower() == ".h" and (
+            _CPP_HEADER_MARKERS.search(content)
+        ):
+            language = "cpp"
 
         try:
             parser = self._get_parser(language)
@@ -162,13 +184,21 @@ class TreeSitterParser(IParser):
         def traverse(node, depth: int = 0):
             nonlocal current_class
             node_type = node.type
+            opened_class = False  # only a class that gave a symbol closes a scope
 
             if node_type in class_types:
-                sym = self._extract_class_symbol(node, content, filepath, language, config)
+                # A C++ class nested in another has the outer class as parent, so it is
+                # found as `Outer::Inner` (`Outer.Inner` in the index).
+                outer = class_stack[-1] if (language == "cpp" and class_stack) else None
+                sym = self._extract_class_symbol(
+                    node, content, filepath, language, config, parent=outer
+                )
                 if sym:
                     symbols.append(sym)
-                    class_stack.append(sym.name)
-                    current_class = sym.name
+                    scope = sym.qualified_name if language == "cpp" else sym.name
+                    class_stack.append(scope)
+                    current_class = scope
+                    opened_class = True
 
             elif node_type in function_types and not current_class:
                 sym = self._extract_function_symbol(
@@ -193,7 +223,7 @@ class TreeSitterParser(IParser):
             for child in node.children:
                 traverse(child, depth + 1)
 
-            if node_type in class_types and class_stack:
+            if opened_class:
                 class_stack.pop()
                 current_class = class_stack[-1] if class_stack else None
 
@@ -299,14 +329,19 @@ class TreeSitterParser(IParser):
         return text.strip()
 
     def _extract_class_symbol(
-        self, node, content: bytes, filepath: str, language: str, config: Dict
+        self, node, content: bytes, filepath: str, language: str, config: Dict,
+        parent: Optional[str] = None,
     ) -> Optional[Symbol]:
+        # `class Foo;` and `struct foo *p` name a type but do not define it.
+        if language in _C_FAMILY and node.child_by_field_name("body") is None:
+            return None
         name = self._get_node_name(node, content, config)
         if not name:
             return None
         return Symbol(
             name=name,
             type=SymbolType.CLASS,
+            parent=parent,
             filepath=filepath,
             line_start=node.start_point[0] + 1,
             line_end=node.end_point[0] + 1,
@@ -322,7 +357,18 @@ class TreeSitterParser(IParser):
         self, node, content: bytes, filepath: str, language: str, config: Dict,
         parent: Optional[str] = None, is_method: bool = False,
     ) -> Optional[Symbol]:
-        name = self._get_node_name(node, content, config)
+        if language in _C_FAMILY and node.type == "function_definition":
+            resolved = self._c_declarator_name(node, content)
+            if resolved is None:
+                return None  # a name from elsewhere (the return type) is worse than none
+            scope, name = resolved
+            if scope:
+                # `Owner::Method() {...}` out of line: a method of `Owner`. The parser
+                # cannot tell a class scope from a namespace scope.
+                parent = ".".join(filter(None, [parent, *scope]))
+                is_method = True
+        else:
+            name = self._get_node_name(node, content, config)
         if not name:
             return None
         return Symbol(
@@ -487,6 +533,45 @@ class TreeSitterParser(IParser):
         for child in node.children:
             if child.type in ("declarator", "function_declarator"):
                 return self._get_node_name(child, content, config)
+        return None
+
+    def _c_declarator_name(self, node, content: bytes) -> Optional[Tuple[List[str], str]]:
+        """The scope and the name of a C or C++ function definition, from its declarator.
+
+        `WeakReference WeakReferenceOwner::GetRef() const` gives
+        (["WeakReferenceOwner"], "GetRef"), not the return type. Template arguments
+        leave the scope (`Holder<T>::Reset` gives ["Holder"]). Constructors, destructors
+        (`~Foo`), operators (`operator==`, `operator bool`) and pointer or reference
+        returns (`char* f()`, `A& f()`) keep their own name. None when no name is found.
+        """
+        scope: List[str] = []
+        decl = node.child_by_field_name("declarator")
+        while decl is not None:
+            kind = decl.type
+            if kind in _DECLARATOR_WRAPPERS:
+                inner = decl.child_by_field_name("declarator")
+                if inner is None:  # `&f()` has no field name for its inner declarator
+                    named = [c for c in decl.named_children if "declarator" in c.type]
+                    inner = named[-1] if named else None
+                decl = inner
+            elif kind == "qualified_identifier":
+                outer = decl.child_by_field_name("scope")
+                if outer is not None:
+                    if outer.type == "template_type":
+                        outer = outer.child_by_field_name("name") or outer
+                    scope.append(self._get_node_text(outer, content).strip())
+                decl = decl.child_by_field_name("name")
+            elif kind == "template_function":
+                decl = decl.child_by_field_name("name")
+            elif kind == "operator_cast":
+                target = decl.child_by_field_name("type")
+                text = self._get_node_text(target, content).strip() if target else ""
+                return scope, f"operator {text}".strip()
+            elif kind in _DECLARATOR_NAMES:
+                text = " ".join(self._get_node_text(decl, content).split())
+                return scope, re.sub(r"^operator\s+(?=\W)", "operator", text)
+            else:
+                return None
         return None
 
     def _get_node_text(self, node, content: bytes) -> str:

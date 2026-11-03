@@ -1140,17 +1140,34 @@ def _slice_names_symbol(code: str, name: str) -> bool:
     return short in "\n".join(code.split("\n")[:NAME_CHECK_LINES])
 
 
+def _chunk_lookup_names(name: str) -> list[str]:
+    """The names to look up in the chunk table for one `find_symbol` name, best first."""
+    if "::" not in name:
+        return [name]
+    parts = [p for p in name.split("::") if p]
+    return [".".join(parts[i:]) for i in range(len(parts))]
+
+
 def _chunk_symbol_entries(state, name: str) -> list[tuple[dict[str, Any], tuple]]:
     """`find_symbol` entries from the chunk table, for a name with no graph node.
 
     The graph holds functions, classes and methods of six languages. A constant, a module
     docstring or a symbol of another language is only in the chunk table.
+
+    A C++ name with `::` is looked up as the index stores it, with `.`
+    (`WeakReference::Flag` is `WeakReference.Flag`). The index has no namespaces, so
+    when the whole name has no match, the leading parts are dropped one at a time:
+    `base::internal::WeakReference` finds `WeakReference`.
     """
-    try:
-        rows = state.vector_engine.find_by_symbol_names([name])
-    except Exception as e:  # noqa: BLE001 - a second source, never a failure
-        logger.debug("Chunk lookup failed for %s: %s", name, e)
-        return []
+    rows: list[dict[str, Any]] = []
+    for candidate in _chunk_lookup_names(name):
+        try:
+            rows = state.vector_engine.find_by_symbol_names([candidate])
+        except Exception as e:  # noqa: BLE001 - a second source, never a failure
+            logger.debug("Chunk lookup failed for %s: %s", candidate, e)
+            return []
+        if rows:
+            break
     out = []
     for r in rows:
         path = str(r.get("filepath", ""))

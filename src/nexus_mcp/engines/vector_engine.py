@@ -155,6 +155,9 @@ class LanceDBVectorEngine(IEngine):
                 r for r in found
                 if r.get("symbol_name") == name or str(r.get("symbol_name")).endswith("." + name)
             ]
+            # The symbol of that whole name before a member with the same last part: a
+            # C++ class `Foo` before its constructor `Foo.Foo`.
+            exact.sort(key=lambda r: r.get("symbol_name") != name)
             for r in exact[:limit_per_name]:
                 r.pop("vector", None)
                 rows.append(r)
