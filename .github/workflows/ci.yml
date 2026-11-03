@@ -29,5 +29,8 @@ jobs:
       - name: Lint
         run: uv run ruff check .
 
+      - name: Published benchmark numbers are current
+        run: uv run python scripts/publish_results.py --check
+
       - name: Test
         run: uv run pytest -v -m "not slow"

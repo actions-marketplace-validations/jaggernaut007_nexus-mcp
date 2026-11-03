@@ -16,6 +16,20 @@ pip install nexus-mcp-ci
 claude mcp add nexus-mcp -- nexus-mcp-ci
 ```
 
+### Results at a glance
+
+<!-- Generated from benchmarks/published/results.json by scripts/publish_results.py. Do not edit. -->
+<!-- results:start -->
+| Project | Cost: Grep and Read → Nexus-MCP | Turns | Correct answers |
+|---|---:|---:|---:|
+| Private Python project (460 files) | $0.571 → $0.446 (**-22%**) | 55 → 35 | 36 → 35 of 36 |
+| [Django](https://github.com/django/django) (3,000 files) | $0.894 → $0.863 (**-3%**) | 93 → 71 | 34 → 36 of 36 |
+
+Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per project, 3 runs each, version 2.1.0 (2026-10-28). The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28). Search hit@1 on the four retrieval suites: `jobscout` 0.81, `nexus_mcp` 0.80, `shop_repo` 0.50, `flask` 0.64.
+`nexus-mcp-ci eval --example` (the Nexus-MCP source, 53 files, no LLM): 5,339 → 1,366 median tokens to reach the right file, right file first 70% → 93%.
+All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) · [JSON](https://jaggernaut007.github.io/nexus-mcp/benchmarks.json) · [CSV](https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv).
+<!-- results:end -->
+
 ---
 
 ## The Problem It Solves
@@ -167,14 +181,9 @@ Two live runs, 12 questions each, with Claude Sonnet, 3 runs for each question a
 (72 runs each) and the prompt cache warm for both conditions. **The result depends on the
 project.**
 
-**Latest (commit `a67e5b4`, `find_symbol` shows an outline of a long class):**
-
-| | Grep and Read | Nexus-MCP |
-|---|---:|---:|
-| Private 460-file Python project: cost | $0.571 | $0.446 (**-22.0%**) |
-| Private project: turns, correct | 55, 36 of 36 | 35, 35 of 36 |
-| Django (3,000 files): cost | $0.894 | $0.863 (**-3.4%**) |
-| Django: turns, correct | 93, 34 of 36 | 71, 36 of 36 |
+**Latest (commit `a67e5b4`, `find_symbol` shows an outline of a long class):** the numbers are
+in [Results at a glance](#results-at-a-glance), generated from
+`benchmarks/published/results.json`.
 
 Only the nexus condition ran again for this commit; the Grep and Read numbers are the stored
 runs below. On django nexus is cheaper in total but still dearer on 8 of 12 questions (the short

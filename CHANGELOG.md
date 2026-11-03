@@ -29,6 +29,11 @@ All notable changes to this project will be documented in this file.
 - `nexus-mcp-ci eval doctor`: checks ripgrep, the cached model, the `claude` and `codex` CLIs,
   and the results folder.
 
+- `benchmarks/published/results.json` is the one source of every published benchmark number.
+  `scripts/publish_results.py` writes the README "Results at a glance" block, the site results
+  rows, the llms.txt "Benchmarks" section and `site/benchmarks.{html,json,csv}`. CI runs it with
+  `--check` and fails when a generated block is out of date.
+
 ### Changed
 
 - `benchmarks/transcript.py` moved to `nexus_mcp.evaluate.transcript`, so the eval CLI ships it.
