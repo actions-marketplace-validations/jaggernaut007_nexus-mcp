@@ -9,7 +9,7 @@ def data_block(record: Dict[str, Any], store_path: str) -> str:
     read = {
         "path": f"Your project files in {source['label']}",
         "url": f"A shallow clone of {source['label']}",
-        "example": "The bundled example project",
+        "example": "A copy of the installed Nexus-MCP source code (the example)",
     }[source["kind"]]
     sent = ["Nothing. This run used no LLM and made no network call of its own."]
     if source["kind"] == "url":

@@ -31,7 +31,11 @@ def _eval_parser() -> argparse.ArgumentParser:
         "or `list` / `show <id>`",
     )
     p.add_argument("run_id", nargs="?", default=None, help=argparse.SUPPRESS)
-    p.add_argument("--example", action="store_true", help="Use the bundled example project")
+    p.add_argument(
+        "--example",
+        action="store_true",
+        help="Use the Nexus-MCP source code as the example project (offline)",
+    )
     p.add_argument("--questions", type=int, default=30, help="Number of questions (default 30)")
     p.add_argument("--seed", type=int, default=7, help="Seed for the question sample (default 7)")
     p.add_argument(

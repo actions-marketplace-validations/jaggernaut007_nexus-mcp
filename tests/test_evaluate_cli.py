@@ -111,7 +111,8 @@ def test_resolve_example_copies_to_a_temp_folder():
         pytest.skip("example project not available")
     src = source.resolve(None, example=True)
     try:
-        assert src.kind == "example" and (src.root / "shop").is_dir()
+        # The example is now the Nexus-MCP source: the 18-file toy project was too small to be fair.
+        assert src.kind == "example" and (src.root / "server.py").is_file()
     finally:
         import shutil
 

@@ -25,12 +25,13 @@ class Source:
 
 
 def example_dir() -> Optional[Path]:
-    """The bundled example project: package data in a wheel, the fixture in a checkout."""
-    packaged = Path(__file__).parent / "data" / "example_repo"
-    if packaged.is_dir():
-        return packaged
-    checkout = Path(__file__).resolve().parents[3] / "evals" / "fixtures" / "shop_repo"
-    return checkout if checkout.is_dir() else None
+    """The example project: the installed Nexus-MCP source code itself.
+
+    It ships in every install, needs no network, and is large enough (about 50 files) for a
+    fair comparison. A tiny toy project makes Grep and Read look better than they are.
+    """
+    package = Path(__file__).resolve().parent.parent
+    return package if (package / "server.py").is_file() else None
 
 
 def is_url(text: str) -> bool:
@@ -69,11 +70,11 @@ def resolve(arg: Optional[str], example: bool, run=subprocess.run) -> Source:
     if example:
         src = example_dir()
         if src is None:
-            raise ValueError("The bundled example project is missing from this install.")
+            raise ValueError("The Nexus-MCP source is missing from this install.")
         tmp = Path(tempfile.mkdtemp(prefix="nexus-example-"))
-        target = tmp / "example"
+        target = tmp / "nexus_mcp"
         shutil.copytree(src, target, ignore=shutil.ignore_patterns(".nexus", "__pycache__"))
-        return Source("example", target, "example", cleanup=tmp)
+        return Source("example", target, "example (Nexus-MCP source)", cleanup=tmp)
     text = arg or "."
     if "://" in text or SCP_RE.match(text):
         if not is_url(text):

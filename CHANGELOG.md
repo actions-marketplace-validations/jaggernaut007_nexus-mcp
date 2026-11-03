@@ -11,7 +11,9 @@ All notable changes to this project will be documented in this file.
   result is a verdict, a table by kind of question, and a "Data in this run" block. Runs are saved
   under `~/.nexus-mcp/evals/` (`eval list`, `eval show <id>`). On this repo's `src/nexus_mcp`
   (53 files, 30 questions) the token proxy reads 1,446 tokens against 5,339 for Grep and Read.
-  On the 18-file bundled example, Grep and Read use fewer tokens, and the verdict says so.
+  `--example` runs the same check on the installed Nexus-MCP source, offline. An 18-file toy
+  project and a synthetic 119-file project both gave "Weak fit" (Grep and Read used fewer tokens),
+  so the toy project is not shipped.
 - `nexus-mcp-ci data where | clear | export-memories`: list every place Nexus-MCP stores data,
   delete it (a dry run unless `--yes`), and export memories first. `clear` refuses a folder that
   is not a Nexus-MCP store.
