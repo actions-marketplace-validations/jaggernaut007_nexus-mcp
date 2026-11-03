@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import List, Optional
 
-from nexus_mcp.evaluate import data_cmd, paths, report, source, store
+from nexus_mcp.evaluate import data_cmd, doctor, paths, report, source, specs, store
 from nexus_mcp.privacy import apply_privacy_defaults
 
 SUBCOMMANDS = ("eval", "data")
@@ -47,7 +47,63 @@ def _eval_parser() -> argparse.ArgumentParser:
         "--out", type=Path, default=None, help="Also copy report.md and report.json here"
     )
     p.add_argument("--json", action="store_true", help="Print the result as JSON")
+    agent = p.add_argument_group(
+        "agent tier (paid, opt-in)",
+        "A real A/B run of Claude Code or Codex with and without Nexus-MCP. It sends prompts "
+        "and the code the agent reads to the provider, through your own CLI and login.",
+    )
+    agent.add_argument(
+        "--agent",
+        metavar="SPECS",
+        help="runner[:model] list, for example claude, claude:haiku,claude:sonnet or "
+        "codex:gpt-5-codex (Codex is experimental)",
+    )
+    agent.add_argument(
+        "--preset",
+        choices=sorted(specs.PRESETS),
+        help="quick: claude:sonnet, 4 tasks. matrix: every --agent model. "
+        "efficient: also the mcp condition, then the cheapest setup at the same accuracy",
+    )
+    agent.add_argument(
+        "--conditions", help="Comma list of baseline, mcp, nexus (default: baseline,nexus)"
+    )
+    agent.add_argument("--tasks", type=int, default=None, help="Tasks per condition (default 4)")
+    agent.add_argument(
+        "--max-usd", type=float, default=5.0, help="Stop starting runs at this spend (default 5)"
+    )
+    agent.add_argument("--concurrency", type=int, default=3, help="Parallel runs (default 3)")
+    agent.add_argument("--yes", action="store_true", help="Skip the cost question")
     return p
+
+
+def _agent_choices(args):
+    """Specs, conditions and task count from --agent, --preset and --conditions."""
+    preset = specs.PRESETS.get(args.preset or "", {})
+    spec_text = args.agent or ",".join(preset.get("specs") or []) or "claude"
+    chosen = specs.parse_specs(spec_text)
+    if args.conditions:
+        conditions = specs.parse_conditions(args.conditions)
+    else:
+        conditions = list(preset.get("conditions") or ["baseline", "nexus"])
+    tasks = args.tasks or preset.get("tasks") or 4
+    return chosen, conditions, tasks
+
+
+def _confirm(args, say):
+    def ask(plan) -> bool:
+        say(
+            f"Agent tier: {plan['runs']} runs, rough estimate ${plan['estimate_usd']:.2f}, "
+            f"hard stop at ${plan['max_usd']:.2f}. Prompts and the code the agent reads go "
+            "to the provider through your CLI."
+        )
+        if args.yes:
+            return True
+        if not sys.stdin.isatty():
+            say("Not a terminal: add --yes to run the agent tier.")
+            return False
+        return input("Start? [y/N] ").strip().lower() in ("y", "yes")
+
+    return ask
 
 
 def _data_parser() -> argparse.ArgumentParser:
@@ -94,8 +150,19 @@ def run_eval(argv: List[str]) -> int:
         print(json.dumps(record, indent=2) if args.json else md.read_text())
         return 0
 
+    if args.source == "doctor":
+        print(doctor.render(doctor.checks()))
+        return 0
+
     apply_privacy_defaults()
     say = (lambda msg: None) if args.json else (lambda msg: print(msg, file=sys.stderr))
+    agent_mode = bool(args.agent or args.preset)
+    if agent_mode:
+        try:
+            chosen, conditions, tasks = _agent_choices(args)
+        except ValueError as exc:
+            print(f"error: {exc}", file=sys.stderr)
+            return 2
     try:
         if args.source and "://" in args.source and not args.json:
             say(f"Network: git clone of {args.source} (shallow).")
@@ -104,12 +171,31 @@ def run_eval(argv: List[str]) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return 2
 
-    from nexus_mcp.evaluate.quick import run_quick
-
     try:
-        result = run_quick(
-            src.root, count=args.questions, seed=args.seed, keep_index=args.keep_index, progress=say
-        )
+        if agent_mode:
+            from nexus_mcp.evaluate.agent import run_agent
+
+            result = run_agent(
+                src.root,
+                chosen,
+                conditions,
+                tasks=tasks,
+                seed=args.seed,
+                max_usd=args.max_usd,
+                concurrency=args.concurrency,
+                confirm=_confirm(args, say),
+                progress=say,
+            )
+        else:
+            from nexus_mcp.evaluate.quick import run_quick
+
+            result = run_quick(
+                src.root,
+                count=args.questions,
+                seed=args.seed,
+                keep_index=args.keep_index,
+                progress=say,
+            )
     except RuntimeError as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 1
@@ -132,7 +218,8 @@ def run_eval(argv: List[str]) -> int:
         **result,
     }
     run_dir = paths.eval_home() / run_id
-    markdown = report.render(record, str(run_dir))
+    render = report.render_agent if agent_mode else report.render
+    markdown = render(record, str(run_dir))
     store.save(run_id, record, markdown)
     if args.out:
         args.out.mkdir(parents=True, exist_ok=True)
@@ -141,7 +228,7 @@ def run_eval(argv: List[str]) -> int:
     print(json.dumps({"id": run_id, **record}, indent=2) if args.json else markdown)
     if not args.json:
         print(f"Saved: {run_dir}", file=sys.stderr)
-    return 0
+    return 1 if record.get("error") else 0
 
 
 def run_data(argv: List[str]) -> int:
