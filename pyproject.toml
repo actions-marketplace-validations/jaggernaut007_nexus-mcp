@@ -94,6 +94,10 @@ extend-exclude = ["evals/fixtures", "benchmarks/repos"]
 [tool.ruff.lint]
 select = ["E", "F", "W", "I"]
 
+[tool.ruff.lint.per-file-ignores]
+# The benchmarks page is an HTML template; its lines follow the HTML, not the 100-column limit.
+"scripts/publish_results.py" = ["E501"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

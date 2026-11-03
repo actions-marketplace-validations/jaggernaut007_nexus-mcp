@@ -1,0 +1,54 @@
+{
+  "schema_version": 1,
+  "updated": "2026-10-28",
+  "version": "2.1.0",
+  "method": {
+    "agent": "Claude Code, Claude Sonnet, headless (claude -p)",
+    "questions_per_project": 12,
+    "runs_per_question": 3,
+    "baseline": "Grep, Glob and Read only",
+    "nexus": "the Nexus-MCP server plus its routing skill",
+    "noise": "The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28).",
+    "source": "https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALS.md"
+  },
+  "runs": [
+    {
+      "id": "private-460-a67e5b4",
+      "project": "Private Python project",
+      "public": false,
+      "files": 460,
+      "commit": "a67e5b4",
+      "date": "2026-10-28",
+      "baseline": {"cost_usd": 0.571, "turns": 55, "correct": 36, "of": 36},
+      "nexus": {"cost_usd": 0.446, "turns": 35, "correct": 35, "of": 36}
+    },
+    {
+      "id": "django-a67e5b4",
+      "project": "Django",
+      "public": true,
+      "url": "https://github.com/django/django",
+      "files": 3000,
+      "commit": "a67e5b4",
+      "date": "2026-10-28",
+      "baseline": {"cost_usd": 0.894, "turns": 93, "correct": 34, "of": 36},
+      "nexus": {"cost_usd": 0.863, "turns": 71, "correct": 36, "of": 36}
+    }
+  ],
+  "retrieval": {
+    "metric": "hit@1",
+    "date": "2026-10-28",
+    "source": "https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md",
+    "suites": {"jobscout": 0.81, "nexus_mcp": 0.80, "shop_repo": 0.50, "flask": 0.64}
+  },
+  "quick_tier": [
+    {
+      "project": "Nexus-MCP source",
+      "files": 53,
+      "date": "2026-11-03",
+      "questions": 30,
+      "verdict": "Likely fit",
+      "grep": {"hit_at_1": 0.70, "hit_at_3": 0.97, "median_tokens": 5339},
+      "nexus": {"hit_at_1": 0.93, "hit_at_3": 1.0, "median_tokens": 1366}
+    }
+  ]
+}

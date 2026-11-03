@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Nexus-MCP Benchmarks</title>
+<meta name="description" content="Measured cost, turns and accuracy of Claude Code with the Nexus-MCP code-intelligence server against Grep and Read, with method and raw data.">
+<link rel="canonical" href="https://jaggernaut007.github.io/nexus-mcp/benchmarks.html">
+<script type="application/ld+json">{"@context": "https://schema.org", "@type": "Dataset", "name": "Nexus-MCP token-efficiency benchmark", "description": "Live agent runs of Claude Code with Nexus-MCP against Grep and Read: cost, turns and correct answers per project.", "url": "https://jaggernaut007.github.io/nexus-mcp/benchmarks.html", "dateModified": "2026-10-28", "license": "https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE", "creator": {"@type": "Person", "name": "Shreyas Jagannath"}, "distribution": [{"@type": "DataDownload", "encodingFormat": "application/json", "contentUrl": "https://jaggernaut007.github.io/nexus-mcp/benchmarks.json"}, {"@type": "DataDownload", "encodingFormat": "text/csv", "contentUrl": "https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv"}]}</script>
+<style>
+:root { --bg:#fbfaf7; --fg:#1d1b18; --muted:#5f5a52; --line:#e3ded4; --accent:#0f6b5c; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) { --bg:#14130f; --fg:#ece8df; --muted:#a39d91; --line:#2e2b25; --accent:#5cc7b2; } }
+:root[data-theme="dark"] { --bg:#14130f; --fg:#ece8df; --muted:#a39d91; --line:#2e2b25; --accent:#5cc7b2; }
+body { margin:0; background:var(--bg); color:var(--fg); font:16px/1.6 system-ui, sans-serif; }
+main { max-width:960px; margin:0 auto; padding:32px 16px 64px; }
+h1 { font-size:2rem; margin:0 0 8px; } h2 { margin-top:40px; }
+p, li { color:var(--muted); } a { color:var(--accent); }
+.scroll { overflow-x:auto; }
+table { border-collapse:collapse; width:100%; font-variant-numeric:tabular-nums; }
+th, td { text-align:left; padding:8px 10px; border-bottom:1px solid var(--line); white-space:nowrap; }
+th { font-size:.85rem; color:var(--muted); font-weight:600; }
+code { font-size:.9em; }
+</style>
+</head>
+<body>
+<main>
+<p><a href="./">← Nexus-MCP</a></p>
+<h1>Benchmarks</h1>
+<p>Nexus-MCP is a local code-intelligence MCP server. These are live runs of Claude Code, Claude Sonnet, headless (claude -p) with Nexus-MCP against an agent with only Grep, Glob and Read. Updated 2026-10-28, version 2.1.0.</p>
+<h2>Live agent runs</h2>
+<div class="scroll"><table>
+<thead><tr><th>Project</th><th>Files</th><th>Cost: Grep and Read</th><th>Cost: Nexus-MCP</th><th>Change</th><th>Turns</th><th>Correct (Grep / Nexus)</th><th>Commit, date</th></tr></thead>
+<tbody>
+<tr><td>Private Python project</td><td>460</td><td>$0.571</td><td>$0.446</td><td>−22%</td><td>55 → 35</td><td>36 / 35 of 36</td><td><code>a67e5b4</code>, 2026-10-28</td></tr>
+<tr><td><a href="https://github.com/django/django">Django</a></td><td>3,000</td><td>$0.894</td><td>$0.863</td><td>−3%</td><td>93 → 71</td><td>34 / 36 of 36</td><td><code>a67e5b4</code>, 2026-10-28</td></tr>
+</tbody></table></div>
+<p>12 questions per project, 3 runs each. The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28). The saving is large on code the model does not know and small on code it knows from training.</p>
+<h2>Search accuracy (no LLM)</h2>
+<div class="scroll"><table><thead><tr><th>Retrieval suite</th><th>hit@1</th></tr></thead><tbody><tr><td><code>jobscout</code></td><td>0.81</td></tr><tr><td><code>nexus_mcp</code></td><td>0.80</td></tr><tr><td><code>shop_repo</code></td><td>0.50</td></tr><tr><td><code>flask</code></td><td>0.64</td></tr></tbody></table></div>
+<h2>Quick tier on the example</h2>
+<p><code>nexus-mcp-ci eval --example</code> on the Nexus-MCP source (53 files, 30 questions, no LLM): median tokens to reach the right file 5,339 with Grep and Read and 1,366 with Nexus-MCP. Right file first: 70% and 93%. Verdict: Likely fit.</p>
+<h2>Run it on your own code</h2>
+<p><code>uvx nexus-mcp-ci eval</code> runs the free offline check on the current folder. <code>uvx nexus-mcp-ci eval --agent claude</code> runs the paid A/B with your own Claude Code login, after it shows the cost.</p>
+<h2>Data</h2>
+<ul>
+<li><a href="benchmarks.json">benchmarks.json</a> (source of truth)</li>
+<li><a href="benchmarks.csv">benchmarks.csv</a></li>
+<li><a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALS.md">Method and run history (docs/EVALS.md)</a></li>
+</ul>
+</main>
+</body>
+</html>
