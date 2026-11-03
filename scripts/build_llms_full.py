@@ -11,6 +11,8 @@ ROOT = Path(__file__).resolve().parent.parent
 
 SECTIONS = [
     ("README", "README.md"),
+    ("Evaluate on your project", "docs/EVALUATE.md"),
+    ("Privacy and data", "docs/PRIVACY.md"),
     ("Installation Guide", "docs/INSTALLATION.md"),
     ("Usage Guide", "docs/USAGE_GUIDE.md"),
     ("Architecture", "docs/ARCHITECTURE.md"),

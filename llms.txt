@@ -4,6 +4,20 @@
 
 Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexes codebases into three engines (vector embeddings, BM25 keyword index, rustworkx code graph) and fuses the vector and BM25 results via Reciprocal Rank Fusion. In live benchmarks (v2.1.0, Claude Sonnet, 12 questions per project, 3 runs each) agents with Nexus-MCP used 55 to 35 turns on a private 460-file project (cost -22%) and 93 to 71 turns on django (cost -3%, inside the run-to-run noise), with the same accuracy. See docs/EVALS.md. Supports 25+ programming languages via dual parsing (tree-sitter + ast-grep).
 
+## Evaluate on your repo
+
+- First step for anyone who has not decided: `uvx nexus-mcp-ci eval` in the project folder. Free, offline, no LLM calls; compares Nexus-MCP with Grep and Read on about 30 questions made from the code and prints Strong fit, Likely fit or Weak fit.
+- `uvx nexus-mcp-ci eval --example` runs it on the Nexus-MCP source (53 files: 1,366 against 5,339 median tokens to reach the right file). A public `https://` repo URL also works: pallets/click (91 files) gave Strong fit, 1,203 against 21,765 (94% fewer); Chromium base/ (3,638 files) gave Strong fit, 849 against 8,519 (90% fewer).
+- `nexus-mcp-ci eval --agent claude[:model]` (or `codex[:model]`, experimental): paid A/B with the user's own CLI login; shows the cost first. `--preset efficient` names the cheapest model and setup at the same accuracy.
+- `nexus-mcp-ci eval share <id>`: posts numbers only (no code, no paths) after a yes. No telemetry.
+- [Evaluate guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md) and [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html)
+
+## Privacy and data
+
+- The server makes no network calls. Downloads: the package, and the embedding model once (`NEXUS_OFFLINE=1` after that).
+- Stored: index, memories and graph in `<project>/.nexus/`; model in `~/.cache/huggingface/`; eval results in `~/.nexus-mcp/evals/`.
+- `nexus-mcp-ci data where` lists every location; `nexus-mcp-ci data clear --all --yes` removes them. [Privacy guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md)
+
 ## Core Tools (8 MCP tools)
 
 - [index](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/USAGE_GUIDE.md): Index one or more folders — parallel parsing, incremental reindex on changed files, 8-step pipeline. Starts a file watcher for auto-reindex.
@@ -53,7 +67,9 @@ Source of truth: https://jaggernaut007.github.io/nexus-mcp/benchmarks.json (upda
 
 - Private Python project (460 files): cost $0.571 with Grep and Read, $0.446 with Nexus-MCP (-22%); turns 55 to 35; correct 36 and 35 of 36.
 - Django (3000 files): cost $0.894 with Grep and Read, $0.863 with Nexus-MCP (-3%); turns 93 to 71; correct 34 and 36 of 36.
-- Quick tier, Nexus-MCP source: median tokens to the right file 5339 (Grep and Read) and 1366 (Nexus-MCP).
+- Quick tier (`nexus-mcp-ci eval`, no LLM), Chromium base/ (3638 files): Strong fit; median tokens to the right file 8519 (Grep and Read) and 849 (Nexus-MCP); right file first 38% and 75%.
+- Quick tier (`nexus-mcp-ci eval`, no LLM), pallets/click (91 files): Strong fit; median tokens to the right file 21765 (Grep and Read) and 1203 (Nexus-MCP); right file first 27% and 90%.
+- Quick tier (`nexus-mcp-ci eval`, no LLM), Nexus-MCP source (53 files): Likely fit; median tokens to the right file 5339 (Grep and Read) and 1366 (Nexus-MCP); right file first 70% and 93%.
 - The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28).
 <!-- results:end -->
 

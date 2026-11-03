@@ -37,8 +37,9 @@ code { font-size:.9em; }
 <p>12 questions per project, 3 runs each. The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28). The saving is large on code the model does not know and small on code it knows from training.</p>
 <h2>Search accuracy (no LLM)</h2>
 <div class="scroll"><table><thead><tr><th>Retrieval suite</th><th>hit@1</th></tr></thead><tbody><tr><td><code>jobscout</code></td><td>0.81</td></tr><tr><td><code>nexus_mcp</code></td><td>0.80</td></tr><tr><td><code>shop_repo</code></td><td>0.50</td></tr><tr><td><code>flask</code></td><td>0.64</td></tr></tbody></table></div>
-<h2>Quick tier on the example</h2>
-<p><code>nexus-mcp-ci eval --example</code> on the Nexus-MCP source (53 files, 30 questions, no LLM): median tokens to reach the right file 5,339 with Grep and Read and 1,366 with Nexus-MCP. Right file first: 70% and 93%. Verdict: Likely fit.</p>
+<h2>Quick tier: <code>nexus-mcp-ci eval</code> (no LLM)</h2>
+<p>The free offline check: about 30 to 40 questions made from each project, with the right file from the parser. Tokens are a proxy (characters divided by 4). Chromium <code>base/</code> took 25 minutes to index on a laptop; the Nexus-MCP source takes about 30 seconds (<code>--example</code>).</p>
+<div class="scroll"><table><thead><tr><th>Project</th><th>Files</th><th>Questions</th><th>Verdict</th><th>Tokens: Grep and Read</th><th>Tokens: Nexus-MCP</th><th>Right file first</th><th>Top 3</th><th>Date</th></tr></thead><tbody><tr><td><a href="https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base">Chromium base/</a></td><td>3,638</td><td>40</td><td>Strong fit</td><td>8,519</td><td>849</td><td>38% → 75%</td><td>70% → 88%</td><td>2026-11-03</td></tr><tr><td><a href="https://github.com/pallets/click">pallets/click</a></td><td>91</td><td>30</td><td>Strong fit</td><td>21,765</td><td>1,203</td><td>27% → 90%</td><td>63% → 100%</td><td>2026-11-03</td></tr><tr><td>Nexus-MCP source</td><td>53</td><td>30</td><td>Likely fit</td><td>5,339</td><td>1,366</td><td>70% → 93%</td><td>97% → 100%</td><td>2026-11-03</td></tr></tbody></table></div>
 <h2>Community results</h2>
 <p>Runs shared with <code>nexus-mcp-ci eval share</code> and accepted by a maintainer. Numbers only: no code and no private names.</p>
 <p>None yet. Yours can be the first.</p>

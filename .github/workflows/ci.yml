@@ -32,5 +32,27 @@ jobs:
       - name: Published benchmark numbers are current
         run: uv run python scripts/publish_results.py --check
 
+      # Versions, tool counts, the docs index, CONFIGURATION.md and (on 3.12) CLI.md.
+      - name: Docs match the code
+        run: uv run python scripts/check_docs.py
+
       - name: Test
         run: uv run pytest -v -m "not slow"
+
+  links:
+    name: Links in the docs
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      # Offline: checks links to files in this repo, so the job never fails on a slow site.
+      - uses: lycheeverse/lychee-action@e7477775783ea5526144ba13e8db5eec57747ce8 # v2.9.0
+        with:
+          args: >-
+            --offline --no-progress --include-fragments
+            --exclude-path docs/research --exclude-path docs/plans
+            --exclude 'llms(-full)?\.txt$'
+            README.md CONTRIBUTING.md SECURITY.md 'docs/**/*.md'
+            site/index.html site/benchmarks.html
+          fail: true

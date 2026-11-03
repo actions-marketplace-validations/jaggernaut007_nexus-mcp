@@ -29,7 +29,8 @@ def test_build_sections_in_order():
         for n, (title, _) in enumerate(script.SECTIONS, start=1)
     ]
     assert positions == sorted(positions)
-    assert len(positions) == len(script.SECTIONS) == 5
+    # 7 since the EVALUATE and PRIVACY guides were added (ADR-020): agents read them first.
+    assert len(positions) == len(script.SECTIONS) == 7
 
 
 def test_build_includes_source_doc_bodies():

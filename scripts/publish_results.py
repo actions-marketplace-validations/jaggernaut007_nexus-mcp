@@ -55,7 +55,6 @@ def readme_block(data: Dict) -> str:
             f"(**{ascii_pct(n['cost_usd'], b['cost_usd'])}**) | {b['turns']} → {n['turns']} | "
             f"{b['correct']} → {n['correct']} of {n['of']} |"
         )
-    q = data["quick_tier"][0]
     ret = data["retrieval"]
     suites = ", ".join(f"`{k}` {v:.2f}" for k, v in ret["suites"].items())
     lines += [
@@ -63,10 +62,21 @@ def readme_block(data: Dict) -> str:
         f"Live runs: {m['agent']}, {m['questions_per_project']} questions per project, "
         f"{m['runs_per_question']} runs each, version {data['version']} ({data['updated']}). "
         f"{m['noise']} Search {ret['metric']} on the four retrieval suites: {suites}.",
-        f"`nexus-mcp-ci eval --example` (the {q['project']}, {q['files']} files, no LLM): "
-        f"{q['grep']['median_tokens']:,} → {q['nexus']['median_tokens']:,} median tokens to "
-        f"reach the right file, right file first {q['grep']['hit_at_1']:.0%} → "
-        f"{q['nexus']['hit_at_1']:.0%}.",
+        "",
+        f"`nexus-mcp-ci eval` (the free offline check, no LLM) on {len(data['quick_tier'])} projects:",
+        "",
+        "| Project | Verdict | Median tokens to the right file | Right file first |",
+        "|---|---|---:|---:|",
+    ]
+    for q in data["quick_tier"]:
+        name = f"[{q['project']}]({q['url']})" if q.get("url") else q["project"]
+        lines.append(
+            f"| {name} ({q['files']:,} files) | {q['verdict']} | "
+            f"{q['grep']['median_tokens']:,} → **{q['nexus']['median_tokens']:,}** | "
+            f"{q['grep']['hit_at_1']:.0%} → {q['nexus']['hit_at_1']:.0%} |"
+        )
+    lines += [
+        "",
         f"All numbers: [benchmarks page]({SITE_URL}/benchmarks.html) · "
         f"[JSON]({SITE_URL}/benchmarks.json) · [CSV]({SITE_URL}/benchmarks.csv).",
     ]
@@ -93,6 +103,13 @@ def site_block(data: Dict) -> str:
         f"{total_correct(data, 'nexus').split(' of ')[0]} · {total_correct(data, 'baseline')}"
         "</span></td></tr>"
     )
+    for q in data["quick_tier"]:
+        g, n = q["grep"]["median_tokens"], q["nexus"]["median_tokens"]
+        rows.append(
+            f"<tr><td>{html.escape(q['project'])}, {q['files']:,} files: tokens to the right "
+            f'file (<code>eval</code>, no LLM)</td><td><span class="pill">{g:,} → {n:,}'
+            "</span></td></tr>"
+        )
     return "\n".join("            " + row for row in rows)
 
 
@@ -113,12 +130,13 @@ def llms_block(data: Dict) -> str:
             f"turns {b['turns']} to {n['turns']}; correct {b['correct']} and {n['correct']} "
             f"of {n['of']}."
         )
-    q = data["quick_tier"][0]
-    lines.append(
-        f"- Quick tier, {q['project']}: median tokens to the right file "
-        f"{q['grep']['median_tokens']} (Grep and Read) and {q['nexus']['median_tokens']} "
-        f"(Nexus-MCP)."
-    )
+    for q in data["quick_tier"]:
+        lines.append(
+            f"- Quick tier (`nexus-mcp-ci eval`, no LLM), {q['project']} ({q['files']} files): "
+            f"{q['verdict']}; median tokens to the right file {q['grep']['median_tokens']} "
+            f"(Grep and Read) and {q['nexus']['median_tokens']} (Nexus-MCP); right file first "
+            f"{q['grep']['hit_at_1']:.0%} and {q['nexus']['hit_at_1']:.0%}."
+        )
     lines.append(f"- {data['method']['noise']}")
     return "\n".join(lines)
 
@@ -209,7 +227,25 @@ def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
         f"<tr><td><code>{html.escape(k)}</code></td><td>{v:.2f}</td></tr>"
         for k, v in data["retrieval"]["suites"].items()
     )
-    q = data["quick_tier"][0]
+    quick_rows = []
+    for q in data["quick_tier"]:
+        name = html.escape(q["project"])
+        if q.get("url"):
+            name = f'<a href="{html.escape(q["url"])}">{name}</a>'
+        quick_rows.append(
+            f"<tr><td>{name}</td><td>{q['files']:,}</td><td>{q['questions']}</td>"
+            f"<td>{html.escape(q['verdict'])}</td><td>{q['grep']['median_tokens']:,}</td>"
+            f"<td>{q['nexus']['median_tokens']:,}</td><td>{q['grep']['hit_at_1']:.0%} → "
+            f"{q['nexus']['hit_at_1']:.0%}</td><td>{q['grep']['hit_at_3']:.0%} → "
+            f"{q['nexus']['hit_at_3']:.0%}</td><td>{html.escape(q['date'])}</td></tr>"
+        )
+    quick_table = (
+        '<div class="scroll"><table><thead><tr><th>Project</th><th>Files</th><th>Questions</th>'
+        "<th>Verdict</th><th>Tokens: Grep and Read</th><th>Tokens: Nexus-MCP</th>"
+        "<th>Right file first</th><th>Top 3</th><th>Date</th></tr></thead><tbody>"
+        + "".join(quick_rows)
+        + "</tbody></table></div>"
+    )
     dataset = {
         "@context": "https://schema.org",
         "@type": "Dataset",
@@ -271,8 +307,9 @@ code {{ font-size:.9em; }}
 <p>{m["questions_per_project"]} questions per project, {m["runs_per_question"]} runs each. {html.escape(m["noise"])} The saving is large on code the model does not know and small on code it knows from training.</p>
 <h2>Search accuracy (no LLM)</h2>
 <div class="scroll"><table><thead><tr><th>Retrieval suite</th><th>{html.escape(data["retrieval"]["metric"])}</th></tr></thead><tbody>{suites}</tbody></table></div>
-<h2>Quick tier on the example</h2>
-<p><code>nexus-mcp-ci eval --example</code> on the {html.escape(q["project"])} ({q["files"]} files, {q["questions"]} questions, no LLM): median tokens to reach the right file {q["grep"]["median_tokens"]:,} with Grep and Read and {q["nexus"]["median_tokens"]:,} with Nexus-MCP. Right file first: {q["grep"]["hit_at_1"]:.0%} and {q["nexus"]["hit_at_1"]:.0%}. Verdict: {html.escape(q["verdict"])}.</p>
+<h2>Quick tier: <code>nexus-mcp-ci eval</code> (no LLM)</h2>
+<p>The free offline check: about 30 to 40 questions made from each project, with the right file from the parser. Tokens are a proxy (characters divided by 4). Chromium <code>base/</code> took 25 minutes to index on a laptop; the Nexus-MCP source takes about 30 seconds (<code>--example</code>).</p>
+{quick_table}
 {community_html(community)}<h2>Run it on your own code</h2>
 <p><code>uvx nexus-mcp-ci eval</code> runs the free offline check on the current folder. <code>uvx nexus-mcp-ci eval --agent claude</code> runs the paid A/B with your own Claude Code login, after it shows the cost.</p>
 <h2>Data</h2>

@@ -93,6 +93,22 @@
         },
         {
           "@type": "Question",
+          "name": "How do I test Nexus-MCP on my own code before I install it?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Run uvx nexus-mcp-ci eval in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 849 against 8,519 on Chromium base/ (3,638 files), 1,203 against 21,765 on pallets/click (91 files) and 1,366 against 5,339 on the Nexus-MCP source. For real agent cost, nexus-mcp-ci eval --agent claude runs a paid A/B with your own Claude Code login after it shows the cost."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "How does Nexus-MCP compare with Serena and claude-context?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Serena finds code through language servers and can edit code. claude-context runs hybrid search over a vector database such as Milvus or Zilliz Cloud with an embedding provider. Nexus-MCP is read only and fully local: hybrid vector and BM25 search in a local LanceDB index with a local embedding model, a static call graph for six languages, and project memory. Measure it on your own repository with nexus-mcp-ci eval instead of relying on any comparison."
+          }
+        },
+        {
+          "@type": "Question",
           "name": "How do I give Claude Code persistent memory across sessions?",
           "acceptedAnswer": {
             "@type": "Answer",
@@ -120,7 +136,7 @@
           "name": "Does my code leave my machine?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "No. Parsing, embeddings, the vector store and the memory store all run locally. Nexus-MCP sends no code to any service and needs no API keys. The embedding model downloads once, at first use."
+            "text": "No. Parsing, embeddings, the vector store and the memory store all run locally. Nexus-MCP sends no code to any service, has no telemetry and needs no API keys. The embedding model downloads once, at first use; set NEXUS_OFFLINE=1 after that. The index lives in .nexus/ in your project: nexus-mcp-ci data where lists every stored file and nexus-mcp-ci data clear removes them. Only the opt-in eval --agent (through your own Claude or Codex CLI) and eval share (numbers only) send anything, and both ask first."
           }
         },
         {
@@ -175,6 +191,7 @@
         <span>Nexus-MCP</span>
       </a>
       <nav class="nav-links" aria-label="Primary">
+        <a href="#try">Try it</a>
         <a href="#problem">Why</a>
         <a href="#features">Features</a>
         <a href="#results">Results</a>
@@ -204,13 +221,14 @@
             It needs no API keys.
           </p>
           <div class="cta-row">
-            <div class="cmd" role="group" aria-label="Install command">
+            <div class="cmd" role="group" aria-label="Evaluate command">
               <span class="prompt" aria-hidden="true">$</span>
-              <code>pip install nexus-mcp-ci</code>
-              <button class="copy" data-copy="pip install nexus-mcp-ci" aria-label="Copy install command">Copy</button>
+              <code>uvx nexus-mcp-ci eval</code>
+              <button class="copy" data-copy="uvx nexus-mcp-ci eval" aria-label="Copy evaluate command">Copy</button>
             </div>
-            <a class="btn btn-primary" href="#install">Set it up in 60 seconds →</a>
+            <a class="btn btn-primary" href="#try">Test it on your repo →</a>
           </div>
+          <p class="lede small">Free, offline, no LLM calls: it measures Nexus-MCP against Grep and Read on your own code. Already convinced? <a href="#install">Set it up in 60 seconds</a>.</p>
           <ul class="proof">
             <li><strong>0</strong> API keys</li>
             <li><strong>~90 MB</strong> RAM idle</li>
@@ -264,6 +282,30 @@
             <div><dt>Listed on</dt><dd><a href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">PyPI</a>, <a href="https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP" rel="noopener">Glama</a>, <a href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">GitHub</a></dd></div>
           </dl>
         </div>
+      </div>
+    </section>
+
+    <!-- TRY IT (evaluate before you adopt) -->
+    <section class="section install" id="try">
+      <div class="wrap">
+        <p class="kicker">Not sure yet?</p>
+        <h2>Measure it on your own code first.</h2>
+        <p class="lede small">One command compares Nexus-MCP with Grep and Read on questions made from your project. It is free, runs offline and calls no LLM. Your code does not leave your machine.</p>
+        <ol class="steps">
+          <li>
+            <h3>Run the check in your project folder</h3>
+            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx nexus-mcp-ci eval</code><button class="copy" data-copy="uvx nexus-mcp-ci eval" aria-label="Copy">Copy</button></div>
+            <p>No project at hand? <code>uvx nexus-mcp-ci eval --example</code> runs it on the Nexus-MCP source. A public repo URL works too.</p>
+          </li>
+          <li>
+            <h3>Read the verdict</h3>
+            <p>"Strong fit", "Likely fit" or "Weak fit", with the tokens an agent needs to reach the right file. On Chromium's <code>base/</code> (3,638 files): "Strong fit", 849 median tokens against 8,519, and the right file first in 75% of questions against 38%. On <code>pallets/click</code> (91 files): "Strong fit", 1,203 against 21,765, right file first 90% against 27%. On the Nexus-MCP source: 1,366 against 5,339. On a tiny project Grep and Read win, and the report says so. <a href="benchmarks.html">All results</a>.</p>
+          </li>
+          <li>
+            <h3>Adopt, measure the real cost, or share</h3>
+            <p>Install it in 60 seconds. Or run <code>nexus-mcp-ci eval --agent claude</code> for a paid A/B with your own Claude Code login (it shows the cost and asks first). <code>nexus-mcp-ci eval share</code> adds your numbers to the <a href="benchmarks.html">community table</a>, only after you say yes.</p>
+          </li>
+        </ol>
       </div>
     </section>
 
@@ -412,6 +454,9 @@
             <tr><td>Django, 3,000 files: turns</td><td><span class="pill">93 → 71</span></td></tr>
             <tr><td>Django: cost</td><td><span class="pill muted">−3%</span></td></tr>
             <tr><td>Correct answers: Nexus, then Grep and Read</td><td><span class="pill muted">71 · 70 of 72</span></td></tr>
+            <tr><td>Chromium base/, 3,638 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">8,519 → 849</span></td></tr>
+            <tr><td>pallets/click, 91 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">21,765 → 1,203</span></td></tr>
+            <tr><td>Nexus-MCP source, 53 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">5,339 → 1,366</span></td></tr>
             <!-- results:end -->
           </tbody>
         </table>
@@ -439,10 +484,62 @@
     <!-- PRIVATE -->
     <section class="section private">
       <div class="wrap grid4">
-        <div class="fact"><h3>Private by design</h3><p>Embeddings run locally. Your code never leaves the machine. It works offline and in air-gapped setups.</p></div>
+        <div class="fact"><h3>Private by design</h3><p>Embeddings run locally. Your code never leaves the machine. It works offline and in air-gapped setups. <code>nexus-mcp-ci data where</code> lists every file it stores; <code>data clear</code> removes them. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">What goes in and out</a>.</p></div>
         <div class="fact"><h3>Light on your laptop</h3><p>Disk-backed vectors and a lazy-loaded model keep it near 90 MB idle. With the embedding model loaded it uses about 460 MB.</p></div>
         <div class="fact"><h3>Any MCP client</h3><p>Standard stdio transport. Config by <code>NEXUS_*</code> environment variables, not vendor files.</p></div>
         <div class="fact"><h3>Safe defaults</h3><p>Input validation, read-only permission mode, audit logs with redaction, and optional rate limits.</p></div>
+      </div>
+      <div class="wrap complement-grid dataflow" id="privacy">
+        <div>
+          <p class="kicker">What goes in and out</p>
+          <h2>Your code stays on your machine.</h2>
+          <p class="lede small">The server makes no network calls and has no telemetry. Two downloads come in once: the package and the embedding model (set <code>NEXUS_OFFLINE=1</code> after that). Nothing goes out unless you run one of two opt-in commands, and both ask first.</p>
+          <p class="lede small"><code>nexus-mcp-ci data where</code> lists everything stored. <code>nexus-mcp-ci data clear</code> removes it. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">Every flow and location</a>.</p>
+        </div>
+        <figure class="flow">
+          <svg viewBox="0 0 400 440" role="img" aria-labelledby="flow-title flow-desc">
+            <title id="flow-title">Nexus-MCP data flow</title>
+            <desc id="flow-desc">PyPI and Hugging Face send the package and the embedding model once. On your machine, Nexus-MCP reads your code, keeps its index in .nexus, and talks to your agent over stdio. Only eval --agent sends prompts and code to Anthropic or OpenAI, and only eval share posts numbers to a GitHub issue, each after a yes.</desc>
+            <defs>
+              <marker id="flow-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="flow-head"/></marker>
+              <marker id="flow-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="flow-head-out"/></marker>
+            </defs>
+            <rect class="flow-ext" x="10" y="10" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="100" y="30" text-anchor="middle">PyPI</text>
+            <text class="flow-note" x="100" y="47" text-anchor="middle">the package, once</text>
+            <rect class="flow-ext" x="210" y="10" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="300" y="30" text-anchor="middle">Hugging Face</text>
+            <text class="flow-note" x="300" y="47" text-anchor="middle">the model, once</text>
+            <line class="flow-line" x1="100" y1="58" x2="100" y2="86" marker-end="url(#flow-in)"/>
+            <line class="flow-line" x1="300" y1="58" x2="300" y2="86" marker-end="url(#flow-in)"/>
+            <rect class="flow-machine" x="10" y="88" width="380" height="232" rx="16"/>
+            <text class="flow-label" x="26" y="110">YOUR MACHINE</text>
+            <rect class="flow-box" x="50" y="124" width="300" height="40" rx="10"/>
+            <text class="flow-name" x="200" y="149" text-anchor="middle">Your code</text>
+            <line class="flow-line" x1="200" y1="166" x2="200" y2="186" marker-end="url(#flow-in)"/>
+            <text class="flow-note" x="212" y="181">read</text>
+            <rect class="flow-box flow-core" x="50" y="188" width="300" height="48" rx="10"/>
+            <text class="flow-name" x="200" y="208" text-anchor="middle">Nexus-MCP server</text>
+            <text class="flow-note flow-mono" x="200" y="226" text-anchor="middle">index, graph, memory in .nexus/</text>
+            <line class="flow-line" x1="200" y1="238" x2="200" y2="258" marker-start="url(#flow-in)" marker-end="url(#flow-in)"/>
+            <text class="flow-note" x="212" y="253">stdio</text>
+            <rect class="flow-box" x="50" y="260" width="300" height="44" rx="10"/>
+            <text class="flow-name" x="200" y="281" text-anchor="middle">Your agent</text>
+            <text class="flow-note" x="200" y="297" text-anchor="middle">Claude Code, Codex, Cursor</text>
+            <line class="flow-line flow-optin" x1="100" y1="322" x2="100" y2="350" marker-end="url(#flow-out)"/>
+            <line class="flow-line flow-optin" x1="300" y1="322" x2="300" y2="350" marker-end="url(#flow-out)"/>
+            <rect class="flow-ext flow-optin" x="10" y="352" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="100" y="372" text-anchor="middle">Anthropic / OpenAI</text>
+            <text class="flow-note flow-mono" x="100" y="389" text-anchor="middle">eval --agent only</text>
+            <rect class="flow-ext flow-optin" x="210" y="352" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="300" y="372" text-anchor="middle">GitHub issue</text>
+            <text class="flow-note flow-mono" x="300" y="389" text-anchor="middle">eval share, numbers only</text>
+            <line class="flow-line" x1="20" y1="424" x2="48" y2="424"/>
+            <text class="flow-note" x="56" y="428">downloaded once</text>
+            <line class="flow-line flow-optin" x1="200" y1="424" x2="228" y2="424"/>
+            <text class="flow-note" x="236" y="428">opt-in, asks first</text>
+          </svg>
+        </figure>
       </div>
     </section>
 
@@ -512,6 +609,14 @@
             <p>Nexus-MCP is a local Model Context Protocol (MCP) server for AI coding agents. It gives an agent persistent project memory, a live map of the codebase, hybrid semantic and keyword code search, and the code of any symbol in one call. It runs on your machine and needs no API keys.</p>
           </details>
           <details>
+            <summary>How do I test Nexus-MCP on my own code before I install it?</summary>
+            <p>Run <code>uvx nexus-mcp-ci eval</code> in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 849 against 8,519 on Chromium <code>base/</code> (3,638 files), 1,203 against 21,765 on <code>pallets/click</code> (91 files) and 1,366 against 5,339 on the Nexus-MCP source. For real agent cost, <code>nexus-mcp-ci eval --agent claude</code> runs a paid A/B with your own Claude Code login after it shows the cost. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md" rel="noopener">The full guide</a>.</p>
+          </details>
+          <details>
+            <summary>How does Nexus-MCP compare with Serena and claude-context?</summary>
+            <p>Serena finds code through language servers and can edit code. claude-context runs hybrid search over a vector database such as Milvus or Zilliz Cloud with an embedding provider. Nexus-MCP is read only and fully local: hybrid vector and BM25 search in a local LanceDB index with a local embedding model, a static call graph for six languages, and project memory. Measure it on your own repository with <code>nexus-mcp-ci eval</code> instead of relying on any comparison.</p>
+          </details>
+          <details>
             <summary>How do I give Claude Code persistent memory across sessions?</summary>
             <p>Install Nexus-MCP with <code>pip install nexus-mcp-ci</code>, then register it with <code>claude mcp add nexus-mcp -- nexus-mcp-ci</code>. The agent can then store decisions, notes and preferences with the memory tool and recall them by meaning in later sessions. The memory store is local and any MCP client can read it.</p>
           </details>
@@ -525,7 +630,7 @@
           </details>
           <details>
             <summary>Does my code leave my machine?</summary>
-            <p>No. Parsing, embeddings, the vector store and the memory store all run locally. Nexus-MCP sends no code to any service and needs no API keys. The embedding model downloads once, at first use.</p>
+            <p>No. Parsing, embeddings, the vector store and the memory store all run locally. Nexus-MCP sends no code to any service, has no telemetry and needs no API keys. The embedding model downloads once, at first use; set <code>NEXUS_OFFLINE=1</code> after that. The index lives in <code>.nexus/</code> in your project: <code>nexus-mcp-ci data where</code> lists every stored file and <code>nexus-mcp-ci data clear</code> removes them. Only the opt-in <code>eval --agent</code> (through your own Claude or Codex CLI) and <code>eval share</code> (numbers only) send anything, and both ask first. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">Every flow and storage location</a>.</p>
           </details>
           <details>
             <summary>Which AI coding agents and MCP clients does it work with?</summary>
@@ -551,9 +656,10 @@
     <section class="section final">
       <div class="wrap final-inner">
         <h2>Give your agent a memory.</h2>
-        <p>Star the repo, open an issue, or send a pull request. Feedback from real projects shapes what ships next.</p>
+        <p>Start with your own numbers: <code>uvx nexus-mcp-ci eval</code>. Then star the repo, share your result, or send a pull request. Feedback from real projects shapes what ships next.</p>
         <div class="cta-row center">
-          <a class="btn btn-primary" href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">Star on GitHub</a>
+          <a class="btn btn-primary" href="#try">Evaluate on your repo</a>
+          <a class="btn btn-ghost" href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">Star on GitHub</a>
           <a class="btn btn-ghost" href="https://github.com/jaggernaut007/Nexus-MCP/issues" rel="noopener">Open an issue</a>
           <a class="btn btn-ghost" href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">View on PyPI</a>
         </div>
