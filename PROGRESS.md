@@ -207,7 +207,7 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
   (25 prompts, `mcp-only`, Tool Search on, one run each). See docs/EVALS.md.
 - [ ] Phase E: benchmark smoke run, then the full run (needs a second go-ahead).
 
-## Adopter Evaluation — 2026-11-03 (PRs #14 to #18, stacked)
+## Adopter Evaluation — 2026-11-03 (PRs #14 to #19, merged; released in 2.2.0)
 - [x] PR 1 (#14): `nexus-mcp-ci eval` quick tier (free, offline), `data where|clear|export-memories`,
   `NEXUS_OFFLINE`, no-network test. `--example` is the Nexus-MCP source: "Likely fit",
   1,234 against 5,385 median tokens. Real repos: Chromium `base/` (3,638 files) "Strong fit",
@@ -216,10 +216,15 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
 - [x] PR 3 (#16): `benchmarks/published/results.json` drives every published number; CI `--check`.
 - [x] PR 4 (#17): `eval share`, issue form, `community-results.yml`; security review fixed.
 - [x] PR 5: evaluate-first calls to action, plugin skill and agent, `server.json`, docs index and pages.
-- [ ] One paid agent-tier run (needs the owner's OK: it sends code to Anthropic).
-- [ ] Owner steps: create the `eval-result` and `eval-accepted` labels; allow Actions to open PRs;
-  publish to the MCP Registry at the next release; set the repo topics; re-claim on Glama;
-  submit to Context7.
+- [x] First paid agent-tier runs (`claude:haiku`, 2 tasks, about $0.02 to $0.03 a run). Too few
+  tasks for a cost number.
+- [ ] A larger paid run (6 tasks, Haiku and Sonnet) for a publishable agent-tier number.
+- [x] Labels `eval-result` and `eval-accepted`; Actions may open PRs; repo description, homepage
+  and topics set (2026-11-03).
+- [x] All six PRs merged to `main` (2026-11-03). Release 2.2.0 (#20) publishes to PyPI and the
+  MCP Registry.
+- [ ] Owner steps after the release: re-claim on Glama; submit to Context7; open PRs to the
+  awesome-mcp-servers lists; delete the six merged branches.
 - [x] `check_docs.py` and the offline lychee link check in CI; CONFIGURATION.md (generated),
   FAQ.md, RELEASING.md. CI runs on every PR, and all five PRs are green.
 - [x] Site data-flow SVG (PR 5). PR 6: `benchmarks/runner.py --repo-path/--generate`,

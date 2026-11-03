@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.0] - 2026-11-03
+
 ### Added
 
 - `nexus-mcp-ci eval [PATH|URL] [--example]`: a free, offline check that compares Nexus-MCP with
