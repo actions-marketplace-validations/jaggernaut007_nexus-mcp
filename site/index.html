@@ -489,6 +489,58 @@
         <div class="fact"><h3>Any MCP client</h3><p>Standard stdio transport. Config by <code>NEXUS_*</code> environment variables, not vendor files.</p></div>
         <div class="fact"><h3>Safe defaults</h3><p>Input validation, read-only permission mode, audit logs with redaction, and optional rate limits.</p></div>
       </div>
+      <div class="wrap complement-grid dataflow" id="privacy">
+        <div>
+          <p class="kicker">What goes in and out</p>
+          <h2>Your code stays on your machine.</h2>
+          <p class="lede small">The server makes no network calls and has no telemetry. Two downloads come in once: the package and the embedding model (set <code>NEXUS_OFFLINE=1</code> after that). Nothing goes out unless you run one of two opt-in commands, and both ask first.</p>
+          <p class="lede small"><code>nexus-mcp-ci data where</code> lists everything stored. <code>nexus-mcp-ci data clear</code> removes it. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">Every flow and location</a>.</p>
+        </div>
+        <figure class="flow">
+          <svg viewBox="0 0 400 440" role="img" aria-labelledby="flow-title flow-desc">
+            <title id="flow-title">Nexus-MCP data flow</title>
+            <desc id="flow-desc">PyPI and Hugging Face send the package and the embedding model once. On your machine, Nexus-MCP reads your code, keeps its index in .nexus, and talks to your agent over stdio. Only eval --agent sends prompts and code to Anthropic or OpenAI, and only eval share posts numbers to a GitHub issue, each after a yes.</desc>
+            <defs>
+              <marker id="flow-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="flow-head"/></marker>
+              <marker id="flow-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="flow-head-out"/></marker>
+            </defs>
+            <rect class="flow-ext" x="10" y="10" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="100" y="30" text-anchor="middle">PyPI</text>
+            <text class="flow-note" x="100" y="47" text-anchor="middle">the package, once</text>
+            <rect class="flow-ext" x="210" y="10" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="300" y="30" text-anchor="middle">Hugging Face</text>
+            <text class="flow-note" x="300" y="47" text-anchor="middle">the model, once</text>
+            <line class="flow-line" x1="100" y1="58" x2="100" y2="86" marker-end="url(#flow-in)"/>
+            <line class="flow-line" x1="300" y1="58" x2="300" y2="86" marker-end="url(#flow-in)"/>
+            <rect class="flow-machine" x="10" y="88" width="380" height="232" rx="16"/>
+            <text class="flow-label" x="26" y="110">YOUR MACHINE</text>
+            <rect class="flow-box" x="50" y="124" width="300" height="40" rx="10"/>
+            <text class="flow-name" x="200" y="149" text-anchor="middle">Your code</text>
+            <line class="flow-line" x1="200" y1="166" x2="200" y2="186" marker-end="url(#flow-in)"/>
+            <text class="flow-note" x="212" y="181">read</text>
+            <rect class="flow-box flow-core" x="50" y="188" width="300" height="48" rx="10"/>
+            <text class="flow-name" x="200" y="208" text-anchor="middle">Nexus-MCP server</text>
+            <text class="flow-note flow-mono" x="200" y="226" text-anchor="middle">index, graph, memory in .nexus/</text>
+            <line class="flow-line" x1="200" y1="238" x2="200" y2="258" marker-start="url(#flow-in)" marker-end="url(#flow-in)"/>
+            <text class="flow-note" x="212" y="253">stdio</text>
+            <rect class="flow-box" x="50" y="260" width="300" height="44" rx="10"/>
+            <text class="flow-name" x="200" y="281" text-anchor="middle">Your agent</text>
+            <text class="flow-note" x="200" y="297" text-anchor="middle">Claude Code, Codex, Cursor</text>
+            <line class="flow-line flow-optin" x1="100" y1="322" x2="100" y2="350" marker-end="url(#flow-out)"/>
+            <line class="flow-line flow-optin" x1="300" y1="322" x2="300" y2="350" marker-end="url(#flow-out)"/>
+            <rect class="flow-ext flow-optin" x="10" y="352" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="100" y="372" text-anchor="middle">Anthropic / OpenAI</text>
+            <text class="flow-note flow-mono" x="100" y="389" text-anchor="middle">eval --agent only</text>
+            <rect class="flow-ext flow-optin" x="210" y="352" width="180" height="46" rx="10"/>
+            <text class="flow-name" x="300" y="372" text-anchor="middle">GitHub issue</text>
+            <text class="flow-note flow-mono" x="300" y="389" text-anchor="middle">eval share, numbers only</text>
+            <line class="flow-line" x1="20" y1="424" x2="48" y2="424"/>
+            <text class="flow-note" x="56" y="428">downloaded once</text>
+            <line class="flow-line flow-optin" x1="200" y1="424" x2="228" y2="424"/>
+            <text class="flow-note" x="236" y="428">opt-in, asks first</text>
+          </svg>
+        </figure>
+      </div>
     </section>
 
     <!-- INSTALL -->
