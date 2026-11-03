@@ -62,6 +62,20 @@ def test_status_in_a_new_process_reports_the_stored_index(indexed_storage, proje
     assert result["graph"]["total_nodes"] > 0
 
 
+def test_status_storage_names_the_index_folder_and_its_size(indexed_storage, restore_on):
+    line = core_api.status()["storage"]
+    assert line.startswith(str(indexed_storage.resolve()))
+    assert line.endswith("B)")  # "(12.3 MB)", "(512 KB)"
+    # One short string: every status field costs tokens on each call.
+    assert len(line) - len(str(indexed_storage.resolve())) < 15
+
+
+def test_status_has_no_storage_field_when_not_indexed(tmp_path, monkeypatch, restore_on):
+    monkeypatch.setenv("NEXUS_STORAGE_DIR", str(tmp_path / "empty"))
+    reset_settings()
+    assert "storage" not in core_api.status()
+
+
 def test_graph_tools_work_in_a_new_process_without_calling_index(
     indexed_storage, restore_on
 ):

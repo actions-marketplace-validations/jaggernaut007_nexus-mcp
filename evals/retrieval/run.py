@@ -18,6 +18,7 @@ in-memory registry of the child process only (see candidates.py).
 
 import argparse
 import json
+import os
 import resource
 import statistics
 import subprocess
@@ -41,20 +42,51 @@ MODES = ("bm25", "vector", "hybrid-source-first", "hybrid-exact")
 
 
 LOCAL_QUERIES_PATH = QUERIES_PATH.with_name("queries.local.yaml")
+# A suites file made by --root --generate. Passed by environment so the per-candidate
+# subprocesses load it too.
+EXTRA_QUERIES_ENV = "NEXUS_RETRIEVAL_EXTRA"
 
 
 def load_suites(path: Path = QUERIES_PATH) -> Dict[str, Any]:
     """Load the query suites from queries.yaml.
 
     For the default path, suites in the git-ignored queries.local.yaml (a private
-    project) are added when that file exists.
+    project) and in the file named by NEXUS_RETRIEVAL_EXTRA are added when they exist.
     """
     with open(path) as f:
         suites = yaml.safe_load(f)["suites"]
-    if path == QUERIES_PATH and LOCAL_QUERIES_PATH.exists():
-        with open(LOCAL_QUERIES_PATH) as f:
-            suites.update(yaml.safe_load(f)["suites"])
+    if path == QUERIES_PATH:
+        for extra in (LOCAL_QUERIES_PATH, os.environ.get(EXTRA_QUERIES_ENV)):
+            if extra and Path(extra).exists():
+                with open(extra) as f:
+                    suites.update(yaml.safe_load(f)["suites"])
     return suites
+
+
+def generate_suite(root: Path, count: int, seed: int = 7) -> Dict[str, Any]:
+    """A suite of queries made from the folder's own symbols, as `nexus-mcp-ci eval` makes them.
+
+    The relevant file is the one that defines each symbol, from the parser. Queries describe
+    the code in words (docstring sentence or name words), never the exact name.
+    """
+    import shutil
+    import tempfile
+
+    from nexus_mcp.evaluate import agent
+
+    root = root.expanduser().resolve()
+    tmp = Path(tempfile.mkdtemp(prefix="nexus-retrieval-generate-"))
+    try:
+        rows = agent.build_index(root, tmp)["rows"]
+    finally:
+        shutil.rmtree(tmp, ignore_errors=True)
+    queries = [
+        {"id": q.id, "query": q.query, "relevant": [q.relevant]}
+        for q in agent.pick_tasks(rows, root, count, seed)
+    ]
+    if not queries:
+        raise ValueError(f"No usable queries in {root}: too few documented symbols")
+    return {"root": str(root), "queries": queries}
 
 
 def suite_root(suite: Dict[str, Any]) -> Path:
@@ -268,8 +300,27 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--single", default="", help="Run one candidate here, print JSON")
     parser.add_argument("--suites", default="nexus_mcp,shop_repo")
     parser.add_argument("--label", default="run")
+    parser.add_argument(
+        "--root", type=Path, default=None, help="With --generate: the folder to make a suite from"
+    )
+    parser.add_argument(
+        "--generate", type=int, default=0, metavar="N",
+        help="Make N queries from the --root folder's own symbols and run only that suite",
+    )
     args = parser.parse_args(argv)
     suite_names = [s.strip() for s in args.suites.split(",") if s.strip()]
+
+    if args.generate:
+        if not args.root:
+            parser.error("--generate needs --root")
+        suite = generate_suite(args.root, args.generate)
+        name = f"gen_{Path(suite['root']).name}"
+        RESULTS_DIR.mkdir(parents=True, exist_ok=True)
+        extra = RESULTS_DIR / f"generated-{name}.yaml"
+        extra.write_text(yaml.safe_dump({"suites": {name: suite}}, sort_keys=False))
+        os.environ[EXTRA_QUERIES_ENV] = str(extra)
+        suite_names = [name]
+        print(f"Generated {len(suite['queries'])} queries: {extra}", file=sys.stderr)
 
     if args.single:
         print(json.dumps(run_candidate(args.single, suite_names)))

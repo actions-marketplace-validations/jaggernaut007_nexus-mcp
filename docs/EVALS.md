@@ -146,6 +146,16 @@ the results.
 python -m evals.retrieval.run --candidates bge-small-en --label baseline
 ```
 
+On any other folder, `--root PATH --generate N` makes N queries from the folder's own symbols
+(the relevant file comes from the parser) and runs only that suite. The suite is saved to
+`evals/results/generated-gen_<folder>.yaml`. On this repo's `src/nexus_mcp` with 20 queries
+(2026-11-03), hybrid hit@1 was 0.85 and BM25 hit@1 0.90. Generated queries use words from the
+symbol names, so they favour BM25 more than the hand-written suites do.
+
+```bash
+python -m evals.retrieval.run --root ~/code/myproject --generate 30 --label myproject
+```
+
 ## Benchmark
 
 The token-efficiency benchmark (`benchmarks/`, ADR-018) drives `claude -p` on large repositories

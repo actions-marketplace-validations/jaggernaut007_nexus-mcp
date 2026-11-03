@@ -222,8 +222,9 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
   submit to Context7.
 - [x] `check_docs.py` and the offline lychee link check in CI; CONFIGURATION.md (generated),
   FAQ.md, RELEASING.md. CI runs on every PR, and all five PRs are green.
-- [ ] Not built from the plan: `benchmarks/runner.py --repo-path/--generate`,
-  `evals/retrieval --root --generate`, `status` storage field, the site data-flow SVG.
+- [x] Site data-flow SVG (PR 5). PR 6: `status` storage field (+23 tokens per `status` call,
+  owner to keep or drop), `benchmarks/runner.py --repo-path/--generate`,
+  `evals/retrieval --root --generate`.
 
 ## Discoverability & Setup Audit — 2026-09-23
 - [x] Audited agent-facing surfaces (tool descriptions, README, `llms.txt`,

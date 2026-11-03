@@ -67,10 +67,25 @@ The models that are not in the shipped registry (the granite candidates, see
 `evals/retrieval/candidates.py`) load through `benchmarks/nexus_server.py`, which registers
 the model in memory only. This is the same code path as the shipped server.
 
-For your own project, put the code in `benchmarks/repos/<name>` (a clone is fine; check out only
-the code, so no `CLAUDE.md` or docs leak a hint into the runs), write a task file in the format
-below, and keep a private one under `benchmarks/tasks/private/` (git-ignored). Ground truth must
-be checked with grep against the pinned commit.
+For your own project, there are two ways:
+
+- **Generated tasks (no YAML to write).** `--repo-path` points at any local folder and
+  `--generate N` makes N tasks from its own symbols, as `nexus-mcp-ci eval` does. The right
+  file comes from the parser. The suite is saved to `results/generated-<folder>.yaml`, so a rerun
+  with `--tasks` uses the same tasks.
+
+  ```bash
+  python -m benchmarks.runner --repo-path ~/code/myproject --generate 8 --smoke
+  python -m benchmarks.runner --tasks benchmarks/results/generated-myproject.yaml --repo-path ~/code/myproject
+  ```
+
+- **Hand-written tasks.** Put the code in `benchmarks/repos/<name>` (or pass `--repo-path`;
+  check out only the code, so no `CLAUDE.md` or docs leak a hint into the runs), write a task
+  file in the format below, and keep a private one under `benchmarks/tasks/private/`
+  (git-ignored). Ground truth must be checked with grep against the pinned commit.
+
+Most adopters do not need this harness: `nexus-mcp-ci eval --agent claude` runs a smaller A/B
+on any folder (see `docs/EVALUATE.md`).
 
 ## Methodology
 
