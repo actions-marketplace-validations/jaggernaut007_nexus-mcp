@@ -44,6 +44,7 @@ jobs:
         # (pypi.file_downloads, all downloads up to BASELINE_END) plus the
         # pypistats with_mirrors counts after that date. Failure is not fatal:
         # the site hides the stat when the file is missing.
+        continue-on-error: true
         env:
           BASELINE_TOTAL: "3538"
           BASELINE_END: "2026-09-30"
