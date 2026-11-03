@@ -1,0 +1,34 @@
+name: Eval result
+description: Share the numbers of a `nexus-mcp-ci eval` run. Numbers only, no code.
+title: "Eval result: "
+labels: ["eval-result"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Run `nexus-mcp-ci eval share <run-id>` to make the payload, or copy it from
+        `nexus-mcp-ci eval show <run-id> --json`. The payload has no paths, no code and no
+        question text. A maintainer reviews it and adds the `eval-accepted` label; a bot then
+        adds it to the community table on the benchmarks page.
+  - type: textarea
+    id: payload
+    attributes:
+      label: Payload
+      description: Paste the JSON from `nexus-mcp-ci eval share`, including the ```json fence.
+      render: markdown
+    validations:
+      required: true
+  - type: dropdown
+    id: client
+    attributes:
+      label: Client you use
+      options:
+        - Claude Code
+        - Codex
+        - Cursor
+        - Other
+  - type: textarea
+    id: notes
+    attributes:
+      label: Notes (optional)
+      description: Anything that helps read the result. Do not paste code or private names.
