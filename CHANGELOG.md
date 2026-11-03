@@ -44,6 +44,10 @@ All notable changes to this project will be documented in this file.
     text. An ALL_CAPS class name (`class URL_PARSER : public Parser {`) is not masked.
     `CHUNK_FORMAT` is 5. hit@1 in `hybrid-exact` mode, before and after, in one folder:
     `nexus_mcp` 0.62 and 0.62, `shop_repo` 0.50 and 0.50.
+    The mask regex has a word boundary after each macro name. Without it, a run of macro
+    lines after a `)` (`DEFINE_CHECK_OP_IMPL(EQ, ==)` in `base/check_op.h`) backtracked:
+    four lines took 5.1 s, and 23 files of `base/` stopped the Chromium index for more
+    than an hour. Now the 3,168 C and C++ files of `base/` have no file over 0.5 s.
   - Eval note: the chunk text starts with the absolute file path, so the scores depend on
     where the checkout is. The same code gave `shop_repo` 0.50 in one folder and 0.62 in
     another. Compare a before and an after run in the same folder.

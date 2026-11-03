@@ -6,6 +6,7 @@ under its return type `WeakReference`, and `WeakReference::Flag` was not found.
 """
 
 import asyncio
+import time
 
 import pytest
 
@@ -363,3 +364,23 @@ class TestExportMacros:
         for name in ("Acquire", "Release", "Try", "AssertAcquired", "Check"):
             assert syms.get(f"Lock.{name}") == SymbolType.METHOD, syms
         assert not any(n.split(".")[-1].isupper() for n in syms), syms
+
+    def test_parse_file_macro_lines_after_a_paren_do_not_backtrack(self, parser, tmp_path):
+        # base/check_op.h: a run of ALL_CAPS macro calls after a `)`. Before the fix each
+        # macro name could be split into many shorter "macros", and four such lines took
+        # 5 s in the tail-macro regex; 23 files of base/ stopped the index for over an hour.
+        path = tmp_path / "check_op.h"
+        path.write_text(
+            "namespace base {\n"
+            "void Check() {}\n"
+            "DEFINE_CHECK_OP_IMPL(EQ, ==)\n"
+            "DEFINE_CHECK_OP_IMPL(NE, !=)\n"
+            "DEFINE_CHECK_OP_IMPL(LE, <=)\n"
+            "DEFINE_CHECK_OP_IMPL(LT, < )\n"
+            "}  // namespace base\n"
+        )
+        _symbols(parser, path)  # load the C++ grammar outside the timed call
+        start = time.perf_counter()
+        syms = dict(_symbols(parser, path))
+        assert time.perf_counter() - start < 0.5
+        assert syms.get("Check") == SymbolType.FUNCTION, syms
