@@ -39,28 +39,48 @@ jobs:
           touch _site/.nojekyll
 
       - name: Fetch PyPI download counts
-        # pypistats.org has no CORS headers, so the browser cannot fetch it, and
-        # it keeps only 180 days. The lifetime total is a fixed BigQuery count
-        # (pypi.file_downloads, all downloads up to BASELINE_END) plus the
-        # pypistats with_mirrors counts after that date. Failure is not fatal:
-        # the site hides the stat when the file is missing.
+        # Primary source: the pepy.tech lifetime total. The pepy.tech API needs
+        # the PEPY_API_KEY repository secret. Without the secret, or when the
+        # call fails, the step uses the alternative source.
+        # Alternative source: pypistats.org. It keeps only 180 days, so the
+        # total is a fixed BigQuery count (pypi.file_downloads, all downloads
+        # up to BASELINE_END) plus the pypistats with_mirrors counts after
+        # that date. The last_month and last_week fields come from pypistats.
+        # Neither API sends CORS headers, so the browser reads downloads.json.
+        # Failure is not fatal: the site hides the stat when the file is missing.
         continue-on-error: true
         env:
           BASELINE_TOTAL: "3538"
           BASELINE_END: "2026-09-30"
+          PEPY_API_KEY: ${{ secrets.PEPY_API_KEY }}
         run: |
+          pepy_total=null
+          if [ -n "$PEPY_API_KEY" ] && curl -fsS --retry 3 --max-time 30 \
+              -H "X-API-Key: $PEPY_API_KEY" \
+              https://api.pepy.tech/api/v2/projects/nexus-mcp-ci -o pepy.json; then
+            pepy_total=$(jq '.total_downloads // null' pepy.json || echo null)
+          fi
           curl -fsS --retry 3 --max-time 30 \
-            https://pypistats.org/api/packages/nexus-mcp-ci/overall -o overall.json
+            https://pypistats.org/api/packages/nexus-mcp-ci/overall -o overall.json \
+            || echo '{"data": null}' > overall.json
           curl -fsS --retry 3 --max-time 30 \
-            https://pypistats.org/api/packages/nexus-mcp-ci/recent -o recent.json
+            https://pypistats.org/api/packages/nexus-mcp-ci/recent -o recent.json \
+            || echo '{"data": {}}' > recent.json
           jq -n --slurpfile o overall.json --slurpfile r recent.json \
+            --argjson pepy "$pepy_total" \
             --argjson base "$BASELINE_TOTAL" --arg end "$BASELINE_END" '
-            ($o[0].data | map(select(.category == "with_mirrors" and .date > $end) | .downloads) | add // 0) as $new
-            | {total: ($base + $new), last_month: $r[0].data.last_month, last_week: $r[0].data.last_week, updated: (now | todate)}' \
+            (if $o[0].data != null
+             then $base + ($o[0].data | map(select(.category == "with_mirrors" and .date > $end) | .downloads) | add // 0)
+             else null end) as $pypi
+            | if ($pepy // $pypi) == null then error("no download source") else . end
+            | {total: ($pepy // $pypi), source: (if $pepy != null then "pepy.tech" else "pypistats.org" end),
+               pypistats_total: $pypi,
+               last_month: $r[0].data.last_month, last_week: $r[0].data.last_week, updated: (now | todate)}' \
             > _site/downloads.json || rm -f _site/downloads.json
-          # Shields.io endpoint for the README badge.
-          if [ -f _site/downloads.json ]; then
-            jq '{schemaVersion: 1, label: "downloads", message: ((.total | tostring) + " total"), color: "blue"}' \
+          # Shields.io endpoint for the alternative (pypistats) README badge.
+          # The primary README badge comes from static.pepy.tech directly.
+          if [ -f _site/downloads.json ] && jq -e '.pypistats_total != null' _site/downloads.json > /dev/null; then
+            jq '{schemaVersion: 1, label: "downloads", message: ((.pypistats_total | tostring) + " total"), color: "blue"}' \
               _site/downloads.json > _site/downloads-badge.json
           fi
 
