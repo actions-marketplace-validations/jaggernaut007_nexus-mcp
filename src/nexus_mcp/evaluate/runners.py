@@ -158,6 +158,7 @@ def parse_codex(lines: Iterable[str], model: str) -> Dict[str, Any]:
     """Usage, tool calls and the final answer from ``codex exec --json`` events."""
     usage = {"input_tokens": 0, "cached_input_tokens": 0, "output_tokens": 0}
     answer, tools, turns, errors, completed = "", 0, 0, 0, False
+    names: Dict[str, int] = {}
     for line in lines:
         line = line.strip()
         if not line:
@@ -179,6 +180,7 @@ def parse_codex(lines: Iterable[str], model: str) -> Dict[str, Any]:
                 answer = item.get("text", "") or answer
             elif item.get("type") in ("mcp_tool_call", "command_execution"):
                 tools += 1
+                names[item["type"]] = names.get(item["type"], 0) + 1
         elif kind in ("turn.failed", "error"):
             errors += 1
     tokens = usage["input_tokens"] + usage["output_tokens"] if completed else None
@@ -188,6 +190,7 @@ def parse_codex(lines: Iterable[str], model: str) -> Dict[str, Any]:
         "cost_usd": specs.codex_cost(model, usage) if completed else None,
         "turns": turns or None,
         "tool_calls": tools,
+        "tools": names,
         "is_error": not completed or errors > 0 and not answer,
     }
 
@@ -217,6 +220,8 @@ def parse_claude(lines: Iterable[str]) -> Dict[str, Any]:
         "cost_usd": trace.total_cost_usd,
         "turns": trace.num_turns,
         "tool_calls": len(trace.tool_calls),
+        # Names and counts, so the report shows whether a nexus run used Nexus-MCP at all.
+        "tools": trace.tool_call_counts,
         "is_error": is_error,
     }
     if is_error:
@@ -255,7 +260,10 @@ def run(
             )
             out, failed = proc.stdout or "", proc.returncode != 0
         except (subprocess.TimeoutExpired, OSError) as exc:
-            out, failed = "", True
+            # Keep what a timed-out run printed: its tool calls show where it was stuck.
+            partial = getattr(exc, "stdout", None) or ""
+            out = partial.decode("utf-8", "replace") if isinstance(partial, bytes) else partial
+            failed = True
             note = type(exc).__name__
         else:
             note = (proc.stderr or "").strip()[-300:] if failed else ""

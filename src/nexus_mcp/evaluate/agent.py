@@ -66,6 +66,13 @@ def build_index(root: Path, storage: Path) -> Dict[str, Any]:
         return {"rows": read_symbol_rows(storage), "files": result.get("total_files", 0)}
 
 
+def uses_nexus(run: Dict[str, Any]) -> bool:
+    """True when the run called at least one Nexus-MCP tool (Claude `mcp__...`, Codex MCP calls)."""
+    return any(
+        name.startswith("mcp__") or name == "mcp_tool_call" for name in run.get("tools") or {}
+    )
+
+
 def _median(values: Sequence[Optional[float]]) -> Optional[float]:
     clean = [v for v in values if v is not None]
     return round(statistics.median(clean), 4) if clean else None
@@ -90,6 +97,7 @@ def summarise(runs: Sequence[Dict[str, Any]]) -> List[Dict[str, Any]]:
                 "median_cost_usd": _median([r.get("cost_usd") for r in done]),
                 "median_turns": _median([r.get("turns") for r in done]),
                 "median_seconds": _median([r.get("seconds") for r in done]),
+                "used_nexus": sum(1 for r in done if uses_nexus(r)),
             }
         )
     return rows
@@ -206,5 +214,7 @@ def run_agent(
         "isolation": sorted({r.get("isolation", "") for r in runs if r.get("isolation")}),
         "summary": rows,
         "recommendation": recommend(rows),
-        "runs": [{k: v for k, v in r.items() if k != "answer"} for r in runs],
+        # The answer stays in the local report so a wrong run can be read. `eval share`
+        # never sends run records (see share.build_payload).
+        "runs": [{**r, "answer": (r.get("answer") or "")[:500]} for r in runs],
     }

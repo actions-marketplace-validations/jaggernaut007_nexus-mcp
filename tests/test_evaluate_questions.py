@@ -81,6 +81,19 @@ def test_generate_skips_tests_dunders_and_duplicated_names(tmp_path):
     assert symbols == {"unique_function_name"}
 
 
+def test_generate_skips_a_method_whose_bare_name_is_in_two_files(tmp_path):
+    # Regression (2026-11-03): UniversalGraph.get_relationships_to and the graph engine's
+    # method of the same name had near-identical docstrings, so a question had two right files.
+    doc = "Return every relationship that points to the given node in the graph."
+    rows = [
+        _row("Graph.get_relationships_to", "core/models.py", tmp_path, "method", doc, "Graph"),
+        _row("Engine.get_relationships_to", "engines/graph.py", tmp_path, "method", doc, "Engine"),
+        _row("Engine.add_weighted_edge", "engines/graph.py", tmp_path, "method", doc, "Engine"),
+    ]
+    symbols = {q.symbol for q in questions.generate(rows, tmp_path, count=20)}
+    assert symbols == {"Engine.add_weighted_edge"}
+
+
 def test_generate_skips_variables(tmp_path):
     rows = [_row("MAX_RETRY_COUNT", "cfg.py", tmp_path, symbol_type="variable")]
     assert questions.generate(rows, tmp_path) == []

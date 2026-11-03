@@ -63,6 +63,17 @@ All notable changes to this project will be documented in this file.
 - PyPI metadata: new description, keywords, classifiers and project URLs. README links are
   absolute, so they work on PyPI and Glama.
 
+- First paid agent-tier runs (`eval --example --agent claude:haiku --tasks 2`, 2026-11-03):
+  baseline 2 of 2 right at $0.030 per task; nexus called `search` in every run, $0.022 to
+  $0.034 per task. Two tasks is far too few to compare cost. The runs found three gaps, now
+  fixed: the report showed no tool names (it now has a "Used Nexus" column and flags a nexus
+  row that never called Nexus-MCP), a timed-out run lost all its output (it now keeps the
+  partial tool calls), and answers were dropped (the local report now keeps them, capped at
+  500 characters; `eval share` still never sends run records).
+- Question generator fix: a method whose bare name is defined in two files (for example
+  `Graph.get_relationships_to` and `Engine.get_relationships_to`) is no longer a question,
+  because both files are right answers. Found by the paid run above, which "missed" such a
+  question. Quick-tier numbers were re-measured with the fix.
 - `benchmarks/runner.py --repo-path PATH` runs the benchmark on any local folder, and
   `--generate N` makes N tasks from its symbols (no YAML to write).
 - `evals/retrieval/run.py --root PATH --generate N` runs the retrieval eval on any folder. On

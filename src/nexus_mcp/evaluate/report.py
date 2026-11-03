@@ -121,16 +121,33 @@ def render_agent(record: Dict[str, Any], store_path: str) -> str:
     lines += [
         "",
         "| Model | Condition | Right file | Median tokens | Median cost | Turns | Seconds "
-        "| Errors |",
-        "|---|---|---:|---:|---:|---:|---:|---:|",
+        "| Used Nexus | Errors |",
+        "|---|---|---:|---:|---:|---:|---:|---:|---:|",
     ]
     for row in record["summary"]:
         acc = "-" if row["accuracy"] is None else _pct(row["accuracy"])
+        used = (
+            "-"
+            if row["condition"] == "baseline"
+            else f"{row.get('used_nexus', 0)}/{row.get('runs', 0)}"
+        )
         lines.append(
             f"| {row['spec']} | {row['condition']} | {acc} | {_num(row['median_tokens'])} | "
             f"{_money(row['median_cost_usd'])} | {_num(row['median_turns'])} | "
-            f"{_num(row['median_seconds'])} | {row['errors']} |"
+            f"{_num(row['median_seconds'])} | {used} | {row['errors']} |"
         )
+    unused = [
+        r
+        for r in record["summary"]
+        if r["condition"] != "baseline" and r.get("runs") and not r.get("used_nexus")
+    ]
+    if unused:
+        lines += [
+            "",
+            "No run of "
+            + ", ".join(f"`{r['spec']} {r['condition']}`" for r in unused)
+            + " called a Nexus-MCP tool, so those rows measure the agent without it.",
+        ]
     if record.get("skipped"):
         why = "the first runs failed" if record.get("error") else "the spend cap was reached"
         lines += ["", f"{record['skipped']} runs were skipped: {why}."]

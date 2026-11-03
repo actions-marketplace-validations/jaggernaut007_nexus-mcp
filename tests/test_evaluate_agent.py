@@ -174,6 +174,24 @@ def test_run_reports_a_timeout_as_an_error(tmp_path):
     assert out["is_error"] and out["error"] == "TimeoutExpired"
 
 
+def test_run_keeps_the_tool_calls_of_a_timed_out_run(tmp_path):
+    started = json.dumps(
+        {
+            "type": "assistant",
+            "message": {
+                "content": [{"type": "tool_use", "id": "a", "name": "mcp__nexus-mcp__index"}]
+            },
+        }
+    )
+
+    def fake(*args, **kwargs):
+        raise subprocess.TimeoutExpired("claude", 1, output=(started + "\n").encode())
+
+    out = runners.run(specs.Spec("claude", "haiku"), "nexus", "q", tmp_path, tmp_path, fake)
+    assert out["is_error"] and out["error"] == "TimeoutExpired"
+    assert out["tools"] == {"mcp__nexus-mcp__index": 1}
+
+
 def test_run_passes_the_project_as_cwd(tmp_path):
     seen = {}
 
@@ -268,7 +286,10 @@ def test_run_agent_runs_every_spec_condition_and_task(project):
     assert len(result["runs"]) == 2 * 2 * len(result["tasks"])
     assert {r["spec"] for r in result["summary"]} == {"claude:haiku", "claude:sonnet"}
     assert all(r["accuracy"] == 1.0 for r in result["summary"])
-    assert all("answer" not in r for r in result["runs"])
+    # Answers are kept, capped, in the local report so a wrong run can be read (2026-11-03:
+    # a nexus run answered wrong and its answer was lost). Sharing drops them: see
+    # test_build_payload_agent_tier_drops_answers_and_reasons.
+    assert all(len(r["answer"]) <= 500 for r in result["runs"])
     assert not (project / ".nexus").exists()
 
 
@@ -456,3 +477,66 @@ def test_recommend_skips_a_setup_whose_runs_all_failed():
         {**_row("claude:haiku", "nexus", 1.0, 0.02), "runs": 2, "errors": 0},
     ]
     assert agent.recommend(rows)["condition"] == "nexus"
+
+
+# --- which tools a run used -------------------------------------------------------------
+
+
+def test_parse_claude_records_tool_names():
+    lines = [
+        json.dumps(
+            {
+                "type": "assistant",
+                "message": {
+                    "content": [
+                        {"type": "tool_use", "id": "a", "name": "mcp__nexus-mcp__search"},
+                        {"type": "tool_use", "id": "b", "name": "Read"},
+                    ]
+                },
+            }
+        ),
+        json.dumps({"type": "result", "result": "x", "total_cost_usd": 0.01, "usage": {}}),
+    ]
+    assert runners.parse_claude(lines)["tools"] == {"mcp__nexus-mcp__search": 1, "Read": 1}
+
+
+def test_parse_codex_records_tool_kinds():
+    assert runners.parse_codex(CODEX_LINES, "gpt-5-codex")["tools"] == {"mcp_tool_call": 1}
+
+
+def test_uses_nexus_detects_claude_and_codex_mcp_calls():
+    assert agent.uses_nexus({"tools": {"mcp__nexus-mcp__find_symbol": 2}})
+    assert agent.uses_nexus({"tools": {"mcp_tool_call": 1}})
+    assert not agent.uses_nexus({"tools": {"Grep": 3, "Read": 1}})
+    assert not agent.uses_nexus({})
+
+
+def test_render_agent_flags_a_nexus_row_that_never_called_nexus():
+    from nexus_mcp.evaluate import report
+
+    row = {
+        "spec": "claude:haiku",
+        "median_tokens": 10,
+        "median_cost_usd": 0.01,
+        "median_turns": 2,
+        "median_seconds": 3,
+        "errors": 0,
+        "accuracy": 1.0,
+        "runs": 2,
+    }
+    record = {
+        "source": {"label": "p"},
+        "repo": {"files": 1},
+        "tasks": [{}],
+        "specs": ["claude:haiku"],
+        "spent_usd": 0.1,
+        "estimate_usd": 0.1,
+        "max_usd": 5,
+        "summary": [
+            {**row, "condition": "baseline"},
+            {**row, "condition": "nexus", "used_nexus": 0},
+        ],
+        "recommendation": {"spec": None, "reason": "x"},
+    }
+    md = report.render_agent(record, "/tmp/x")
+    assert "| 0/2 |" in md and "called a Nexus-MCP tool" in md
