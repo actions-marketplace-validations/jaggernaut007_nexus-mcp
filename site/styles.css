@@ -226,6 +226,7 @@ h1 em { color: var(--accent); }
 .final { background: var(--ink); color: var(--paper); border-top: 0; text-align: center; }
 .final h2 { margin: 0 auto; max-width: none; font-size: clamp(2.4rem, 6vw, 4.4rem); }
 .final p { color: color-mix(in srgb, var(--paper) 70%, transparent); max-width: 34em; margin: 18px auto 32px; }
+.final p code { background: color-mix(in srgb, var(--paper) 12%, transparent); color: var(--paper); }
 .final .btn-ghost { background: transparent; color: var(--paper); border-color: color-mix(in srgb, var(--paper) 25%, transparent); }
 
 .footer { padding: 28px 0; font-size: .88rem; color: var(--ink-3); }
