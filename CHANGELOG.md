@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **A head-to-head with GitNexus on Chromium `base/`, published.** `results.json` has a new
+  `comparisons` list. `publish_results.py` writes it to the README, the benchmarks page
+  and `llms.txt`. 8 C++ tasks, 3 runs each, Claude Sonnet, 24 of 24 correct for each
+  condition. Median tokens and cost per task: Grep and Read 62,450 and $0.057; Nexus-MCP
+  (with the C++ fixes of 2.2.1) 82,900 and $0.062; GitNexus 1.6.12 164,192 and $0.085.
+  North star: Nexus-MCP does not lower tokens against Grep and Read on this C++ code.
+  Before the C++ fixes, the WeakPtr task cost $0.100 (106.8k tokens); after, $0.069
+  (82.6k).
+- **Third-party setup for the comparison.** `benchmarks/setup_chromium_base.sh` makes a
+  shallow sparse clone of `base/` at the pinned commit and builds both indexes.
+  `python -m benchmarks.setup_gitnexus` checks the pinned GitNexus release, runs
+  `analyze`, keeps its CLAUDE.md block for the runner and removes the files it wrote.
+
 ## [2.2.1] - 2026-11-05
 
 ### Fixed

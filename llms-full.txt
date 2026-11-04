@@ -59,6 +59,16 @@ Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per pr
 | [pallets/click](https://github.com/pallets/click) (91 files) | Strong fit | 24,774 → **1,301** | 27% → 97% |
 | Nexus-MCP source (59 files) | Likely fit | 5,385 → **1,234** | 70% → 93% |
 
+Nexus-MCP and GitNexus on [Chromium base/](https://chromium.googlesource.com/chromium/src/+/d8ebdd25980e38badccc265758aa508e6592000e/base/) (C++, 4,243 files): 8 tasks, 3 runs each, 2026-11-04.
+
+| Condition | Version | Tokens (median) | Cost per task (median) | Correct |
+|---|---|---:|---:|---:|
+| Grep and Read | built-in tools | 62,450 | $0.057 | 24 of 24 |
+| Nexus-MCP | 2.2.0 with unreleased C++ parser fixes | 82,900 | $0.062 | 24 of 24 |
+| GitNexus | 1.6.12 | 164,192 | $0.085 | 24 of 24 |
+
+Nexus-MCP used fewer tokens than GitNexus on 8 of 8 tasks and cost less on 6; GitNexus cost $0.002 less on one task, and one task was a tie. Grep and Read cost less than both on this C++ code. Nexus-MCP cost less than Grep and Read on 3 of 8 tasks (the two needle tasks and WeakPtr).
+
 All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) · [JSON](https://jaggernaut007.github.io/nexus-mcp/benchmarks.json) · [CSV](https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv).
 <!-- results:end -->
 

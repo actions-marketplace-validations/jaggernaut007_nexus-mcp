@@ -41,6 +41,25 @@ def total_correct(data: Dict, side: str) -> str:
     return f"{sum(r[side]['correct'] for r in runs)} of {sum(r[side]['of'] for r in runs)}"
 
 
+def comparison_md(comp: Dict) -> List[str]:
+    """A head-to-head comparison of tools as Markdown lines: one row per condition."""
+    name = f"[{comp['project']}]({comp['url']})" if comp.get("url") else comp["project"]
+    lines = [
+        f"{comp['title']} on {name} ({comp['language']}, {comp['files']:,} files): "
+        f"{comp['tasks']} tasks, {comp['runs_per_task']} runs each, {comp['date']}.",
+        "",
+        "| Condition | Version | Tokens (median) | Cost per task (median) | Correct |",
+        "|---|---|---:|---:|---:|",
+    ]
+    for c in comp["conditions"]:
+        lines.append(
+            f"| {c['label']} | {c['version']} | {c['median_tokens']:,} | "
+            f"${c['median_cost_usd']:.3f} | {c['correct']} of {c['of']} |"
+        )
+    lines += ["", " ".join(comp["notes"][1:3])]
+    return lines
+
+
 def readme_block(data: Dict) -> str:
     m = data["method"]
     lines = [
@@ -75,6 +94,8 @@ def readme_block(data: Dict) -> str:
             f"{q['grep']['median_tokens']:,} → **{q['nexus']['median_tokens']:,}** | "
             f"{q['grep']['hit_at_1']:.0%} → {q['nexus']['hit_at_1']:.0%} |"
         )
+    for c in data.get("comparisons", []):
+        lines += ["", *comparison_md(c)]
     lines += [
         "",
         f"All numbers: [benchmarks page]({SITE_URL}/benchmarks.html) · "
@@ -136,6 +157,16 @@ def llms_block(data: Dict) -> str:
             f"{q['verdict']}; median tokens to the right file {q['grep']['median_tokens']} "
             f"(Grep and Read) and {q['nexus']['median_tokens']} (Nexus-MCP); right file first "
             f"{q['grep']['hit_at_1']:.0%} and {q['nexus']['hit_at_1']:.0%}."
+        )
+    for comp in data.get("comparisons", []):
+        conds = "; ".join(
+            f"{c['label']} {c['version']}: {c['median_tokens']} tokens, "
+            f"${c['median_cost_usd']:.3f}, {c['correct']} of {c['of']} correct"
+            for c in comp["conditions"]
+        )
+        lines.append(
+            f"- {comp['title']}, {comp['project']} ({comp['language']}, {comp['tasks']} tasks, "
+            f"{comp['runs_per_task']} runs each, medians per task): {conds}."
         )
     lines.append(f"- {data['method']['noise']}")
     return "\n".join(lines)
@@ -206,6 +237,38 @@ def community_html(entries: List[Dict]) -> str:
         "<th>Project</th><th>Size</th><th>Languages</th><th>Result</th><th>Version</th>"
         "</tr></thead><tbody>\n" + "\n".join(rows) + "\n</tbody></table></div>\n"
     )
+
+
+def comparison_html(comp: Dict) -> str:
+    """A head-to-head comparison section: totals per condition, then each task."""
+    conds = comp["conditions"]
+    name = html.escape(comp["project"])
+    if comp.get("url"):
+        name = f'<a href="{html.escape(comp["url"])}">{name}</a>'
+    summary = "".join(
+        f"<tr><td>{html.escape(c['label'])}</td><td>{html.escape(c['version'])}</td>"
+        f"<td>{c['median_tokens']:,}</td><td>${c['median_cost_usd']:.3f}</td>"
+        f"<td>${c['total_cost_usd']:.2f}</td><td>{c['median_turns']:g}</td>"
+        f"<td>{c['correct']} of {c['of']}</td></tr>"
+        for c in conds
+    )
+    heads = "".join(f"<th>{html.escape(c['label'])}</th>" for c in conds)
+    tasks = "".join(
+        f"<tr><td><code>{html.escape(t['task'])}</code></td><td>{html.escape(t['category'])}</td>"
+        + "".join(
+            f"<td>{t['tokens'][c['key']]:,} · ${t['cost_usd'][c['key']]:.3f}</td>" for c in conds
+        )
+        + "</tr>"
+        for t in comp["per_task"]
+    )
+    notes = "".join(f"<li>{html.escape(n)}</li>" for n in comp["notes"])
+    return f"""<h2>Head to head: {html.escape(comp["title"])}</h2>
+<p>{name} ({html.escape(comp["language"])}, {comp["files"]:,} files, commit <code>{html.escape(comp["commit"])}</code>): {comp["tasks"]} tasks, {comp["runs_per_task"]} runs each, {html.escape(comp["agent"])}, {html.escape(comp["date"])}. Each total is {html.escape(comp["aggregate"])}.</p>
+<div class="scroll"><table><thead><tr><th>Condition</th><th>Version</th><th>Tokens (median)</th><th>Cost per task (median)</th><th>Cost of all runs</th><th>Turns</th><th>Correct</th></tr></thead><tbody>{summary}</tbody></table></div>
+<div class="scroll"><table><thead><tr><th>Task</th><th>Category</th>{heads}</tr></thead><tbody>{tasks}</tbody></table></div>
+<ul>{notes}</ul>
+<p>Run it yourself: <code>{html.escape(comp["setup"])}</code>, then the runner on <code>{html.escape(comp["task_suite"])}</code> (see <a href="{REPO_URL}/blob/main/benchmarks/README.md">benchmarks/README.md</a>).</p>
+"""
 
 
 def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
@@ -310,7 +373,7 @@ code {{ font-size:.9em; }}
 <h2>Quick tier: <code>nexus-mcp-ci eval</code> (no LLM)</h2>
 <p>The free offline check: about 30 to 40 questions made from each project, with the right file from the parser. Tokens are a proxy (characters divided by 4). Chromium <code>base/</code> took 25 minutes to index on a laptop; the Nexus-MCP source takes about 30 seconds (<code>--example</code>).</p>
 {quick_table}
-{community_html(community)}<h2>Run it on your own code</h2>
+{"".join(comparison_html(c) for c in data.get("comparisons", []))}{community_html(community)}<h2>Run it on your own code</h2>
 <p><code>uvx nexus-mcp-ci eval</code> runs the free offline check on the current folder. <code>uvx nexus-mcp-ci eval --agent claude</code> runs the paid A/B with your own Claude Code login, after it shows the cost.</p>
 <h2>Data</h2>
 <ul>

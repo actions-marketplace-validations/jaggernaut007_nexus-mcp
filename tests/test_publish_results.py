@@ -64,3 +64,25 @@ def test_check_fails_when_a_generated_number_is_edited(tmp_path, monkeypatch):
 
     monkeypatch.setattr(publish, "outputs", outputs)
     assert publish.main(["--check"]) == 1
+
+
+def test_comparison_md_has_one_row_per_condition():
+    comp = DATA["comparisons"][0]
+    lines = publish.comparison_md(comp)
+    rows = [line for line in lines if line.startswith("| ") and "Condition" not in line]
+    assert len(rows) == len(comp["conditions"])
+    assert "| 164,192 |" in "\n".join(lines)
+
+
+def test_comparison_html_has_every_task_and_escapes_text():
+    comp = dict(DATA["comparisons"][0], title="A <b> test")
+    page = publish.comparison_html(comp)
+    for task in comp["per_task"]:
+        assert task["task"] in page
+    assert "A &lt;b&gt; test" in page and "<b>" not in page
+
+
+def test_page_html_and_llms_block_without_comparisons():
+    data = {k: v for k, v in DATA.items() if k != "comparisons"}
+    assert "Head to head" not in publish.page_html(data, community=[])
+    assert "GitNexus" not in publish.llms_block(data)

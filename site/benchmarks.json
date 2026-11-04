@@ -119,5 +119,179 @@
         "median_tokens": 1234
       }
     }
+  ],
+  "comparisons": [
+    {
+      "id": "chromium-base-d8ebdd2-gitnexus",
+      "title": "Nexus-MCP and GitNexus",
+      "project": "Chromium base/",
+      "url": "https://chromium.googlesource.com/chromium/src/+/d8ebdd25980e38badccc265758aa508e6592000e/base/",
+      "language": "C++",
+      "files": 4243,
+      "commit": "d8ebdd2",
+      "date": "2026-11-04",
+      "tasks": 8,
+      "runs_per_task": 3,
+      "agent": "Claude Code 2.1.280, Claude Sonnet, headless (claude -p)",
+      "aggregate": "the median over tasks of each task's median of 3 runs",
+      "task_suite": "benchmarks/tasks/chromium-base.yaml",
+      "setup": "benchmarks/setup_chromium_base.sh",
+      "conditions": [
+        {
+          "key": "grep_and_read",
+          "label": "Grep and Read",
+          "version": "built-in tools",
+          "median_tokens": 62450,
+          "median_cost_usd": 0.057,
+          "total_cost_usd": 1.58,
+          "median_turns": 5,
+          "correct": 24,
+          "of": 24
+        },
+        {
+          "key": "nexus_mcp",
+          "label": "Nexus-MCP",
+          "version": "2.2.0 with unreleased C++ parser fixes",
+          "median_tokens": 82900,
+          "median_cost_usd": 0.062,
+          "total_cost_usd": 1.64,
+          "median_turns": 6,
+          "correct": 24,
+          "of": 24
+        },
+        {
+          "key": "gitnexus",
+          "label": "GitNexus",
+          "version": "1.6.12",
+          "median_tokens": 164192,
+          "median_cost_usd": 0.085,
+          "total_cost_usd": 2.13,
+          "median_turns": 6,
+          "correct": 24,
+          "of": 24
+        }
+      ],
+      "per_task": [
+        {
+          "task": "cr-concept-weakptr-invalidate",
+          "category": "conceptual",
+          "tokens": {
+            "grep_and_read": 50057,
+            "nexus_mcp": 82568,
+            "gitnexus": 110006
+          },
+          "cost_usd": {
+            "grep_and_read": 0.077,
+            "nexus_mcp": 0.069,
+            "gitnexus": 0.088
+          }
+        },
+        {
+          "task": "cr-impact-atexit-registercallback",
+          "category": "impact",
+          "tokens": {
+            "grep_and_read": 58666,
+            "nexus_mcp": 72676,
+            "gitnexus": 212910
+          },
+          "cost_usd": {
+            "grep_and_read": 0.04,
+            "nexus_mcp": 0.046,
+            "gitnexus": 0.09
+          }
+        },
+        {
+          "task": "cr-impact-histogram-bucket-ranges",
+          "category": "impact",
+          "tokens": {
+            "grep_and_read": 256305,
+            "nexus_mcp": 267985,
+            "gitnexus": 374064
+          },
+          "cost_usd": {
+            "grep_and_read": 0.164,
+            "nexus_mcp": 0.175,
+            "gitnexus": 0.173
+          }
+        },
+        {
+          "task": "cr-concept-json-reader-backend",
+          "category": "conceptual",
+          "tokens": {
+            "grep_and_read": 56211,
+            "nexus_mcp": 109361,
+            "gitnexus": 180053
+          },
+          "cost_usd": {
+            "grep_and_read": 0.037,
+            "nexus_mcp": 0.055,
+            "gitnexus": 0.076
+          }
+        },
+        {
+          "task": "cr-needle-json-max-depth",
+          "category": "needle",
+          "tokens": {
+            "grep_and_read": 66234,
+            "nexus_mcp": 49847,
+            "gitnexus": 97562
+          },
+          "cost_usd": {
+            "grep_and_read": 0.029,
+            "nexus_mcp": 0.022,
+            "gitnexus": 0.028
+          }
+        },
+        {
+          "task": "cr-needle-utf8-to-utf16",
+          "category": "needle",
+          "tokens": {
+            "grep_and_read": 52976,
+            "nexus_mcp": 32710,
+            "gitnexus": 103939
+          },
+          "cost_usd": {
+            "grep_and_read": 0.028,
+            "nexus_mcp": 0.018,
+            "gitnexus": 0.045
+          }
+        },
+        {
+          "task": "cr-arch-task-scheduling",
+          "category": "architecture",
+          "tokens": {
+            "grep_and_read": 132197,
+            "nexus_mcp": 111439,
+            "gitnexus": 191516
+          },
+          "cost_usd": {
+            "grep_and_read": 0.083,
+            "nexus_mcp": 0.09,
+            "gitnexus": 0.099
+          }
+        },
+        {
+          "task": "cr-concept-timer-hierarchy",
+          "category": "conceptual",
+          "tokens": {
+            "grep_and_read": 71500,
+            "nexus_mcp": 83231,
+            "gitnexus": 148332
+          },
+          "cost_usd": {
+            "grep_and_read": 0.074,
+            "nexus_mcp": 0.082,
+            "gitnexus": 0.082
+          }
+        }
+      ],
+      "notes": [
+        "All three conditions answered all 24 runs correctly.",
+        "Nexus-MCP used fewer tokens than GitNexus on 8 of 8 tasks and cost less on 6; GitNexus cost $0.002 less on one task, and one task was a tie.",
+        "Grep and Read cost less than both on this C++ code. Nexus-MCP cost less than Grep and Read on 3 of 8 tasks (the two needle tasks and WeakPtr).",
+        "GitNexus sends about 17.9k tokens of tool schema on each turn (17 tools); Nexus-MCP sends about 2.3k (8 tools).",
+        "The GitNexus condition gets its MCP server and the CLAUDE.md block that gitnexus analyze writes; its on-demand skills are not given."
+      ]
+    }
   ]
 }
