@@ -56,7 +56,12 @@ def comparison_md(comp: Dict) -> List[str]:
             f"| {c['label']} | {c['version']} | {c['median_tokens']:,} | "
             f"${c['median_cost_usd']:.3f} | {c['correct']} of {c['of']} |"
         )
-    lines += ["", " ".join(comp["notes"][1:3])]
+    lines += [
+        "",
+        " ".join(comp["notes"][1:3]) + " Each condition had the same agent, model, prompt and "
+        "built-in tools, and each tool had its MCP server and its always-loaded instructions "
+        f"([method]({REPO_URL}/blob/main/benchmarks/README.md#methodology)).",
+    ]
     return lines
 
 
@@ -262,12 +267,15 @@ def comparison_html(comp: Dict) -> str:
         for t in comp["per_task"]
     )
     notes = "".join(f"<li>{html.escape(n)}</li>" for n in comp["notes"])
+    fairness = "".join(f"<li>{html.escape(n)}</li>" for n in comp.get("fairness", []))
     return f"""<h2>Head to head: {html.escape(comp["title"])}</h2>
 <p>{name} ({html.escape(comp["language"])}, {comp["files"]:,} files, commit <code>{html.escape(comp["commit"])}</code>): {comp["tasks"]} tasks, {comp["runs_per_task"]} runs each, {html.escape(comp["agent"])}, {html.escape(comp["date"])}. Each total is {html.escape(comp["aggregate"])}.</p>
 <div class="scroll"><table><thead><tr><th>Condition</th><th>Version</th><th>Tokens (median)</th><th>Cost per task (median)</th><th>Cost of all runs</th><th>Turns</th><th>Correct</th></tr></thead><tbody>{summary}</tbody></table></div>
 <div class="scroll"><table><thead><tr><th>Task</th><th>Category</th>{heads}</tr></thead><tbody>{tasks}</tbody></table></div>
 <ul>{notes}</ul>
-<p>Run it yourself: <code>{html.escape(comp["setup"])}</code>, then the runner on <code>{html.escape(comp["task_suite"])}</code> (see <a href="{REPO_URL}/blob/main/benchmarks/README.md">benchmarks/README.md</a>).</p>
+<h3>How the comparison was kept fair</h3>
+<ul>{fairness}</ul>
+<p>The tasks are in <code>{html.escape(comp["task_suite"])}</code>. The method, and how to run the benchmark on any repo, are in <a href="{REPO_URL}/blob/main/benchmarks/README.md">benchmarks/README.md</a>.</p>
 """
 
 

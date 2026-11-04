@@ -103,7 +103,7 @@ def aggregate_condition(records: List[Dict[str, Any]]) -> Dict[str, Any]:
 
 
 def aggregate_by_condition(records: List[Dict[str, Any]]) -> Dict[str, Dict[str, Any]]:
-    """Aggregate across ALL tasks for each condition (macro-average of per-task medians)."""
+    """Aggregate across ALL tasks for each condition (the median of the per-task medians)."""
     by_condition: Dict[str, Dict[str, Any]] = {}
     for condition, cond_records in group_by(records, "condition").items():
         per_task = aggregate_by_task(cond_records)

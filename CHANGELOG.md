@@ -13,11 +13,13 @@ All notable changes to this project will be documented in this file.
   (with the C++ fixes of 2.2.1) 82,900 and $0.062; GitNexus 1.6.12 164,192 and $0.085.
   North star: Nexus-MCP does not lower tokens against Grep and Read on this C++ code.
   Before the C++ fixes, the WeakPtr task cost $0.100 (106.8k tokens); after, $0.069
-  (82.6k).
-- **Third-party setup for the comparison.** `benchmarks/setup_chromium_base.sh` makes a
-  shallow sparse clone of `base/` at the pinned commit and builds both indexes.
-  `python -m benchmarks.setup_gitnexus` checks the pinned GitNexus release, runs
-  `analyze`, keeps its CLAUDE.md block for the runner and removes the files it wrote.
+  (82.6k). The benchmarks page lists the rules that kept the comparison fair.
+- **Fair comparisons, documented.** `benchmarks/README.md` has a "Fair comparisons" list:
+  the same agent, prompt and built-in tools in each condition, each tool with only what its
+  real user has loaded, warm caches, isolation, pinned versions, 3 runs and the same
+  scoring. The benchmark runs on any repo (`--repo-path`, `--generate`). The GitNexus
+  condition and its setup scripts were removed after the run; only the published numbers
+  stay. `benchmarks/tasks/chromium-base.yaml` stays as a C++ task suite.
 
 ## [2.2.1] - 2026-11-05
 

@@ -86,7 +86,15 @@
       "agent": "Claude Code 2.1.280, Claude Sonnet, headless (claude -p)",
       "aggregate": "the median over tasks of each task's median of 3 runs",
       "task_suite": "benchmarks/tasks/chromium-base.yaml",
-      "setup": "benchmarks/setup_chromium_base.sh",
+      "fairness": [
+        "Same agent, model, prompt, budget and timeout in each condition.",
+        "Read, Grep and Glob in each condition; a tool server is added to them, not in place of them.",
+        "Each tool gets what its real user always has loaded: its MCP server and its always-loaded instructions.",
+        "Indexes built before the runs; a warm-up call so that each run starts with a warm prompt cache.",
+        "Isolated config folder and --strict-mcp-config for each run.",
+        "Pinned repo commit and tool versions; ground truth checked with grep against the commit.",
+        "The same mechanical scoring (file recall and required facts) for each condition; every task is published."
+      ],
       "conditions": [
         {"key": "grep_and_read", "label": "Grep and Read", "version": "built-in tools",
          "median_tokens": 62450, "median_cost_usd": 0.057, "total_cost_usd": 1.58,

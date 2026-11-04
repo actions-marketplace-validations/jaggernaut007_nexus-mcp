@@ -17,8 +17,7 @@ READ_TOOL = "Read"
 SEARCH_TOOLS = ("Grep", "Glob")
 MCP_TOOL_PREFIX = "mcp__"
 
-# `filePath` is the key of GitNexus results (the `gitnexus` benchmark condition).
-_FILEPATH_KEYS = ("filepath", "absolute_path", "filePath")
+_FILEPATH_KEYS = ("filepath", "absolute_path")
 
 
 @dataclass

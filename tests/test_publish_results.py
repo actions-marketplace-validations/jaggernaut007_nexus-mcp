@@ -1,5 +1,6 @@
 """scripts/publish_results.py: one data file drives every published benchmark number."""
 
+import html
 import importlib.util
 import json
 from pathlib import Path
@@ -80,6 +81,14 @@ def test_comparison_html_has_every_task_and_escapes_text():
     for task in comp["per_task"]:
         assert task["task"] in page
     assert "A &lt;b&gt; test" in page and "<b>" not in page
+
+
+def test_comparison_html_lists_every_fairness_rule():
+    comp = DATA["comparisons"][0]
+    page = publish.comparison_html(comp)
+    assert "How the comparison was kept fair" in page
+    for rule in comp["fairness"]:
+        assert html.escape(rule) in page
 
 
 def test_page_html_and_llms_block_without_comparisons():

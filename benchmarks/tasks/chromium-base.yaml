@@ -6,8 +6,8 @@ repo:
   sparse: ["/base/"]
   why: >-
     Chromium's base/ library only (4,243 files, mostly C++), from a shallow sparse
-    checkout. A C++ codebase, where GitNexus has a call graph and Nexus-MCP has
-    symbols and search but no call edges (ADR-019).
+    checkout. A C++ codebase, where Nexus-MCP has symbols and search but no call
+    edges (ADR-019). Clone it with a sparse checkout of /base/ at the pin.
 
 defaults:
   max_budget_usd: 1.00

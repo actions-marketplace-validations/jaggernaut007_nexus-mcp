@@ -234,12 +234,15 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
   docs/PRIVACY.md answer "where is my data?" instead.
 
 ## GitNexus Comparison on Chromium `base/` — 2026-11-04 (branch worktree-bench-gitnexus-chromium)
-- [x] `gitnexus` benchmark condition and `benchmarks/tasks/chromium-base.yaml` (8 C++ tasks).
+- [x] `benchmarks/tasks/chromium-base.yaml` (8 C++ tasks) and a temporary `gitnexus` condition.
 - [x] C++ parser fixes: declarator names, `.h` parsed as C++, `::` lookups, export macros,
   and no regex backtracking in the macro mask (ac813e4).
 - [x] Published: Grep and Read 62,450 tokens / $0.057; Nexus-MCP 82,900 / $0.062; GitNexus
-  1.6.12 164,192 / $0.085 (medians per task, 24 of 24 correct each). Setup scripts
-  `benchmarks/setup_chromium_base.sh` and `benchmarks.setup_gitnexus` for third parties.
+  1.6.12 164,192 / $0.085 (medians per task, 24 of 24 correct each), with fairness notes.
+- Decided 2026-11-04 (owner): remove all GitNexus tooling from the repo (the condition, its
+  MCP config, the setup scripts and their tests). Keep the published numbers as
+  documentation and keep the general benchmark, which runs on any repo. The "Fair
+  comparisons" list in `benchmarks/README.md` says how a fair comparison is run.
 - [ ] Push the branch (owner).
 - [ ] TODO: trim the fixed overhead on each turn. Nexus adds about 3.7k tokens to each call
   (tool schemas 2,320, server instructions 444, skill about 410). At equal turns this is the

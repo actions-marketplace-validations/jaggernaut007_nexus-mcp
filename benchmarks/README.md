@@ -101,43 +101,31 @@ on any folder (see `docs/EVALUATE.md`).
   from "does Claude reliably discover the skill," which is a separate
   question. An optional `nexus-plugin` condition (`--plugin-dir plugin/`)
   measures the shipped routing behavior instead, if you want that number too.
-- `gitnexus` — a competitor, for comparison. Same built-in tools, plus the GitNexus MCP
-  server (`benchmarks/mcp-configs/gitnexus.json`, which runs `gitnexus mcp`) and the
-  CLAUDE.md block that `gitnexus analyze` writes, given via `--append-system-prompt`.
-  Claude Code always loads that block for a GitNexus user, so this is the same as the
-  `nexus` condition. The on-demand GitNexus skills are not given. Set it up once for each
-  repo:
-  1. Install the pinned release: `npm install -g gitnexus@1.6.12`.
-  2. Run `PYTHONPATH=src:. python -m benchmarks.setup_gitnexus --repo <name>` (or
-     `--repo-dir <path>`). It checks the version, runs `gitnexus analyze` with the
-     full-text search extension (`GITNEXUS_LBUG_EXTENSION_INSTALL=auto`), and writes the
-     `<!-- gitnexus:start -->` block of the new `CLAUDE.md` to
-     `benchmarks/repos/<name>.gitnexus-context.md`. Then it removes the `CLAUDE.md`,
-     `AGENTS.md` and `.claude/skills/gitnexus-*` that `analyze` wrote, so the other
-     conditions do not see them. A `CLAUDE.md` that was in the repo before keeps its text.
 
-### Nexus-MCP and GitNexus on Chromium `base/`
+**Fair comparisons.** Each condition is the same except the tool under test. The same rules
+apply when you compare Nexus-MCP with Grep and Read, or with another code-search tool:
 
-The published head-to-head (README and the benchmarks page) used these steps. You need
-Node (for GitNexus), Python 3.10 to 3.12, and about 1 GB of disk.
+- Every condition uses the same agent, model, prompt, budget and timeout. The runner adds
+  the same read-only suffix to each prompt.
+- Every condition keeps the built-in `Read`, `Grep` and `Glob`. A tool server is added to
+  them, never in place of them.
+- A tool gets what its real user always has loaded: its MCP server and its always-loaded
+  instructions (for Nexus-MCP, the skill body). Do not give one side extra hints.
+- Build each index before the runs. Index time is not part of the measure; report it apart.
+- Use `--warm-up`, so that each recorded run starts with a warm prompt cache in every
+  condition.
+- Each run has its own config folder and `--strict-mcp-config`, so no user `CLAUDE.md`, hook
+  or other server reaches it. The `isolation_mode` field records the level.
+- Pin the repo commit and the tool versions. Check the ground truth with grep against the
+  pinned commit before the first run.
+- Run each task at least 3 times. Report the median of each task, then the median over the
+  tasks.
+- Score every condition with the same mechanical rules (file recall and required facts).
+- Publish every task and every condition, also the tasks where Nexus-MCP loses.
 
-```bash
-pip install -e ".[bench]"
-npm install -g gitnexus@1.6.12
-bash benchmarks/setup_chromium_base.sh   # sparse clone of base/ at the pin, then both indexes
-PYTHONPATH=src:. python -m benchmarks.runner --tasks benchmarks/tasks/chromium-base.yaml \
-    --conditions baseline,nexus,gitnexus --embedding-models bge-small-en --smoke
-PYTHONPATH=src:. python -m benchmarks.runner --tasks benchmarks/tasks/chromium-base.yaml \
-    --conditions baseline,nexus,gitnexus --embedding-models bge-small-en --reps 3 --warm-up
-python -m benchmarks.report benchmarks/results/runs-chromium-base.jsonl
-```
-
-- The clone takes about a minute (147 MB). The Nexus-MCP index of `base/` took 43 minutes
-  on an Apple-silicon laptop; GitNexus takes a few minutes.
-- The smoke run is 2 tasks × 3 conditions × 1 run, about $0.50. The full run is 8 tasks ×
-  3 conditions × 3 runs, about $5.50 (the published run cost $1.58, $1.64 and $2.13).
-- To publish your numbers, open an issue with the report, or use
-  `nexus-mcp-ci eval share` for the quick tier.
+Any repo works: put it under `benchmarks/repos/<name>` with a task file, or use
+`--repo-path <folder> --generate N`. The free offline check, `nexus-mcp-ci eval` (or
+`nexus-mcp-ci eval --example` on the Nexus-MCP source), needs no task file.
 
 **Isolation:** each run gets `CLAUDE_CONFIG_DIR` pointed at
 `benchmarks/.claude-bench` (gitignored) plus `--strict-mcp-config` and
@@ -224,8 +212,8 @@ exact formulas):
   a judge pass is run — see `scoring.judge_prompt`/`parse_judge_output` for
   an optional LLM-judge rubric (not run by default; costs one extra call per
   task).
-- Aggregation is the **median across reps** per (task, condition), then a
-  macro-average of per-task medians per condition, with IQR reported for
+- Aggregation is the **median across reps** per (task, condition), then the
+  median of the per-task medians per condition, with IQR reported for
   wasted-read ratio.
 
 **Contamination:** both target repos are large enough (django: ~2,900 Python
