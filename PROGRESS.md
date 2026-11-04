@@ -233,6 +233,28 @@ Plan: `~/.claude/plans/go-through-the-docs-glistening-sketch.md` (phases A-F).
   and lowered nothing, so the north-star rule drops it. `nexus-mcp-ci data where` and
   docs/PRIVACY.md answer "where is my data?" instead.
 
+## GitNexus Comparison on Chromium `base/` — 2026-11-04 (branch worktree-bench-gitnexus-chromium)
+- [x] `gitnexus` benchmark condition and `benchmarks/tasks/chromium-base.yaml` (8 C++ tasks).
+- [x] C++ parser fixes: declarator names, `.h` parsed as C++, `::` lookups, export macros,
+  and no regex backtracking in the macro mask (ac813e4).
+- [x] Published: Grep and Read 62,450 tokens / $0.057; Nexus-MCP 82,900 / $0.062; GitNexus
+  1.6.12 164,192 / $0.085 (medians per task, 24 of 24 correct each). Setup scripts
+  `benchmarks/setup_chromium_base.sh` and `benchmarks.setup_gitnexus` for third parties.
+- [ ] Push the branch (owner).
+- [ ] TODO: trim the fixed overhead on each turn. Nexus adds about 3.7k tokens to each call
+  (tool schemas 2,320, server instructions 444, skill about 410). At equal turns this is the
+  whole Chromium gap. The agent used only `find_symbol`, `graph`, `search` and `map`;
+  `status`, `index`, `analyze` and `memory` cost about 1,060 tokens on each turn. Make the
+  descriptions shorter and remove the text that the instructions and the skill both say.
+  It helps every repo and language. Gate: routing eval (`evals/routing`) and hit@1.
+- [ ] TODO: give one absolute `root` in the `find_symbol`, `graph` and `search` responses
+  (about 20 tokens). All 9 failed Reads in the 72 Chromium runs dropped the leading `base/`
+  of a relative path; nexus had 6 of them (`core_api.py:651` strips `absolute_path`). It
+  helps where the repo folder and its top folder have similar names (`django/django/`) or
+  the working folder is not the index root.
+- [ ] TODO: measure both fixes on Chromium (C++) and Django (Python) with a nexus-only rerun,
+  and record before and after in CHANGELOG.md.
+
 ## Discoverability & Setup Audit — 2026-09-23
 - [x] Audited agent-facing surfaces (tool descriptions, README, `llms.txt`,
   `llms-full.txt`, `docs/USAGE_GUIDE.md`, plugin skill, marketplace manifests)
