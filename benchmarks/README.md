@@ -105,14 +105,39 @@ on any folder (see `docs/EVALUATE.md`).
   server (`benchmarks/mcp-configs/gitnexus.json`, which runs `gitnexus mcp`) and the
   CLAUDE.md block that `gitnexus analyze` writes, given via `--append-system-prompt`.
   Claude Code always loads that block for a GitNexus user, so this is the same as the
-  `nexus` condition. Set it up once for each repo:
-  1. Install a pinned release: `npm install -g gitnexus@1.6.12`.
-  2. In the repo, run `GITNEXUS_LBUG_EXTENSION_INSTALL=auto gitnexus analyze .` (the
-     variable gets the full-text search extension).
-  3. Move the `<!-- gitnexus:start -->` block of the new `CLAUDE.md` to
-     `benchmarks/repos/<name>.gitnexus-context.md`.
-  4. Delete the `CLAUDE.md`, `AGENTS.md` and `.claude/` that `analyze` wrote, so the other
-     conditions do not see them.
+  `nexus` condition. The on-demand GitNexus skills are not given. Set it up once for each
+  repo:
+  1. Install the pinned release: `npm install -g gitnexus@1.6.12`.
+  2. Run `PYTHONPATH=src:. python -m benchmarks.setup_gitnexus --repo <name>` (or
+     `--repo-dir <path>`). It checks the version, runs `gitnexus analyze` with the
+     full-text search extension (`GITNEXUS_LBUG_EXTENSION_INSTALL=auto`), and writes the
+     `<!-- gitnexus:start -->` block of the new `CLAUDE.md` to
+     `benchmarks/repos/<name>.gitnexus-context.md`. Then it removes the `CLAUDE.md`,
+     `AGENTS.md` and `.claude/skills/gitnexus-*` that `analyze` wrote, so the other
+     conditions do not see them. A `CLAUDE.md` that was in the repo before keeps its text.
+
+### Nexus-MCP and GitNexus on Chromium `base/`
+
+The published head-to-head (README and the benchmarks page) used these steps. You need
+Node (for GitNexus), Python 3.10 to 3.12, and about 1 GB of disk.
+
+```bash
+pip install -e ".[bench]"
+npm install -g gitnexus@1.6.12
+bash benchmarks/setup_chromium_base.sh   # sparse clone of base/ at the pin, then both indexes
+PYTHONPATH=src:. python -m benchmarks.runner --tasks benchmarks/tasks/chromium-base.yaml \
+    --conditions baseline,nexus,gitnexus --embedding-models bge-small-en --smoke
+PYTHONPATH=src:. python -m benchmarks.runner --tasks benchmarks/tasks/chromium-base.yaml \
+    --conditions baseline,nexus,gitnexus --embedding-models bge-small-en --reps 3 --warm-up
+python -m benchmarks.report benchmarks/results/runs-chromium-base.jsonl
+```
+
+- The clone takes about a minute (147 MB). The Nexus-MCP index of `base/` took 43 minutes
+  on an Apple-silicon laptop; GitNexus takes a few minutes.
+- The smoke run is 2 tasks × 3 conditions × 1 run, about $0.50. The full run is 8 tasks ×
+  3 conditions × 3 runs, about $5.50 (the published run cost $1.58, $1.64 and $2.13).
+- To publish your numbers, open an issue with the report, or use
+  `nexus-mcp-ci eval share` for the quick tier.
 
 **Isolation:** each run gets `CLAUDE_CONFIG_DIR` pointed at
 `benchmarks/.claude-bench` (gitignored) plus `--strict-mcp-config` and
