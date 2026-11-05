@@ -96,6 +96,9 @@ def tier_retrieval(corpus, pinned, out_dir: Path, label: str) -> Dict[str, Any]:
     if proc.returncode != 0 or not result_file.exists():
         raise RuntimeError(f"retrieval tier failed for {corpus['name']}: {proc.stderr[-500:]}")
     run = json.loads(result_file.read_text())[0]
+    if run.get("error") or suite not in run.get("suites", {}):
+        # The install crashed while it indexed the suite (C# on 2.2.2): a result.
+        raise RuntimeError(str(run.get("error") or "no result for the suite")[-400:])
     result = run["suites"][suite]
     if "error" in result:
         raise RuntimeError(f"retrieval tier failed for {corpus['name']}: {result['error']}")
@@ -162,7 +165,7 @@ def _tier(row: Dict[str, Any], name: str, fn) -> None:
         row[name] = fn()
     except runner.UsageLimitReached:
         raise
-    except (RuntimeError, SystemExit) as exc:
+    except (RuntimeError, SystemExit, KeyError, ValueError) as exc:
         row[name] = {"error": str(exc)[-400:] or type(exc).__name__}
         print(f"[{row['name']}] {name} tier failed: {row[name]['error']}", file=sys.stderr)
 

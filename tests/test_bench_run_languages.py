@@ -122,6 +122,33 @@ def test_run_corpus_a_crashed_index_is_a_result_and_stops_graph_and_live(
     assert ("graph",) not in stubbed and ("live",) not in stubbed
 
 
+def test_tier_retrieval_a_crashed_run_without_suites_is_a_runtime_error(tmp_path, monkeypatch):
+    out = tmp_path / "evals" / "results"
+    out.mkdir(parents=True)
+    (out / "retrieval-t-demo.json").write_text(
+        json.dumps([{"candidate": "bge-small-en", "error": "PanicException c_sharp"}])
+    )
+    monkeypatch.setattr(rl, "REPO_ROOT", tmp_path)
+
+    class _Done:
+        returncode = 0
+        stderr = ""
+
+    monkeypatch.setattr(rl.subprocess, "run", lambda *a, **k: _Done())
+    pinned = runner.PinnedNexus(venv=tmp_path / ".venv-x", version="2.2.2", ref="r")
+    with pytest.raises(RuntimeError, match="PanicException"):
+        rl.tier_retrieval(_corpus(), pinned, tmp_path, "t")
+
+
+def test_run_corpus_a_key_error_in_a_tier_is_stored_as_an_error(stubbed, pinned, monkeypatch):
+    def broken(*a, **k):
+        raise KeyError("suites")
+
+    monkeypatch.setattr(rl, "tier_retrieval", broken)
+    row = rl.run_corpus(_corpus(tiers=["retrieval"]), pinned, ["retrieval"], "t", None)
+    assert "error" in row["retrieval"]
+
+
 def test_main_rejects_an_unknown_tier(pinned, monkeypatch):
     monkeypatch.setattr(runner, "load_pinned", lambda venv: pinned)
     with pytest.raises(SystemExit):
