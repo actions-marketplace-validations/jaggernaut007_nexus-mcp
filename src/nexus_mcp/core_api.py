@@ -1227,10 +1227,15 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
     for name in _split_symbol_names(symbol_name) or [symbol_name]:
         nodes = _resolve_symbol(state.graph_engine, name, exact=exact)
         # Functions and classes first, then tests, then the node of a whole file (the graph
-        # has one for each file, named like it: `main` is also `main.py`).
+        # has one for each file, named like it: `main` is also `main.py`). A C++ or C#
+        # constructor has the name of its class, so it comes after the class.
         nodes = sorted(
             nodes,
-            key=lambda n: (n.node_type == NodeType.MODULE, is_test_path(n.location.file_path)),
+            key=lambda n: (
+                n.node_type == NodeType.MODULE,
+                is_test_path(n.location.file_path),
+                n.node_type == NodeType.FUNCTION and n.metadata.get("parent_class") == n.name,
+            ),
         )
         if len(nodes) > MAX_MATCHES_PER_NAME:
             more_matches[name] = len(nodes) - MAX_MATCHES_PER_NAME
