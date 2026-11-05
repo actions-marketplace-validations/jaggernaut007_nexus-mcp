@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.1] - 2026-11-05
+
 ### Fixed
 
 - **C++ symbol names.** A benchmark run on Chromium `base/` (commit d8ebdd25) found two
