@@ -141,10 +141,11 @@ ASTGREP_LANG_IDS: Dict[str, str] = {
     "ruby": "ruby",
     "php": "php",
     "swift": "swift",
-    "csharp": "c_sharp",
+    "csharp": "csharp",  # ast-grep has no "c_sharp"; that id panics past `except Exception`
     "scala": "scala",
     "lua": "lua",
-    "dart": "dart",
+    # No "dart": ast-grep-py ships no Dart grammar, and an unknown id panics past
+    # `except Exception`. parse_file() returns 0 for a language with no id.
 }
 
 

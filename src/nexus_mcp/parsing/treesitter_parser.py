@@ -1,7 +1,7 @@
 """Tree-sitter based multi-language code parser.
 
 Ported from CodeGrok MCP. Extracts symbols, imports, and calls from source files.
-Supports 9 languages via tree-sitter grammars.
+Supports 12 languages via tree-sitter grammars.
 """
 
 import logging
@@ -16,6 +16,7 @@ from tree_sitter_languages import get_parser
 from nexus_mcp.core.interfaces import IParser
 from nexus_mcp.core.models import ParsedFile, Symbol, SymbolType
 from nexus_mcp.parsing.language_registry import (
+    TREESITTER_GRAMMARS,
     get_config_for_language,
     get_language_for_file,
     get_treesitter_extensions,
@@ -63,6 +64,11 @@ _DECLARATOR_NAMES = (
     "identifier", "field_identifier", "destructor_name", "operator_name", "type_identifier",
 )
 _C_FAMILY = ("c", "cpp")
+# Nodes between a doc comment and its item: `#[derive(Debug)]` in Rust, `[Fact]` in C#.
+_ATTRIBUTE_KINDS = ("attribute_item", "attribute_list", "attribute")
+# A doc comment: `/// text` or `/** text */`. `//!` and `/*!` describe the enclosing module.
+_DOC_COMMENT = re.compile(r"^(?:///(?!/)|/\*\*(?!/))")
+_XML_TAG = re.compile(r"</?[A-Za-z][^>]*>")
 
 
 class TreeSitterParser(IParser):
@@ -77,6 +83,9 @@ class TreeSitterParser(IParser):
     LICENCE_WORDS = ("copyright", "license", "licence", "spdx")
     # File names that say nothing: the folder name is the module name.
     PACKAGE_FILE_STEMS = ("__init__", "index", "mod", "main")
+    # Nodes before the top comment that say nothing about the file: `<?php`,
+    # `declare(strict_types=1);`.
+    FILE_PREAMBLE_KINDS = ("php_tag", "declare_statement")
     # Comments that talk to a tool, not to a reader: they are not a module description.
     PRAGMA_PREFIXES = (
         "pylint:", "type:", "noqa", "mypy:", "pyright:", "flake8:", "isort:", "fmt:", "ruff:",
@@ -192,7 +201,7 @@ class TreeSitterParser(IParser):
 
     def _get_parser(self, language: str):
         if language not in self._parsers:
-            self._parsers[language] = get_parser(language)
+            self._parsers[language] = get_parser(TREESITTER_GRAMMARS.get(language, language))
         return self._parsers[language]
 
     def _extract_symbols(
@@ -206,13 +215,21 @@ class TreeSitterParser(IParser):
         class_types = config.get("class_types", [])
         method_types = config.get("method_types", [])
         constant_types = config.get("constant_types", [])
+        scope_types = config.get("scope_types", {})
 
         def traverse(node, depth: int = 0):
             nonlocal current_class
             node_type = node.type
             opened_class = False  # only a class that gave a symbol closes a scope
 
-            if node_type in class_types:
+            if node_type in scope_types:
+                scope = self._scope_name(node, content, scope_types[node_type])
+                if scope:
+                    class_stack.append(scope)
+                    current_class = scope
+                    opened_class = True
+
+            elif node_type in class_types:
                 # A C++ class nested in another has the outer class as parent, so it is
                 # found as `Outer::Inner` (`Outer.Inner` in the index).
                 outer = class_stack[-1] if (language == "cpp" and class_stack) else None
@@ -317,6 +334,8 @@ class TreeSitterParser(IParser):
         prev_end: Optional[int] = None
         docstring: Optional[Tuple[str, int]] = None
         for child in root_node.children:
+            if child.type in self.FILE_PREAMBLE_KINDS:
+                continue
             if "comment" in child.type:
                 text = self._comment_text(self._get_node_text(child, content))
                 first_line, last_line = child.start_point[0], child.end_point[0]
@@ -473,6 +492,11 @@ class TreeSitterParser(IParser):
                                 break
                         break
 
+        elif language == "rust":
+            name_node = node.child_by_field_name("name")
+            if name_node is not None:
+                name = self._get_node_text(name_node, content).strip()
+
         if not name:
             return None
 
@@ -553,6 +577,8 @@ class TreeSitterParser(IParser):
         return None
 
     def _extract_docstring(self, node, content: bytes, config: Dict) -> str:
+        if config.get("doc_comment") == "leading":
+            return self._leading_doc_comment(node, content)
         body = self._get_body_node(node, config)
         if not body:
             return ""
@@ -564,6 +590,48 @@ class TreeSitterParser(IParser):
             elif child.type in ("string", "string_literal", "comment"):
                 return self._clean_docstring(self._get_node_text(child, content))
         return ""
+
+    def _leading_doc_comment(self, node, content: bytes) -> str:
+        """The first line of the doc comment just above a node (`///` or `/** */`).
+
+        Attributes between the comment and the node are skipped. A blank line ends the
+        comment. C# XML tags (`<summary>`) and PHPDoc tags (`@param`) are not text.
+        """
+        parts: List[str] = []
+        row = node.start_point[0]
+        prev = node.prev_named_sibling
+        while prev is not None and prev.end_point[0] >= row - 1:
+            if prev.type in _ATTRIBUTE_KINDS:
+                pass
+            elif "comment" in prev.type:
+                text = self._get_node_text(prev, content).strip()
+                if not _DOC_COMMENT.match(text):
+                    break
+                parts.insert(0, text)
+            else:
+                break
+            row = prev.start_point[0]
+            prev = prev.prev_named_sibling
+        for raw in "\n".join(parts).split("\n"):
+            line = raw.strip().lstrip("/*!").rstrip("*/").strip()
+            line = _XML_TAG.sub("", line).strip()
+            if line and not line.startswith("@"):
+                return line
+        return ""
+
+    def _scope_name(self, node, content: bytes, field: str) -> Optional[str]:
+        """The type that a scope node such as Rust `impl<T> Box<T>` belongs to: `Box`."""
+        target = node.child_by_field_name(field)
+        while target is not None:
+            if target.type == "type_identifier":
+                return self._get_node_text(target, content).strip()
+            if target.type == "scoped_type_identifier":
+                target = target.child_by_field_name("name")
+            elif target.type in ("generic_type", "reference_type", "pointer_type"):
+                target = target.child_by_field_name("type")
+            else:
+                break
+        return None
 
     def _get_body_node(self, node, config: Dict):
         for child in node.children:
