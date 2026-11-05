@@ -13,11 +13,11 @@ suites:
     queries:
       - {id: oneshot, query: "send one value from one task to another exactly once", relevant: [sync/oneshot.rs]}
       - {id: fan-out, query: "many receivers each get a copy of every message that is sent", relevant: [sync/broadcast.rs]}
-      - {id: latest-value, query: "watch the newest value of shared state and wake up when it changes", relevant: [sync/watch.rs]}
+      - {id: latest-value, query: "follow the newest value of shared state and wake up when it changes", relevant: [sync/watch.rs]}
       - {id: permits, query: "limit how many tasks can hold a permit at the same time", relevant: [sync/semaphore.rs, sync/batch_semaphore.rs]}
       - {id: deadline, query: "cancel a future if it does not finish within a given duration", relevant: [time/timeout.rs]}
       - {id: ticker, query: "fire repeatedly at a fixed period, with a policy for ticks that were missed", relevant: [time/interval.rs]}
-      - {id: blocking-pool, query: "run blocking work on a separate pool of threads so the async workers stay free", relevant: [runtime/blocking/pool.rs, task/blocking.rs]}
+      - {id: blocking-pool, query: "run work that can stall a thread on its own set of extra threads so the async workers stay free", relevant: [runtime/blocking/pool.rs, task/blocking.rs]}
       - {id: first-done, query: "wait on several futures at once and continue with the first one that completes", relevant: [macros/select.rs]}
       - {id: runtime-config, query: "set the number of worker threads and turn on io and timers before the runtime starts", relevant: [runtime/builder.rs]}
       - {id: budget, query: "make a task give up its turn after a fixed amount of work so other tasks can run", relevant: [task/coop/mod.rs]}
@@ -73,11 +73,11 @@ suites:
       - {id: refcount, query: "count references to an object that is shared across threads", relevant: [memory/ref_counted.h]}
       - {id: json, query: "parse json text into a tree of values", relevant: [json/json_reader.h, json/json_reader.cc]}
       - {id: utf, query: "convert utf-8 text to utf-16", relevant: [strings/utf_string_conversions.cc]}
-      - {id: histogram, query: "record a sample into a histogram with exponential buckets", relevant: [metrics/histogram.cc]}
+      - {id: histogram, query: "record a measured value into a distribution with exponentially growing buckets", relevant: [metrics/histogram.cc]}
       - {id: pool, query: "post tasks to a pool of worker threads with priorities", relevant: [task/thread_pool/thread_pool_impl.cc]}
       - {id: at-exit, query: "run registered callbacks when the process exits", relevant: [at_exit.h, at_exit.cc]}
-      - {id: bind, query: "bind arguments to a function to make a callback that runs later", relevant: [functional/bind.h, functional/bind_internal.h]}
-      - {id: crash-check, query: "check a condition and crash with a message when it is false", relevant: [check.h, check.cc]}
+      - {id: bind, query: "fix some arguments of a function ahead of time to make a callback that runs later", relevant: [functional/bind.h, functional/bind_internal.h]}
+      - {id: crash-check, query: "verify a condition and crash with a message when it is false", relevant: [check.h, check.cc]}
       - {id: file-io, query: "read and write whole files by path", relevant: [files/file_util.h, files/file_util.cc]}
       - {id: split, query: "split a string on delimiters", relevant: [strings/string_split.cc]}
       - {id: signal, query: "let one thread wait until another thread signals it", relevant: [synchronization/waitable_event.h]}
@@ -106,7 +106,7 @@ suites:
   prometheus:  # Go, prometheus/prometheus @ 4bfb6bb5
     root: benchmarks/repos/prometheus
     queries:
-      - {id: xor, query: "compress float samples by storing the xor of each value with the previous one", relevant: [tsdb/chunkenc/xor.go, tsdb/chunkenc/xor2.go]}
+      - {id: xor, query: "compress float samples by storing only the bits that differ from the previous value", relevant: [tsdb/chunkenc/xor.go, tsdb/chunkenc/xor2.go]}
       - {id: compact, query: "merge several on-disk blocks into a larger one and drop deleted data", relevant: [tsdb/compact.go]}
       - {id: wal, query: "write-ahead log segments so data in memory survives a crash", relevant: [tsdb/wlog/wlog.go, tsdb/head_wal.go]}
       - {id: eval, query: "evaluate a query expression over a time range step by step", relevant: [promql/engine.go]}
@@ -151,10 +151,10 @@ suites:
       - {id: rewrite-imports, query: "rewrite import paths in served modules so the browser can load them", relevant: [node/plugins/importAnalysis.ts]}
       - {id: glob, query: "turn a glob pattern on import meta into a list of imports", relevant: [node/plugins/importMetaGlob.ts]}
       - {id: define, query: "replace global constants in the code at build time", relevant: [node/plugins/define.ts]}
-      - {id: resolve, query: "resolve a bare package name to a file with the package exports and browser fields", relevant: [node/plugins/resolve.ts]}
+      - {id: resolve, query: "turn a bare package name into a file path using the package exports and browser fields", relevant: [node/plugins/resolve.ts]}
       - {id: proxy, query: "forward some request paths to another server during development", relevant: [node/server/middlewares/proxy.ts]}
-      - {id: overlay, query: "show compile errors as an overlay on the page in the browser", relevant: [client/overlay.ts]}
-      - {id: config, query: "load the user config file and merge it with the defaults", relevant: [node/config.ts]}
+      - {id: overlay, query: "show compile errors in a full-screen panel on top of the page in the browser", relevant: [client/overlay.ts]}
+      - {id: config, query: "load the user settings file and merge it with the defaults", relevant: [node/config.ts]}
       - {id: ssr, query: "rewrite import and export statements so a module can run on the server", relevant: [node/ssr/ssrTransform.ts]}
       - {id: host, query: "reject requests whose host header is not allowed", relevant: [node/server/middlewares/hostCheck.ts]}
       - {id: socket, query: "web socket channel between the dev server and the page", relevant: [node/server/ws.ts]}
