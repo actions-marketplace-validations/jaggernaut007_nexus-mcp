@@ -21,6 +21,21 @@ All notable changes to this project will be documented in this file.
   condition and its setup scripts were removed after the run; only the published numbers
   stay. `benchmarks/tasks/chromium-base.yaml` stays as a C++ task suite.
 
+### Fixed
+
+- **C++ attributes in a class head, and out-of-line nested classes.**
+  - A class head with `[[...]]` attributes before, between or after its macros was not a
+    class (`class [[nodiscard]] SCOPED_LOCKABLE BasicAutoLock {`,
+    `class BASE_EXPORT [[maybe_unused, nodiscard]] TaskScope {`). Its constructors were
+    top-level functions. The class-head mask now masks these attributes with the macros.
+  - `class Outer::Inner {` was named `Outer::Inner`, so `find_symbol("Outer::Inner")` did
+    not find it, and its methods had the parent `Outer::Inner`. It now has the name `Inner`
+    and the parent `Outer`, as a class nested in the body of `Outer` has. A `::` in template
+    arguments does not split the name (`std.pointer_traits<a::B<T>>`).
+  - A parse of Chromium `base/` before and after renames 412 symbols from `::` to `.` and
+    adds 28, in 174 files. No other name changes. `CHUNK_FORMAT` is 7. hit@1 does not
+    change: the `nexus_mcp` and `shop_repo` suites have no C or C++ file (0.62 and 0.50).
+
 ## [2.2.1] - 2026-11-05
 
 ### Fixed

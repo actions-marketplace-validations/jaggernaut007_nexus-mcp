@@ -34,9 +34,12 @@ _CPP_HEADER_MARKERS = re.compile(
 # tree-sitter-cpp cannot expand them and reads such a class as a function definition. The
 # lookahead needs a name after the macros and then `{`, `:`, `final` or template arguments,
 # so an ALL_CAPS class name (`class URL_PARSER : public Parser {`) is not taken for a macro.
+# `[[...]]` attributes can come before, between or after the macros
+# (`class [[nodiscard]] SCOPED_LOCKABLE Foo {`, `class BASE_EXPORT [[nodiscard]] Foo {`). They
+# are masked with the macros; the code of the symbol still comes from the original text.
 _CPP_CLASS_HEAD_MACROS = re.compile(
     rb"\b(?:class|struct|union)\s+"
-    rb"((?:[A-Z][A-Z0-9_]+\b(?:\s*\([^()\n]*\))?\s+)+)"
+    rb"((?:\[\[[^\[\]]*\]\]\s*|[A-Z][A-Z0-9_]+\b(?:\s*\([^()\n]*\))?\s+)+)"
     rb"(?=[A-Za-z_][\w:]*\s*(?:<[^;{}]*>\s*)?(?:final\b\s*)?[:{])"
 )
 # ALL_CAPS annotation macros between the parameter list and the body of a function:
@@ -361,6 +364,17 @@ class TreeSitterParser(IParser):
         name = self._get_node_name(node, content, config)
         if not name:
             return None
+        if language == "cpp" and "::" in name:
+            # `class Outer::Inner {` out of line: the same name and parent as a class nested
+            # in the body of `Outer`. Only a `::` outside template arguments splits the
+            # name (`struct std::hash<a::B> {` is `hash<a::B>` in `std`). Template
+            # arguments in the scope are dropped.
+            parts = [p.strip() for p in self._split_cpp_scope(name)]
+            scope = [re.sub(r"<.*>", "", p, flags=re.DOTALL).strip() for p in parts[:-1]]
+            if not parts[-1]:
+                return None
+            name = parts[-1]
+            parent = ".".join(filter(None, [parent, *scope])) or None
         return Symbol(
             name=name,
             type=SymbolType.CLASS,
@@ -375,6 +389,25 @@ class TreeSitterParser(IParser):
             imports=tuple(self._extract_imports_from_node(node, content, config)),
             calls=tuple(self._extract_calls_from_node(node, content, config)),
         )
+
+    @staticmethod
+    def _split_cpp_scope(name: str) -> List[str]:
+        """Split a C++ name on each `::` that is outside template arguments."""
+        parts, depth, start, i = [], 0, 0, 0
+        while i < len(name):
+            ch = name[i]
+            if ch == "<":
+                depth += 1
+            elif ch == ">" and depth:
+                depth -= 1
+            elif depth == 0 and name.startswith("::", i):
+                parts.append(name[start:i])
+                i += 2
+                start = i
+                continue
+            i += 1
+        parts.append(name[start:])
+        return parts
 
     def _extract_function_symbol(
         self, node, content: bytes, filepath: str, language: str, config: Dict,

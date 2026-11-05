@@ -42,7 +42,9 @@ SKIP_DIRS: Set[str] = {
 # 5: a C++ class with export macros (`class BASE_EXPORT Foo {`) is a class, and a method with
 # an annotation macro (`void f() LOCKS_EXCLUDED(x) {`) is named after itself. 6: the same
 # holds for a constructor with a member initializer list (`A(L& l) LOCKS(l) : l_(l) {`).
-CHUNK_FORMAT = 6
+# 7: a C++ class head with `[[...]]` attributes and macros is a class, and `class A::B {` is
+# named `B` with the parent `A`.
+CHUNK_FORMAT = 7
 
 
 @dataclass

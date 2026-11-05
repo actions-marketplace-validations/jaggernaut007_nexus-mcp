@@ -365,6 +365,68 @@ class TestExportMacros:
             assert syms.get(f"Lock.{name}") == SymbolType.METHOD, syms
         assert not any(n.split(".")[-1].isupper() for n in syms), syms
 
+    def test_parse_file_class_with_attributes_and_macros_is_a_class(self, parser, tmp_path):
+        # base/synchronization/lock_impl.h, base/task/task_annotator.h,
+        # base/threading/scoped_blocking_call.h: `[[...]]` before, between or after macros.
+        path = tmp_path / "scoped.h"
+        path.write_text(
+            "namespace base {\n"
+            "class [[nodiscard]] SCOPED_LOCKABLE BasicAutoLock {\n public:\n"
+            "  explicit BasicAutoLock(Lock& lock) EXCLUSIVE_LOCK_FUNCTION(lock)\n"
+            "      : lock_(lock) {}\n"
+            "};\n"
+            "class [[nodiscard]] SCOPED_LOCKABLE BASE_EXPORT TaggedAutoLock {\n public:\n"
+            "  void Release() UNLOCK_FUNCTION() {}\n"
+            "};\n"
+            "class BASE_EXPORT [[maybe_unused, nodiscard]] TaskScope {\n public:\n"
+            "  void Enter() {}\n"
+            "};\n"
+            "class BASE_EXPORT [[nodiscard]] ScopedBlockingCall\n"
+            "    : public internal::UncheckedScopedBlockingCall {\n public:\n"
+            "  void Wait() {}\n"
+            "};\n"
+            "}  // namespace base\n"
+        )
+        syms = dict(_symbols(parser, path))
+        for cls, method in (
+            ("BasicAutoLock", "BasicAutoLock"),
+            ("TaggedAutoLock", "Release"),
+            ("TaskScope", "Enter"),
+            ("ScopedBlockingCall", "Wait"),
+        ):
+            assert syms.get(cls) == SymbolType.CLASS, syms
+            assert syms.get(f"{cls}.{method}") == SymbolType.METHOD, syms
+        assert not any(n.split(".")[-1].isupper() for n in syms), syms
+
+    def test_parse_file_out_of_line_nested_class_is_named_like_a_nested_class(
+        self, parser, tmp_path
+    ):
+        # base/allocator/dispatcher/dispatcher.cc, base/task/common/task_annotator.h:
+        # `class Outer::Inner {` gets the name `Inner` and the parent `Outer`, as a class
+        # nested in the body of `Outer` does, so `find_symbol("Outer::Inner")` finds it.
+        path = tmp_path / "dispatcher.cc"
+        path.write_text(
+            "namespace base {\n"
+            "class Dispatcher::Impl {\n public:\n  void Reset() {}\n};\n"
+            "class BASE_EXPORT [[maybe_unused, nodiscard]] TaskAnnotator::LongTaskTracker {\n"
+            " public:\n  void Stop() {}\n};\n"
+            "}  // namespace base\n"
+            "template <typename T>\n"
+            "struct std::pointer_traits<base::CheckedIterator<T>> {\n"
+            "  static T* to_address(T p) { return p; }\n};\n"
+        )
+        parsed = {s.qualified_name: s for s in parser.parse_file(str(path)).symbols}
+        assert parsed["Dispatcher.Impl"].type == SymbolType.CLASS, list(parsed)
+        assert parsed["Dispatcher.Impl"].name == "Impl"
+        assert parsed["Dispatcher.Impl"].parent == "Dispatcher"
+        assert parsed["Dispatcher.Impl.Reset"].type == SymbolType.METHOD
+        assert parsed["TaskAnnotator.LongTaskTracker"].type == SymbolType.CLASS
+        assert parsed["TaskAnnotator.LongTaskTracker.Stop"].type == SymbolType.METHOD
+        # A `::` inside template arguments does not split the name.
+        traits = parsed["std.pointer_traits<base::CheckedIterator<T>>"]
+        assert traits.type == SymbolType.CLASS and traits.parent == "std"
+        assert not any("::" in n for n in parsed if "<" not in n), list(parsed)
+
     def test_parse_file_constructor_with_annotation_macro_and_initializer(
         self, parser, tmp_path
     ):
