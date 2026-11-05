@@ -460,9 +460,18 @@ def run_suite(
     if pinned is not None and any(cond.split_condition(n)[1] for n in condition_names):
         raise SystemExit("--nexus-venv measures one install; do not combine it with "
                          "--embedding-models")
-    if pinned is not None and any(n != "baseline" for n in condition_names):
+    for name in condition_names:
+        if cond.is_ext(name):
+            ext_config = cond.ext_tool_dir(name) / "mcp.json"
+            if not ext_config.is_file():
+                raise SystemExit(f"{name} needs an MCP config at {ext_config}")
+    if pinned is not None and any(
+        n != "baseline" and not cond.is_ext(n) for n in condition_names
+    ):
         ensure_pinned_index(pinned, repo_dir)
     for name in condition_names:
+        if cond.is_ext(name):
+            continue
         embedding_model = cond.split_condition(name)[1]
         if embedding_model and not storage_dir_for(repo_dir, embedding_model).exists():
             raise SystemExit(

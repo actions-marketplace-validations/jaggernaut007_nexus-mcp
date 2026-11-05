@@ -34,6 +34,34 @@ DEFAULT_EFFORT = "medium"
 # These two have no server of ours to configure, so `<name>@<model>` is an error.
 NO_MODEL_CONDITIONS = ("baseline", "nexus-plugin")
 
+# `ext:<name>` runs another code tool in place of Nexus-MCP, for a head-to-head. The repo
+# keeps no third-party tool config: each tool lives in EXT_TOOLS_DIR/<name>/ (git-ignored),
+# with `mcp.json` (its MCP servers) and an optional `instructions.md` (the always-loaded
+# text that its real user has, appended to the system prompt as the nexus skill is).
+EXT_PREFIX = "ext:"
+EXT_TOOLS_DIR = Path(__file__).resolve().parent / "tools" / "private"
+
+
+def is_ext(condition: str) -> bool:
+    """Whether `condition` names an external tool (`ext:<name>`)."""
+    return condition.startswith(EXT_PREFIX)
+
+
+def ext_tool_dir(condition: str, tools_dir: Optional[Path] = None) -> Path:
+    """The config folder of an `ext:<name>` condition. Raises ValueError for a bad name."""
+    name = condition[len(EXT_PREFIX):]
+    if not name or "/" in name or "\\" in name or name.startswith("."):
+        raise ValueError(f"Bad external tool name: {condition!r}")
+    return (tools_dir or EXT_TOOLS_DIR) / name
+
+
+def ext_allowed_tools(mcp_config_path: Path) -> str:
+    """ALLOWED_TOOLS plus `mcp__<server>__*` for each server in an external MCP config."""
+    servers = json.loads(mcp_config_path.read_text()).get("mcpServers", {})
+    if not servers:
+        raise ValueError(f"No mcpServers in {mcp_config_path}")
+    return ",".join(["Read,Grep,Glob,ToolSearch"] + [f"mcp__{s}__*" for s in servers])
+
 
 def split_condition(name: str) -> Tuple[str, Optional[str]]:
     """Split `nexus@granite` into ("nexus", "granite"). A plain name has no model."""
@@ -51,7 +79,7 @@ def expand_conditions(names: List[str], embedding_models: List[str]) -> List[str
     out: List[str] = []
     for name in names:
         base, model = split_condition(name)
-        if base in NO_MODEL_CONDITIONS or model or not embedding_models:
+        if base in NO_MODEL_CONDITIONS or is_ext(base) or model or not embedding_models:
             out.append(name)
         else:
             out += [f"{name}@{m}" for m in embedding_models]
@@ -148,6 +176,7 @@ def _common_args(
     model: str,
     max_budget_usd: float,
     effort: Optional[str] = None,
+    allowed_tools: str = ALLOWED_TOOLS,
 ) -> List[str]:
     effort_args = ["--effort", effort] if effort else []
     return [
@@ -162,7 +191,7 @@ def _common_args(
         "--permission-mode",
         "dontAsk",
         "--allowedTools",
-        ALLOWED_TOOLS,
+        allowed_tools,
         "--no-session-persistence",
         "--max-budget-usd",
         str(max_budget_usd),
@@ -181,14 +210,20 @@ def build_argv(
     plugin_dir: Path = PLUGIN_DIR,
     builtin_tools: str = BASELINE_TOOLS,
     effort: Optional[str] = None,
+    ext_tools_dir: Optional[Path] = None,
 ) -> List[str]:
     """Build the full argv for a `claude` invocation under the given condition.
 
     `condition` is one of KNOWN_CONDITIONS, optionally with `@<embedding model>` (the model
-    is applied through `mcp_config_path`, not here). Raises ValueError otherwise.
+    is applied through `mcp_config_path`, not here), or `ext:<name>` (see EXT_TOOLS_DIR).
+    Raises ValueError otherwise.
     `builtin_tools` is the `--tools` list; the routing eval adds `ToolSearch`
     so deferred MCP tools stay discoverable.
     """
+    if is_ext(condition):
+        return _ext_argv(
+            condition, prompt, model, max_budget_usd, builtin_tools, ext_tools_dir, effort
+        )
     base, embedding_model = split_condition(condition)
     if base not in KNOWN_CONDITIONS or (embedding_model and base in NO_MODEL_CONDITIONS):
         raise ValueError(f"Unknown condition: {condition!r}, expected one of {KNOWN_CONDITIONS}")
@@ -217,6 +252,28 @@ def build_argv(
 
     argv += [prompt]
     return argv
+
+
+def _ext_argv(
+    condition: str,
+    prompt: str,
+    model: str,
+    max_budget_usd: float,
+    builtin_tools: str,
+    tools_dir: Optional[Path],
+    effort: Optional[str] = None,
+) -> List[str]:
+    """Argv for `ext:<name>`: the same flags as `nexus`, with the tool's own server and text."""
+    folder = ext_tool_dir(condition, tools_dir)
+    mcp_config = folder / "mcp.json"
+    if not mcp_config.is_file():
+        raise ValueError(f"{condition!r} needs {mcp_config}")
+    argv = _common_args(model, max_budget_usd, effort, ext_allowed_tools(mcp_config))
+    argv += ["--tools", builtin_tools, "--strict-mcp-config", "--mcp-config", str(mcp_config)]
+    instructions = folder / "instructions.md"
+    if instructions.is_file():
+        argv += ["--append-system-prompt", strip_frontmatter(instructions.read_text())]
+    return argv + [prompt]
 
 
 def build_env(
