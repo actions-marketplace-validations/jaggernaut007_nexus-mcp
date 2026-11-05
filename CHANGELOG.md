@@ -4,6 +4,8 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.2.2] - 2026-11-05
+
 ### Added
 
 - **A head-to-head with GitNexus on Chromium `base/`, published.** `results.json` has a new
