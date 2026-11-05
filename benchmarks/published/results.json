@@ -99,7 +99,7 @@
         {"key": "grep_and_read", "label": "Grep and Read", "version": "built-in tools",
          "median_tokens": 62450, "median_cost_usd": 0.057, "total_cost_usd": 1.58,
          "median_turns": 5, "correct": 24, "of": 24},
-        {"key": "nexus_mcp", "label": "Nexus-MCP", "version": "2.2.0 with unreleased C++ parser fixes",
+        {"key": "nexus_mcp", "label": "Nexus-MCP", "version": "2.2.0 with the C++ parser fixes of 2.2.1",
          "median_tokens": 82900, "median_cost_usd": 0.062, "total_cost_usd": 1.64,
          "median_turns": 6, "correct": 24, "of": 24},
         {"key": "gitnexus", "label": "GitNexus", "version": "1.6.12",

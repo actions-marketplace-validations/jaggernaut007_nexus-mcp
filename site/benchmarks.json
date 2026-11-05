@@ -159,7 +159,7 @@
         {
           "key": "nexus_mcp",
           "label": "Nexus-MCP",
-          "version": "2.2.0 with unreleased C++ parser fixes",
+          "version": "2.2.0 with the C++ parser fixes of 2.2.1",
           "median_tokens": 82900,
           "median_cost_usd": 0.062,
           "total_cost_usd": 1.64,

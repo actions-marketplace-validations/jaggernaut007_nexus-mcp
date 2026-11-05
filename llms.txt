@@ -70,7 +70,7 @@ Source of truth: https://jaggernaut007.github.io/nexus-mcp/benchmarks.json (upda
 - Quick tier (`nexus-mcp-ci eval`, no LLM), Chromium base/ (3638 files): Strong fit; median tokens to the right file 17998 (Grep and Read) and 950 (Nexus-MCP); right file first 40% and 70%.
 - Quick tier (`nexus-mcp-ci eval`, no LLM), pallets/click (91 files): Strong fit; median tokens to the right file 24774 (Grep and Read) and 1301 (Nexus-MCP); right file first 27% and 97%.
 - Quick tier (`nexus-mcp-ci eval`, no LLM), Nexus-MCP source (59 files): Likely fit; median tokens to the right file 5385 (Grep and Read) and 1234 (Nexus-MCP); right file first 70% and 93%.
-- Nexus-MCP and GitNexus, Chromium base/ (C++, 8 tasks, 3 runs each, medians per task): Grep and Read built-in tools: 62450 tokens, $0.057, 24 of 24 correct; Nexus-MCP 2.2.0 with unreleased C++ parser fixes: 82900 tokens, $0.062, 24 of 24 correct; GitNexus 1.6.12: 164192 tokens, $0.085, 24 of 24 correct.
+- Nexus-MCP and GitNexus, Chromium base/ (C++, 8 tasks, 3 runs each, medians per task): Grep and Read built-in tools: 62450 tokens, $0.057, 24 of 24 correct; Nexus-MCP 2.2.0 with the C++ parser fixes of 2.2.1: 82900 tokens, $0.062, 24 of 24 correct; GitNexus 1.6.12: 164192 tokens, $0.085, 24 of 24 correct.
 - The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28).
 <!-- results:end -->
 

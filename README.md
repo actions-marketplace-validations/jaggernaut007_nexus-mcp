@@ -54,7 +54,7 @@ Nexus-MCP and GitNexus on [Chromium base/](https://chromium.googlesource.com/chr
 | Condition | Version | Tokens (median) | Cost per task (median) | Correct |
 |---|---|---:|---:|---:|
 | Grep and Read | built-in tools | 62,450 | $0.057 | 24 of 24 |
-| Nexus-MCP | 2.2.0 with unreleased C++ parser fixes | 82,900 | $0.062 | 24 of 24 |
+| Nexus-MCP | 2.2.0 with the C++ parser fixes of 2.2.1 | 82,900 | $0.062 | 24 of 24 |
 | GitNexus | 1.6.12 | 164,192 | $0.085 | 24 of 24 |
 
 Nexus-MCP used fewer tokens than GitNexus on 8 of 8 tasks and cost less on 6; GitNexus cost $0.002 less on one task, and one task was a tie. Grep and Read cost less than both on this C++ code. Nexus-MCP cost less than Grep and Read on 3 of 8 tasks (the two needle tasks and WeakPtr). Each condition had the same agent, model, prompt and built-in tools, and each tool had its MCP server and its always-loaded instructions ([method](https://github.com/jaggernaut007/Nexus-MCP/blob/main/benchmarks/README.md#methodology)).
