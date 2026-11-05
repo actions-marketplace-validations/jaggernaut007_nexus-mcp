@@ -365,6 +365,25 @@ class TestExportMacros:
             assert syms.get(f"Lock.{name}") == SymbolType.METHOD, syms
         assert not any(n.split(".")[-1].isupper() for n in syms), syms
 
+    def test_parse_file_constructor_with_annotation_macro_and_initializer(
+        self, parser, tmp_path
+    ):
+        # base/synchronization/lock_impl.h: the macro comes before a member initializer list.
+        path = tmp_path / "lock_impl.h"
+        path.write_text(
+            "class BASE_EXPORT AutoLock {\n public:\n"
+            "  explicit AutoLock(Lock& lock) EXCLUSIVE_LOCK_FUNCTION(lock)\n"
+            "      : lock_(lock) {\n    lock_.Acquire();\n  }\n"
+            "  AutoLock(Lock& lock, const AlreadyAcquired&) EXCLUSIVE_LOCKS_REQUIRED(lock)"
+            " : lock_(lock) {}\n"
+            "};\n"
+            "AutoLock::AutoLock(int n) NO_THREAD_SAFETY_ANALYSIS : n_(n) {}\n"
+        )
+        syms = _symbols(parser, path)
+        names = [n for n, _ in syms]
+        assert names.count("AutoLock.AutoLock") == 3, syms
+        assert not any(n.split(".")[-1].isupper() for n in names), syms
+
     def test_parse_file_macro_lines_after_a_paren_do_not_backtrack(self, parser, tmp_path):
         # base/check_op.h: a run of ALL_CAPS macro calls after a `)`. Before the fix each
         # macro name could be split into many shorter "macros", and four such lines took

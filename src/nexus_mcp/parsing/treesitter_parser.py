@@ -41,14 +41,15 @@ _CPP_CLASS_HEAD_MACROS = re.compile(
 )
 # ALL_CAPS annotation macros between the parameter list and the body of a function:
 # `void Acquire() EXCLUSIVE_LOCK_FUNCTION() {`. Without the mask the function is named after
-# the macro. Only a body (`{`, `= default`, `override`, ...) follows; a declaration that ends
+# the macro. Only a body (`{`, `= default`, `override`, a constructor's `: member_(x)`, ...)
+# follows; a declaration that ends
 # in `;` gives no symbol, and `if (x) DCHECK(y);` is left as it is.
 # The `\b` after each name keeps a name whole. Without it `DEFINE_CHECK_OP_IMPL` can split
 # into many shorter names, and a run of macro lines (base/check_op.h) backtracks for minutes.
 _CPP_FUNCTION_TAIL_MACROS = re.compile(
     rb"\)\s*(?:(?:const|volatile|noexcept|override|final)\b\s*)*"
     rb"((?:[A-Z][A-Z0-9_]{2,}\b(?:\s*\([^()\n]*\))?\s*)+)"
-    rb"(?=\{|=(?!=)|override\b|final\b|const\b|->)"
+    rb"(?=\{|=(?!=)|:(?!:)|override\b|final\b|const\b|->)"
 )
 # C and C++ declarators that wrap the name of a function (`*f()`, `&f()`, `f() const`).
 _DECLARATOR_WRAPPERS = (

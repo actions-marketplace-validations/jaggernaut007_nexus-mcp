@@ -48,6 +48,15 @@ All notable changes to this project will be documented in this file.
     lines after a `)` (`DEFINE_CHECK_OP_IMPL(EQ, ==)` in `base/check_op.h`) backtracked:
     four lines took 5.1 s, and 23 files of `base/` stopped the Chromium index for more
     than an hour. Now the 3,168 C and C++ files of `base/` have no file over 0.5 s.
+  - **Annotation macro before a constructor initializer.** The tail-macro mask now also
+    applies when a member initializer list follows the macro
+    (`explicit AutoLock(Lock& l) EXCLUSIVE_LOCK_FUNCTION(l) : lock_(l) {`). Before, the
+    Chromium index named 12 such constructors after the macro (`BasicAutoLock`,
+    `TaggedMetricAutoLock`, the partition_alloc `ScopedGuard`). The macro also broke the parse
+    of `basic_cstring_view`, so 48 of its methods had no class as parent. A parse of all of
+    `base/` before and after changes only these names. `CHUNK_FORMAT` is 6. hit@1 does not
+    change: the `nexus_mcp` and `shop_repo` suites have no C or C++ file, so their chunks
+    are the same (0.62 and 0.50).
   - Eval note: the chunk text starts with the absolute file path, so the scores depend on
     where the checkout is. The same code gave `shop_repo` 0.50 in one folder and 0.62 in
     another. Compare a before and an after run in the same folder.

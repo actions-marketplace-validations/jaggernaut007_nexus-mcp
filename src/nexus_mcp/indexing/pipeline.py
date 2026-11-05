@@ -40,8 +40,9 @@ SKIP_DIRS: Set[str] = {
 # licence block. 4: C and C++ functions are named from their declarator (`Owner.Method`, not
 # the return type), a C++ `.h` file is parsed as C++, and a forward declaration gives no chunk.
 # 5: a C++ class with export macros (`class BASE_EXPORT Foo {`) is a class, and a method with
-# an annotation macro (`void f() LOCKS_EXCLUDED(x) {`) is named after itself.
-CHUNK_FORMAT = 5
+# an annotation macro (`void f() LOCKS_EXCLUDED(x) {`) is named after itself. 6: the same
+# holds for a constructor with a member initializer list (`A(L& l) LOCKS(l) : l_(l) {`).
+CHUNK_FORMAT = 6
 
 
 @dataclass
