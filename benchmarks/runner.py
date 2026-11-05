@@ -579,6 +579,10 @@ def main(argv: Optional[List[str]] = None) -> int:
         "--smoke", action="store_true", help="Run 2 tasks x 1 rep for a cheap sanity check"
     )
     parser.add_argument(
+        "--task-ids", default="",
+        help="Comma-separated task ids: run only these tasks of the suite",
+    )
+    parser.add_argument(
         "--out", default=None,
         help="Output JSONL path (default: results/runs-<repo>.jsonl; rerun with the same "
         "path to resume)",
@@ -613,7 +617,12 @@ def main(argv: Optional[List[str]] = None) -> int:
         [m.strip() for m in args.embedding_models.split(",") if m.strip()],
     )
 
-    task_ids = None
+    task_ids = [t.strip() for t in args.task_ids.split(",") if t.strip()] or None
+    if task_ids:
+        missing = set(task_ids) - {t["id"] for t in suite["tasks"]}
+        if missing:
+            parser.error(f"--task-ids not in the suite: {', '.join(sorted(missing))}")
+        suite["tasks"] = [t for t in suite["tasks"] if t["id"] in task_ids]
     reps = args.reps
     if args.smoke:
         task_ids = [t["id"] for t in suite["tasks"][:2]]

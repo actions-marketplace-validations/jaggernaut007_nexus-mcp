@@ -570,3 +570,27 @@ def test_main_passes_medium_effort_by_default(tmp_path, monkeypatch):
     assert runner.main(["--tasks", str(suite_path)]) == 0
     assert captured["effort"] == "medium"
     assert captured["pinned"] is None
+
+
+def test_main_task_ids_runs_only_those_tasks(tmp_path, monkeypatch):
+    suite_path = tmp_path / "suite.yaml"
+    suite_path.write_text(
+        "repo:\n  name: django\n  pin: abc\n"
+        "tasks:\n  - id: t1\n    prompt: a\n  - id: t2\n    prompt: b\n  - id: t3\n    prompt: c\n"
+    )
+    captured = {}
+
+    def fake_run_suite(suite, *args, **kwargs):
+        captured["ids"] = [t["id"] for t in suite["tasks"]]
+        return []
+
+    monkeypatch.setattr(runner, "run_suite", fake_run_suite)
+    assert runner.main(["--tasks", str(suite_path), "--task-ids", "t3,t1"]) == 0
+    assert captured["ids"] == ["t1", "t3"]
+
+
+def test_main_task_ids_not_in_the_suite_is_an_error(tmp_path):
+    suite_path = tmp_path / "suite.yaml"
+    suite_path.write_text("repo:\n  name: django\n  pin: abc\ntasks:\n  - id: t1\n    prompt: a\n")
+    with pytest.raises(SystemExit):
+        runner.main(["--tasks", str(suite_path), "--task-ids", "nope"])
