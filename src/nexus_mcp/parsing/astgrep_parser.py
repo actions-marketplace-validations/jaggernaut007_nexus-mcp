@@ -5,6 +5,7 @@ structural analysis across 25+ languages.
 """
 
 import logging
+import posixpath
 import re
 import uuid
 from dataclasses import dataclass
@@ -37,8 +38,13 @@ from nexus_mcp.parsing.treesitter_parser import (
 
 logger = logging.getLogger(__name__)
 
-# Call expressions per language: (node kind, field that holds the callee).
-# A field of None means "use the whole node" (handled for Java below).
+# A callee field that is not one field: the first named child holds the callee
+# (`new User()` in PHP has no field for `User`).
+FIRST_NAMED_CHILD = "*"
+
+# Call expressions per language: (node kind, field that holds the callee). A pair of
+# fields is (receiver, name), joined with a dot: Java `obj.m()`, PHP `$obj->m()`.
+# None is ("object", "name").
 CALL_KINDS: Dict[str, tuple] = {
     "python": (("call", "function"),),
     "javascript": (("call_expression", "function"), ("new_expression", "constructor")),
@@ -46,6 +52,23 @@ CALL_KINDS: Dict[str, tuple] = {
     "go": (("call_expression", "function"),),
     "java": (("method_invocation", None), ("object_creation_expression", "type")),
     "rust": (("call_expression", "function"),),
+    "c": (("call_expression", "function"),),
+    "cpp": (("call_expression", "function"), ("new_expression", "type")),
+    "csharp": (
+        ("invocation_expression", "function"), ("object_creation_expression", "type"),
+    ),
+    "php": (
+        ("function_call_expression", "function"),
+        ("member_call_expression", ("object", "name")),
+        ("nullsafe_member_call_expression", ("object", "name")),
+        ("scoped_call_expression", ("scope", "name")),
+        ("object_creation_expression", FIRST_NAMED_CHILD),
+    ),
+}
+# Receivers that mean the own class or its base class, per language.
+RECEIVER_ALIASES: Dict[str, Dict[str, str]] = {
+    "php": {"static": "self", "parent": "super"},
+    "csharp": {"base": "super"},
 }
 
 # Function and class definitions per language, by node kind.
@@ -209,6 +232,26 @@ class _SgView:
 
 def _sg_text(view: "_SgView") -> str:
     return view.node.text()
+
+
+def _language_callee(text: str, language: str) -> str:
+    """Callee text in the common form before normalize_call_text().
+
+    PHP: `$this->m` is `this.m`, `\\App\\fmt` is `fmt`, `static::m` is `self.m`,
+    `parent::m` is `super.m`. C#: `base.M` is `super.M`. C++: `::g` is `g`.
+    """
+    if language == "php":
+        text = text.replace("$", "")
+        if "(" not in text:  # a namespace prefix, not a backslash in an argument
+            text = text.rsplit("\\", 1)[-1]
+    elif language == "cpp":
+        text = text.lstrip(":").strip()
+    aliases = RECEIVER_ALIASES.get(language)
+    if aliases:
+        head, sep, rest = text.partition(".")
+        if sep and head in aliases:
+            text = f"{aliases[head]}.{rest}"
+    return text
 
 
 @dataclass(frozen=True)
@@ -495,6 +538,10 @@ class AstGrepParser:
         calls = self._extract_calls(match, language)
         if calls:
             meta["calls"] = calls
+            if language == "cpp":
+                scoped = self._scoped_calls(match)
+                if scoped:
+                    meta["scoped_calls"] = scoped
         parent = self._enclosing_class(match, language)
         if language == "go" and match.kind() == "method_declaration":
             parent = self._go_receiver_type(match)
@@ -521,7 +568,7 @@ class AstGrepParser:
                 except Exception as e:
                     logger.debug("Failed to read callee: %s", e)
                     continue
-                name = normalize_call_text(text)
+                name = normalize_call_text(_language_callee(text, language))
                 if name:
                     seen.setdefault(name, None)
                 if len(seen) >= MAX_CALLS_PER_FUNCTION:
@@ -529,8 +576,33 @@ class AstGrepParser:
         return list(seen)
 
     @staticmethod
-    def _callee_text(call, field_name: Optional[str]) -> str:
-        if field_name is not None:
+    def _scoped_calls(match) -> List[str]:
+        """C++ calls through `::` (`base::Bind()`, `Widget::Create()`), normalised.
+
+        normalize_call_text() turns `::`, `.` and `->` into dots. The resolver needs to
+        know which calls were `ns::f()`: such a call names a free function or a static
+        method, never a method on an object of unknown type.
+        """
+        seen: Dict[str, None] = {}
+        try:
+            for call in match.find_all(kind="call_expression"):
+                callee = call.field("function")
+                if callee and callee.kind() == "qualified_identifier":
+                    name = normalize_call_text(_language_callee(callee.text(), "cpp"))
+                    if name:
+                        seen.setdefault(name, None)
+                if len(seen) >= MAX_CALLS_PER_FUNCTION:
+                    break
+        except Exception as e:
+            logger.debug("Scoped call search failed: %s", e)
+        return list(seen)
+
+    @staticmethod
+    def _callee_text(call, field_name) -> str:
+        if field_name == FIRST_NAMED_CHILD:
+            named = [c for c in call.children() if c.is_named()]
+            return named[0].text() if named else ""
+        if isinstance(field_name, str):
             callee = call.field(field_name)
             if not callee:
                 return ""
@@ -540,11 +612,12 @@ class AstGrepParser:
             if span.end.index - span.start.index > 4 * MAX_CALL_TEXT:
                 return ""
             return callee.text()
-        # Java method_invocation: object (optional) + name
-        name = call.field("name")
+        # Java method_invocation, PHP member and scoped calls: receiver (optional) + name
+        receiver_field, name_field = field_name or ("object", "name")
+        name = call.field(name_field)
         if not name:
             return ""
-        obj = call.field("object")
+        obj = call.field(receiver_field)
         return f"{obj.text()}.{name.text()}" if obj else name.text()
 
     @staticmethod
@@ -724,6 +797,25 @@ class AstGrepParser:
                     source = node.field("source")
                     if source:
                         names.setdefault(source.text().strip("'\"`"), None)
+            elif language in _C_FAMILY:
+                # `#include "base/util.h"` imports the module path `base/util`: the
+                # header and its `.c` or `.cc` file. `<stdio.h>` is a system header.
+                for node in sg_node.find_all(kind="preproc_include"):
+                    path = node.field("path")
+                    if path and path.kind() == "string_literal":
+                        target = posixpath.splitext(path.text().strip('"'))[0]
+                        if target:
+                            names.setdefault(target, None)
+            elif language == "php":
+                # `use App\Support\Helper;` -> `Support/Helper`: the PSR-4 root (`App`) is
+                # often not a folder name, so only the last two parts must match the path.
+                for clause in sg_node.find_all(kind="namespace_use_clause"):
+                    named = [c for c in clause.children() if c.is_named()]
+                    if not named:
+                        continue
+                    parts = [p for p in named[0].text().split("\\") if p]
+                    if parts:
+                        names.setdefault("/".join(parts[-2:]), None)
         except Exception as e:
             logger.debug("Import name collection failed: %s", e)
         return names

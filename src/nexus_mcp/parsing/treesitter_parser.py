@@ -64,6 +64,14 @@ _DECLARATOR_NAMES = (
     "identifier", "field_identifier", "destructor_name", "operator_name", "type_identifier",
 )
 _C_FAMILY = ("c", "cpp")
+# A declarator with one of these names is a misparse, not a function: with
+# `FMT_BEGIN_NAMESPACE namespace detail {` the macro looks like a return type and
+# `namespace` like the name of a function.
+_CPP_KEYWORD_NAMES = frozenset({
+    "namespace", "if", "for", "while", "switch", "return", "sizeof", "do", "else", "case",
+    "decltype", "alignof", "static_assert", "template", "typedef", "using", "class",
+    "struct", "union", "enum", "noexcept", "throw", "catch", "try", "new", "delete",
+})
 
 
 def is_cpp_header(filepath: str, content: bytes) -> bool:
@@ -149,6 +157,8 @@ def c_declarator_name(
             return scope, f"operator {target_text}".strip()
         elif kind in _DECLARATOR_NAMES:
             name = " ".join(text(decl).split())
+            if name in _CPP_KEYWORD_NAMES:
+                return None
             return scope, re.sub(r"^operator\s+(?=\W)", "operator", name)
         else:
             return None

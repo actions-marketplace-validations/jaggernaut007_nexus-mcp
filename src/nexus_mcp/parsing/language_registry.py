@@ -61,7 +61,7 @@ EXTENSION_MAP: Dict[str, str] = {
     ".scala": "scala",
     # Lua (ast-grep only)
     ".lua": "lua",
-    # Dart (ast-grep only)
+    # Dart (no parser: ast-grep-py ships no Dart grammar)
     ".dart": "dart",
 }
 

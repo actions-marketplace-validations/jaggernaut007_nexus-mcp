@@ -157,3 +157,11 @@ def test_extract_functions_php(tmp_path):
 def test_extract_classes_php(tmp_path):
     classes = _nodes(_graph(tmp_path, "User.php", PHP_SOURCE), NodeType.CLASS)
     assert {"Greeter", "Loud", "User", "Suit"} <= set(classes)
+
+
+def test_extract_functions_cpp_keyword_is_not_a_function_name(tmp_path):
+    # fmt: `FMT_BEGIN_NAMESPACE namespace detail {` was the function `namespace`.
+    source = "FMT_BEGIN_NAMESPACE namespace detail {\nvoid parse_width() { }\n}\n"
+    funcs = _nodes(_graph(tmp_path, "impl.cc", source), NodeType.FUNCTION)
+    assert "namespace" not in funcs
+    assert "parse_width" in funcs
