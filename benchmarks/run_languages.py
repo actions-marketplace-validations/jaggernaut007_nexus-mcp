@@ -152,28 +152,46 @@ def index_meta(pinned: runner.PinnedNexus, corpus) -> Optional[Dict[str, Any]]:
     return meta.get(corpora.repo_dir(corpus).name)
 
 
+def _tier(row: Dict[str, Any], name: str, fn) -> None:
+    """Run one tier and store its result in `row`.
+
+    A failure is stored as {"error": ...}: an install that crashes on a language is a result
+    to publish, not a reason to stop. The usage limit is the one error that stops the batch.
+    """
+    try:
+        row[name] = fn()
+    except runner.UsageLimitReached:
+        raise
+    except (RuntimeError, SystemExit) as exc:
+        row[name] = {"error": str(exc)[-400:] or type(exc).__name__}
+        print(f"[{row['name']}] {name} tier failed: {row[name]['error']}", file=sys.stderr)
+
+
 def run_corpus(corpus, pinned, tiers: List[str], label: str, args) -> Dict[str, Any]:
     """Run the chosen tiers on one corpus and return its summary row."""
     out_dir = out_dir_for(label)
     out_dir.mkdir(parents=True, exist_ok=True)
     corpora.checkout(corpus)
     available = [t for t in tiers if t in corpus["tiers"]]
-    if any(t in available for t in ("graph", "live")):
-        runner.ensure_pinned_index(pinned, corpora.repo_dir(corpus))
     row: Dict[str, Any] = {
         "name": corpus["name"], "language": corpus["language"], "repo": corpus["repo"],
         "url": corpus["url"], "pin": corpus["pin"], "label": label,
         "nexus_version": pinned.version, "nexus_ref": pinned.ref,
-        "index": index_meta(pinned, corpus),
     }
     if "quick" in available:
-        row["quick"] = tier_quick(corpus, pinned, out_dir)
+        _tier(row, "quick", lambda: tier_quick(corpus, pinned, out_dir))
     if "retrieval" in available:
-        row["retrieval"] = tier_retrieval(corpus, pinned, out_dir, label)
+        _tier(row, "retrieval", lambda: tier_retrieval(corpus, pinned, out_dir, label))
+    if any(t in available for t in ("graph", "live")):
+        _tier(row, "index", lambda: str(
+            runner.ensure_pinned_index(pinned, corpora.repo_dir(corpus))))
+        row["index_meta"] = index_meta(pinned, corpus)
+        if isinstance(row["index"], dict):  # {"error": ...}: no index, so no graph or live
+            return row
     if "graph" in available:
-        row["graph"] = tier_graph(corpus, pinned, out_dir)
+        _tier(row, "graph", lambda: tier_graph(corpus, pinned, out_dir))
     if "live" in available:
-        row["live"] = tier_live(corpus, pinned, out_dir, args)
+        _tier(row, "live", lambda: tier_live(corpus, pinned, out_dir, args))
     return row
 
 
@@ -206,10 +224,8 @@ def main(argv: Optional[List[str]] = None) -> int:
             print(str(exc), file=sys.stderr)
             code = 3
             break
-        except RuntimeError as exc:
-            print(f"[{corpus['name']}] {exc}", file=sys.stderr)
-            code = 1
-            continue
+        if any(isinstance(v, dict) and "error" in v for v in row.values()):
+            code = code or 1
         summary["rows"][corpus["name"]] = {**summary["rows"].get(corpus["name"], {}), **row}
         RESULTS_DIR.mkdir(parents=True, exist_ok=True)
         summary_path.write_text(json.dumps(summary, indent=2))

@@ -93,7 +93,9 @@ def test_main_exit_code_3_when_the_usage_limit_stops_the_live_tier(
     assert rl.main(["--nexus-venv", "v", "--label", "t", "--tiers", "live"]) == 3
 
 
-def test_main_a_failed_tier_gives_exit_code_1_and_continues(stubbed, pinned, monkeypatch):
+def test_main_a_failed_tier_is_kept_as_an_error_and_gives_exit_code_1(
+    stubbed, pinned, monkeypatch
+):
     def boom(*a, **k):
         raise RuntimeError("quick tier failed")
 
@@ -102,7 +104,22 @@ def test_main_a_failed_tier_gives_exit_code_1_and_continues(stubbed, pinned, mon
     monkeypatch.setattr(rl, "tier_quick", lambda c, *a, **k: boom() if c["name"] == "a" else {})
     assert rl.main(["--nexus-venv", "v", "--label", "t", "--tiers", "quick"]) == 1
     summary = json.loads((rl.RESULTS_DIR / "languages-t.json").read_text())
-    assert set(summary["rows"]) == {"b"}
+    assert set(summary["rows"]) == {"a", "b"}
+    assert summary["rows"]["a"]["quick"] == {"error": "quick tier failed"}
+    assert summary["rows"]["b"]["quick"] == {}
+
+
+def test_run_corpus_a_crashed_index_is_a_result_and_stops_graph_and_live(
+    stubbed, pinned, monkeypatch
+):
+    def crash(p, d):
+        raise SystemExit("Indexing x failed")
+
+    monkeypatch.setattr(runner, "ensure_pinned_index", crash)
+    row = rl.run_corpus(_corpus(), pinned, ["graph", "live"], "before", None)
+    assert row["index"] == {"error": "Indexing x failed"}
+    assert "graph" not in row and "live" not in row
+    assert ("graph",) not in stubbed and ("live",) not in stubbed
 
 
 def test_main_rejects_an_unknown_tier(pinned, monkeypatch):
