@@ -17,6 +17,14 @@ All notable changes to this project will be documented in this file.
     Includes and `use` lines count as imports; `std::` calls and library method names
     (`push_back`, `Add`, `map`) get no edge.
 
+- **A per-language results table, ready for data.** `results.json` is schema v2: it can hold
+  an optional `languages` list, with a `before` run and an optional `after` run for each
+  language. `publish_results.py` writes the table to the README, the site results rows,
+  `llms.txt`, the benchmarks page and the CSV. A cell shows "before → after" when both runs
+  exist. On a phone the table scrolls in its own box. Schema v1 files still work. No
+  language numbers are published yet. The CSV has new columns for the language rows.
+  North star: no change (output only).
+
 ### Fixed
 
 - **C# and Dart files stopped the whole index.** The ast-grep ids `c_sharp` and `dart` do not
