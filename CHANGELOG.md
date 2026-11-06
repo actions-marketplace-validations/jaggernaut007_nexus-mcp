@@ -4,6 +4,33 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-11-06
+
+### Added
+
+- **The server stops by itself when the session is done.** A new module, `lifecycle.py`
+  ([ADR-022](docs/adr/ADR-022-server-lifecycle-and-exit.md)), stops the server:
+  - after 3 hours with no tool call (`NEXUS_IDLE_TIMEOUT`, in seconds; `0` turns it off). A
+    tool call or an index that runs is not idle time;
+  - when the client process that started it is gone, also when the stdin pipe stays open
+    (`NEXUS_EXIT_ON_PARENT_EXIT`, default `true`);
+  - on SIGHUP (the terminal closed), as on SIGTERM and SIGINT.
+  After an idle stop, reconnect the server in the client (`/mcp` in Claude Code). The stored
+  index attaches again.
+
+### Fixed
+
+- **The server did not exit after SIGTERM.** It logged "Nexus-MCP shutdown complete." and was
+  still running 20 s later: the interpreter exit waited for a thread. Each stop now runs the
+  cleanup with a deadline (`NEXUS_SHUTDOWN_TIMEOUT`, default 10 s) and ends the process with
+  `os._exit`. Measured after the fix: exit 0 in 0.01 s after SIGTERM. A watchdog ends a
+  cleanup that hangs, and a second signal ends the process at once (exit code 1).
+- **The shutdown saved the graph while an index changed it.** The save now waits for the
+  running index. If the index still runs at the deadline, the graph is not saved, and the next
+  start finds the index out of date.
+- North star: no tool output changes, so the tokens of the benchmark do not change. hit@1 is
+  not affected (no change to parsing, indexing or search).
+
 ## [2.2.2] - 2026-11-05
 
 ### Added
