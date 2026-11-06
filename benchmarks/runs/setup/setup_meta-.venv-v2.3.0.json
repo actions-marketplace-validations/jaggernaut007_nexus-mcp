@@ -32,5 +32,22 @@
       "files_modified": 0,
       "files_deleted": 0
     }
+  },
+  "webpack": {
+    "index_seconds": 572.8,
+    "peak_rss_mb": 1153,
+    "embedding_model": "default",
+    "result": {
+      "total_files": 822,
+      "total_symbols": 8687,
+      "total_chunks": 8687,
+      "parse_errors": 0,
+      "graph_nodes": 6813,
+      "graph_relationships": 12938,
+      "time_seconds": 571.3719968795776,
+      "files_added": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
   }
 }
