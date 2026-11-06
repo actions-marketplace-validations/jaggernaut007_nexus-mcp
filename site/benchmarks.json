@@ -301,5 +301,212 @@
         "The GitNexus condition gets its MCP server and the CLAUDE.md block that gitnexus analyze writes; its on-demand skills are not given."
       ]
     }
+  ],
+  "languages": [
+    {
+      "language": "TypeScript",
+      "project": "vitejs/vite",
+      "url": "https://github.com/vitejs/vite",
+      "pin": "483512809bbdb399d66be59af0f5aeb01ccb7181",
+      "files": 429,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.2.2",
+        "date": "2026-11-05",
+        "index_seconds": 362.6,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.433,
+            "median_tokens": 16519.5
+          },
+          "nexus": {
+            "hit_at_1": 0.833,
+            "median_tokens": 1321.5
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.47,
+        "graph": {
+          "fn_nodes": 1721,
+          "calls_per_fn": 1.38
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 71166,
+            "cost_usd": 0.062,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 57268,
+            "cost_usd": 0.048,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      },
+      "after": {
+        "nexus_version": "2.4.0 pre-release (11cfccc)",
+        "date": "2026-11-06",
+        "index_seconds": 112.9,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.433,
+            "median_tokens": 16519.5
+          },
+          "nexus": {
+            "hit_at_1": 0.833,
+            "median_tokens": 1285.5
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.47,
+        "graph": {
+          "fn_nodes": 1721,
+          "calls_per_fn": 1.38
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 70482,
+            "cost_usd": 0.059,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 54986,
+            "cost_usd": 0.047,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
+    },
+    {
+      "language": "Java",
+      "project": "apache/commons-lang",
+      "url": "https://github.com/apache/commons-lang",
+      "pin": "e547d704b21a1b10a2dae0158f7288d7afa4d064",
+      "files": 264,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.2.2",
+        "date": "2026-11-05",
+        "index_seconds": 633.3,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.233,
+            "median_tokens": 48175.5
+          },
+          "nexus": {
+            "hit_at_1": 0.867,
+            "median_tokens": 1277.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.73,
+        "graph": {
+          "fn_nodes": 4177,
+          "calls_per_fn": 0.75
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 58755,
+            "cost_usd": 0.047,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 34601,
+            "cost_usd": 0.023,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      },
+      "after": {
+        "nexus_version": "2.4.0 pre-release (11cfccc)",
+        "date": "2026-11-06",
+        "index_seconds": 265.5,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.233,
+            "median_tokens": 48175.5
+          },
+          "nexus": {
+            "hit_at_1": 0.867,
+            "median_tokens": 1241.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.73,
+        "graph": {
+          "fn_nodes": 4177,
+          "calls_per_fn": 0.75
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 50448,
+            "cost_usd": 0.044,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 32862,
+            "cost_usd": 0.022,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
+    },
+    {
+      "language": "C++",
+      "project": "chromium/chromium",
+      "url": "https://chromium.googlesource.com/chromium/src",
+      "pin": "d8ebdd25980e38badccc265758aa508e6592000e",
+      "files": 3641,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.2.2",
+        "date": "2026-11-05",
+        "index_seconds": 4373.5,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.367,
+            "median_tokens": 16096.5
+          },
+          "nexus": {
+            "hit_at_1": 0.833,
+            "median_tokens": 953.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.4,
+        "graph": {
+          "fn_nodes": 5745,
+          "calls_per_fn": 1.39
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 70495,
+            "cost_usd": 0.065,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 60622,
+            "cost_usd": 0.055,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
+    }
   ]
 }

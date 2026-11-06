@@ -49,6 +49,16 @@ Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per pr
 | [pallets/click](https://github.com/pallets/click) (91 files) | Strong fit | 24,774 → **1,301** | 27% → 97% |
 | Nexus-MCP source (59 files) | Likely fit | 5,385 → **1,234** | 70% → 93% |
 
+Results per language:
+
+| Language | Project | Nexus-MCP version | Index time (s) | Right file first: Grep and Read | Right file first: Nexus-MCP | Tokens to the right file: Grep and Read | Tokens to the right file: Nexus-MCP | Search hit@1 | Calls per function | Live tokens: Grep and Read | Live tokens: Nexus-MCP | Correct: Grep and Read | Correct: Nexus-MCP | Agent |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| TypeScript | [vitejs/vite](https://github.com/vitejs/vite) (429 files) | 2.2.2 → 2.4.0 pre-release (11cfccc) | 362.6 → 112.9 | 43% | 83% | 16,520 | 1,322 → 1,286 | 0.47 | 1.38 | 70,482 | 57,268 → 54,986 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+| Java | [apache/commons-lang](https://github.com/apache/commons-lang) (264 files) | 2.2.2 → 2.4.0 pre-release (11cfccc) | 633.3 → 265.5 | 23% | 87% | 48,176 | 1,277 → 1,241 | 0.73 | 0.75 | 50,448 | 34,601 → 32,862 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+| C++ | [chromium/chromium](https://chromium.googlesource.com/chromium/src) (3,641 files) | 2.2.2 | 4,373.5 | 37% | 83% | 16,096 | 953 | 0.40 | 1.39 | 70,495 | 60,622 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+
+One row for each language, on one pinned public project. A Nexus-MCP cell with an arrow shows the value before and after a fix: before → after. A Grep and Read cell shows the latest run. Right file first and tokens come from `nexus-mcp-ci eval` (no LLM); search hit@1 from the retrieval suite; live tokens and correct answers from the live benchmark.
+
 Nexus-MCP and GitNexus on [Chromium base/](https://chromium.googlesource.com/chromium/src/+/d8ebdd25980e38badccc265758aa508e6592000e/base/) (C++, 4,243 files): 8 tasks, 3 runs each, 2026-11-04.
 
 | Condition | Version | Tokens (median) | Cost per task (median) | Correct |

@@ -16,6 +16,8 @@ SPEC = importlib.util.spec_from_file_location(
 publish = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(publish)
 DATA = json.loads((ROOT / "benchmarks" / "published" / "results.json").read_text())
+# The same data without the per-language list, for the tests of the project runs alone.
+DATA_NO_LANGS = {k: v for k, v in DATA.items() if k != "languages"}
 
 
 def test_publish_results_check_passes_on_the_committed_files():
@@ -41,7 +43,7 @@ def test_site_block_totals_the_correct_answers():
 
 
 def test_csv_has_two_rows_per_run():
-    lines = publish.csv_text(DATA).strip().splitlines()
+    lines = publish.csv_text(DATA_NO_LANGS).strip().splitlines()
     assert len(lines) == 1 + 2 * len(DATA["runs"])
 
 
@@ -108,7 +110,7 @@ BEFORE_ONLY, BEFORE_AFTER = LANGS
 
 def test_languages_md_without_languages_is_empty():
     assert publish.languages_md([]) == []
-    assert "Results per language" not in publish.readme_block(DATA)
+    assert "Results per language" not in publish.readme_block(DATA_NO_LANGS)
 
 
 def test_languages_md_before_only_shows_one_value_per_cell():
@@ -146,7 +148,7 @@ def test_language_cell_missing_after_value():
 
 def test_languages_html_without_languages_is_empty():
     assert publish.languages_html([]) == ""
-    assert "Results per language" not in publish.page_html(DATA, community=[])
+    assert "Results per language" not in publish.page_html(DATA_NO_LANGS, community=[])
 
 
 def test_languages_html_scrolls_in_its_own_box_and_escapes_text():

@@ -3,3 +3,28 @@ Private Python project,460,a67e5b4,2026-10-28,grep_and_read,0.571,55,36,36,,,,,,
 Private Python project,460,a67e5b4,2026-10-28,nexus_mcp,0.446,35,35,36,,,,,,,,
 Django,3000,a67e5b4,2026-10-28,grep_and_read,0.894,93,34,36,,,,,,,,
 Django,3000,a67e5b4,2026-10-28,nexus_mcp,0.863,71,36,36,,,,,,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,eval_grep_and_read,,,,,TypeScript,before,2.2.2,16519.5,0.433,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,eval_nexus_mcp,,,,,TypeScript,before,2.2.2,1321.5,0.833,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,nexus_mcp_index,,,,,TypeScript,before,2.2.2,,0.47,362.6,1721,1.38
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,grep_and_read,0.062,,6,6,TypeScript,before,2.2.2,71166,,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,nexus_mcp,0.048,,6,6,TypeScript,before,2.2.2,57268,,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,eval_grep_and_read,,,,,TypeScript,after,2.4.0 pre-release (11cfccc),16519.5,0.433,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,eval_nexus_mcp,,,,,TypeScript,after,2.4.0 pre-release (11cfccc),1285.5,0.833,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,nexus_mcp_index,,,,,TypeScript,after,2.4.0 pre-release (11cfccc),,0.47,112.9,1721,1.38
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,grep_and_read,0.059,,6,6,TypeScript,after,2.4.0 pre-release (11cfccc),70482,,,,
+vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,nexus_mcp,0.047,,6,6,TypeScript,after,2.4.0 pre-release (11cfccc),54986,,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,eval_grep_and_read,,,,,Java,before,2.2.2,48175.5,0.233,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,eval_nexus_mcp,,,,,Java,before,2.2.2,1277.0,0.867,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,nexus_mcp_index,,,,,Java,before,2.2.2,,0.73,633.3,4177,0.75
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,grep_and_read,0.047,,6,6,Java,before,2.2.2,58755,,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,nexus_mcp,0.023,,6,6,Java,before,2.2.2,34601,,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,eval_grep_and_read,,,,,Java,after,2.4.0 pre-release (11cfccc),48175.5,0.233,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,eval_nexus_mcp,,,,,Java,after,2.4.0 pre-release (11cfccc),1241.0,0.867,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,nexus_mcp_index,,,,,Java,after,2.4.0 pre-release (11cfccc),,0.73,265.5,4177,0.75
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,grep_and_read,0.044,,6,6,Java,after,2.4.0 pre-release (11cfccc),50448,,,,
+apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,nexus_mcp,0.022,,6,6,Java,after,2.4.0 pre-release (11cfccc),32862,,,,
+chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,eval_grep_and_read,,,,,C++,before,2.2.2,16096.5,0.367,,,
+chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,eval_nexus_mcp,,,,,C++,before,2.2.2,953.0,0.833,,,
+chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,nexus_mcp_index,,,,,C++,before,2.2.2,,0.4,4373.5,5745,1.39
+chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,grep_and_read,0.065,,6,6,C++,before,2.2.2,70495,,,,
+chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,nexus_mcp,0.055,,6,6,C++,before,2.2.2,60622,,,,
