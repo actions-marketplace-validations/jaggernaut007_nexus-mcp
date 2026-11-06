@@ -53,7 +53,8 @@ corpora:
     url: https://github.com/webpack/webpack.git
     pin: f6366b0bc2afbf1f5494f33e81f2bd0588b802cc
     sparse: [lib]
-    tiers: [quick, retrieval, graph]
+    tiers: [quick, retrieval, graph, live]
+    tasks: benchmarks/tasks/webpack.yaml
     suite: webpack
 
   - name: commons-lang
