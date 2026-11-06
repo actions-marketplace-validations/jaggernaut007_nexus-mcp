@@ -75,6 +75,7 @@ src/nexus_mcp/
 ├── server.py              # FastMCP server: 8 thin tool wrappers (guard, audit) + graceful shutdown
 ├── core_api.py            # Transport-agnostic tool logic, input validation, _pipeline + lock
 ├── config.py              # Settings with NEXUS_ env prefix (security, audit, rate limit, auto-watch)
+├── setup_clients.py       # `nexus-mcp-ci setup`: add the server and the skill to an MCP client
 ├── state.py               # Session state singleton + shutdown()
 ├── lifecycle.py           # Idle timeout, orphan exit, signals; finish() always ends the process
 ├── core/
@@ -166,6 +167,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 - Adopter evaluation in the package (`eval`), ground truth from the parser — [ADR-020](docs/adr/ADR-020-adopter-evaluation.md)
 - One source for published numbers; opt-in sharing, no telemetry — [ADR-021](docs/adr/ADR-021-results-publishing-and-sharing.md)
 - Server lifecycle: idle timeout (3 h), orphan exit, `os._exit` after a bounded cleanup — [ADR-022](docs/adr/ADR-022-server-lifecycle-and-exit.md)
+- MIT licence, commercial licence key removed again — [ADR-023](docs/adr/ADR-023-commercial-licence-check.md) (superseded by [ADR-024](docs/adr/ADR-024-mit-licence.md))
 
 ## Gotchas
 

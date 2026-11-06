@@ -66,8 +66,7 @@ uv cache clean nexus-mcp-ci
 
 ## Uninstall
 
-1. Remove the server from your client: `claude mcp remove nexus-mcp`, or
-   `/plugin uninstall nexus-mcp@nexus-mcp`.
-2. Remove the package: `pip uninstall nexus-mcp-ci`.
+1. Remove the server from your client: `nexus-mcp-ci setup --uninstall --yes`,
+   `claude mcp remove nexus-mcp`, or `/plugin uninstall nexus-mcp@nexus-mcp`.2. Remove the package: `pip uninstall nexus-mcp-ci`.
 3. Remove the data: `nexus-mcp-ci data clear --all --yes` before step 2, or the shell commands
    above after it.

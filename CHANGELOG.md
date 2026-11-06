@@ -4,6 +4,58 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.3.0] - 2026-11-06
+
+### Added
+
+- **`nexus-mcp-ci setup`: one command to install the server and its skill.** It finds Claude
+  Code, Claude Desktop, Cursor, VS Code, Windsurf, Gemini CLI, Codex and Cline on the machine,
+  shows each change, and asks before it writes. `--dry-run` writes nothing, `--yes` does not
+  ask, `--client` picks one, `--uninstall` removes what it wrote. An agent can run it from
+  `llms-install.md` ("Install Nexus-MCP from the repository URL"). It keeps the other servers
+  in a config file and refuses a config that is not valid JSON.
+- **More install channels.** A Claude Desktop extension (`mcpb/`, built by `publish.yml`; it is
+  also a plain way to install it by hand), a Gemini CLI extension, VS Code and Cursor
+  install links, a `docker/Dockerfile.stdio` image pushed to GHCR, and a composite GitHub
+  Action (`action.yml`). `scripts/bump_version.py` sets every pinned version at once.
+  [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) lists each channel and the owner steps.
+- **Cursor plugin.** `.cursor-plugin/marketplace.json` and `plugin/.cursor-plugin/plugin.json`
+  reuse the skill and the `uvx` launch. `bump_version.py` and `check_docs.py` cover the new file.
+  [docs/SUBMISSIONS.md](docs/SUBMISSIONS.md) holds ready-to-paste text for each listing.
+
+### Changed
+
+- **Licence: PolyForm Noncommercial 1.0.0 → MIT** ([ADR-024](docs/adr/ADR-024-mit-licence.md)),
+  to remove the barrier for companies and directories that accept only OSI licences. Every new
+  release is MIT. Versions 2.0.1 to 2.2.3 keep the PolyForm terms for those who got them. A paid
+  commercial tier (a Polar licence key, built and tested in the sandbox during this cycle) was
+  dropped before release, and its code is not in this release. The server again makes no
+  network call of its own.
+- The Claude Code plugin starts the server with `uvx nexus-mcp-ci==X`, so it needs `uv` and no
+  `pip install`. The README quickstart now starts with "ask your agent" and `uvx nexus-mcp-ci setup`.
+- The skill has an install section for a client with no nexus tools. The always-loaded files
+  (rules, `AGENTS.md` block, `gemini-context.md`) and the benchmark loaders cut it.
+
+### Removed
+
+- `smithery.yaml`. Smithery shut down its CLI, API and accounts on 31 October 2026 and stays
+  only as a curated public directory, so there is nothing to publish there.
+
+### North star
+
+- Tokens: no change for any user. `status()` is the same 204 characters (51 tokens, 4
+  characters per token). The skill text in the benchmark and the eval is unchanged: the loaders
+  cut the new install section.
+- Retrieval gate, hit@1 in `hybrid-exact` mode, before (commit 0430f01) and after, same
+  command (`python -m evals.retrieval.run --single bge-small-en`), each in a clean checkout:
+  `nexus_mcp` 0.67 and 0.67, `shop_repo` 0.50 and 0.62. hit@5: 0.92 and 0.92, 1.00 and 1.00.
+  The gate holds: hit@1 did not fall. Only two of the four suites ran (`flask` and `jobscout`
+  have no checkout here). No retrieval code changed. The `nexus_mcp` suite indexes this source,
+  so it grew from 773 to 854 chunks. The `shop_repo` gain is not explained by the diff: its
+  chunks are the same, BM25 and vector hit@1 are equal, and only the two fused modes moved
+  (one query of eight). Two baseline runs gave the same 0.50, and two runs of this branch gave
+  0.62, so it is not run-to-run noise. Treat it as unexplained, not as an improvement.
+
 ## [2.2.3] - 2026-11-06
 
 ### Added

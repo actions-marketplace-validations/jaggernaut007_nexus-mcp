@@ -106,7 +106,9 @@ def strip_frontmatter(skill_text: str) -> str:
 
 def load_skill_body(skill_path: Path = SKILL_PATH) -> str:
     """Load the nexus-mcp SKILL.md body with frontmatter stripped."""
-    return strip_frontmatter(skill_path.read_text())
+    from nexus_mcp.setup_clients import skill_body
+
+    return skill_body(skill_path.read_text())
 
 
 def _common_args(
@@ -250,7 +252,11 @@ def build_run(
 ) -> Dict[str, Any]:
     """Build the full (argv, env, isolation_mode) triple for one run."""
     argv = build_argv(
-        condition, prompt, model, max_budget_usd, mcp_config_path=mcp_config_path,
+        condition,
+        prompt,
+        model,
+        max_budget_usd,
+        mcp_config_path=mcp_config_path,
         builtin_tools=builtin_tools,
     )
     # --mcp-config, --tools and similar options take a list of values and swallow a

@@ -14,6 +14,30 @@ Lower token use for an agent, with the same accuracy. Set by the owner on 2026-1
 - Keep a change only when it lowers the measure and passes the gate. Record the two
   numbers, before and after, in `CHANGELOG.md`.
 
+## MIT licence and install channels — 2026-11-06 (branch, not released)
+
+Decisions: MIT for every new release ([ADR-024](docs/adr/ADR-024-mit-licence.md)), for adoption. A
+paid licence key (Polar, $5 per developer per month) was built and tested in the sandbox, then
+removed; ADR-023 is superseded. The default install is "ask your agent" or `uvx nexus-mcp-ci setup`.
+
+- [x] `nexus-mcp-ci setup` (8 clients, `--dry-run`, `--uninstall`), `llms-install.md`, plugin on `uvx`
+- [x] Channel files: `mcpb/` (Claude Desktop), `gemini-extension.json`, VS Code and
+  Cursor links, `docker/Dockerfile.stdio`, `action.yml`, `publish.yml` jobs, `scripts/bump_version.py`
+- [x] `smithery.yaml` removed: Smithery shut down its CLI and accounts on 2026-10-31.
+- [x] Glama, awesome-mcp-servers (`punkpeye`) and Context7 listings done by the owner. Cline logo `site/logo-400.png` and GitHub social
+  preview `site/social-preview.png` made.
+- [ ] **Owner:** GitHub Sponsors (optional), then `.github/FUNDING.yml`
+- [ ] **Owner:** social preview upload, GitHub Marketplace tick, Cline issue, Docker catalog PR (see
+  [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md))
+- [x] Verified 2026-11-06: `mcpb pack`, the stdio Docker build and an MCP handshake (8 tools),
+  `setup` for all 8 clients against a fake home.
+- [ ] **Todo:** install and test on the real clients: Gemini CLI, Cursor, VS Code and the Claude
+  Desktop app. None of them is installed on the dev machine.
+- [ ] **Todo:** release 2.3.0 (version files are bumped; merge, then create the GitHub release).
+- [ ] **Todo, after the release:** submit to Cline, Cursor, the Anthropic directory, the Docker
+  catalog, mcp.so and mcpservers.org with the text in [docs/SUBMISSIONS.md](docs/SUBMISSIONS.md).
+  Add Codex, Copilot and Antigravity support first if wanted (formats not checked yet).
+
 ## Phase 1: Scaffold + Port Core Modules — COMPLETE
 - [x] Project structure created
 - [x] pyproject.toml with all dependencies

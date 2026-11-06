@@ -5,9 +5,15 @@
 `scripts/check_docs.py` fails in CI when these disagree with `pyproject.toml`:
 
 - `pyproject.toml` (`version`)
+- `src/nexus_mcp/__init__.py` (`__version__`; the server reports it to MCP clients)
 - `CITATION.cff` (`version`, and set `date-released`)
 - `server.json` (`version`, and the `version` of each package)
 - `plugin/.claude-plugin/plugin.json` (`version`)
+- `plugin/.cursor-plugin/plugin.json` (`version`)
+- `plugin/.mcp.json`, `gemini-extension.json` and `mcpb/pyproject.toml` (the pinned
+  `nexus-mcp-ci==X.Y.Z` launch), `mcpb/manifest.json` and `mcpb/pyproject.toml` (`version`)
+
+`python scripts/bump_version.py X.Y.Z` sets all of these at once, except `date-released`.
 
 Also update by hand:
 
@@ -30,9 +36,14 @@ again. It names the version that the benchmark measured.
 6. Create a GitHub release with the tag `vX.Y.Z`. `publish.yml` then:
    - builds the wheel and the sdist and publishes them to PyPI (trusted publishing);
    - publishes `server.json` to the official MCP Registry (GitHub OIDC). The registry checks
-     that the PyPI README holds `mcp-name: io.github.jaggernaut007/nexus-mcp`.
+     that the PyPI README holds `mcp-name: io.github.jaggernaut007/nexus-mcp`;
+   - builds `nexus-mcp.mcpb` (the Claude Desktop extension) after PyPI has the version, and
+     attaches it to the release;
+   - pushes `ghcr.io/jaggernaut007/nexus-mcp:<version>` and `:latest`.
 7. `pages.yml` deploys the site from `main`.
 8. Check Glama: it rebuilds from the repository. Re-claim the server if the listing is stale.
+9. Do the owner steps in [DISTRIBUTION.md](DISTRIBUTION.md): tick "Publish to Marketplace" for
+   the Action, and open the Cline issue.
 
 ## After the release
 
