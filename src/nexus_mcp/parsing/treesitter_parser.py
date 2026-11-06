@@ -64,6 +64,18 @@ _DECLARATOR_NAMES = (
     "identifier", "field_identifier", "destructor_name", "operator_name", "type_identifier",
 )
 _C_FAMILY = ("c", "cpp")
+
+
+def _inside_function_definition(node) -> bool:
+    """True when a C declarator is part of a function definition, not a prototype."""
+    parent = node.parent
+    while parent is not None:
+        if parent.type == "function_definition":
+            return True
+        if parent.type in ("declaration", "translation_unit", "field_declaration"):
+            return False
+        parent = parent.parent
+    return False
 # A declarator with one of these names is a misparse, not a function: with
 # `FMT_BEGIN_NAMESPACE namespace detail {` the macro looks like a return type and
 # `namespace` like the name of a function.
@@ -341,9 +353,14 @@ class TreeSitterParser(IParser):
                     opened_class = True
 
             elif node_type in function_types and not current_class:
-                sym = self._extract_function_symbol(
-                    node, content, filepath, language, config, parent=None
-                )
+                # C lists `function_declarator` to keep header prototypes. The declarator
+                # inside a definition is the same function again, as a one-line chunk.
+                if node_type == "function_declarator" and _inside_function_definition(node):
+                    sym = None
+                else:
+                    sym = self._extract_function_symbol(
+                        node, content, filepath, language, config, parent=None
+                    )
                 if sym:
                     symbols.append(sym)
 

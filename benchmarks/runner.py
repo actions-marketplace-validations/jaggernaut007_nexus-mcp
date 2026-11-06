@@ -412,6 +412,7 @@ def run_once(
         "total_tokens": trace.total_tokens,
         "fresh_tokens": trace.fresh_tokens,
         "retrieval_tokens_est": trace.retrieval_tokens_est,
+        "result_tokens_by_tool": trace.result_tokens_by_tool,
         "total_cost_usd": trace.total_cost_usd,
         "num_turns": trace.num_turns,
         "duration_ms": trace.duration_ms,
