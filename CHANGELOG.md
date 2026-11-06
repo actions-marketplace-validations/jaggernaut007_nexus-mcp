@@ -34,6 +34,25 @@ All notable changes to this project will be documented in this file.
   function named `namespace` (8 in fmt). Such a declarator now gives no symbol.
 - `find_symbol` puts a constructor after the class of the same name.
 
+### Changed
+
+- **Less fixed text on every turn.** The tool descriptions, the parameter descriptions, the
+  server instructions and the skill body are shorter. They were 3.6k tokens above the Grep
+  condition on each turn, and tool results were the same size in both conditions, so this
+  text explained most of the token gap. No tool, parameter or enum changed.
+
+  Token measure (north star), first-turn context of `claude -p` on Redis, Sonnet, medium
+  effort, no tool call: Grep 12,480; Nexus-MCP 16,105 before and 15,322 after. The gap to
+  Grep falls from 3.6k to 2.8k tokens on each turn.
+
+  Live benchmark, Nexus-MCP only, 6 tasks × 3 reps, same model and effort as the 2.2.2 run
+  (Grep numbers are from the 2.2.2 run). Median tokens per task, 2.2.2 → this branch (Grep):
+  Vite 57,342 → 60,920 (77,004); commons-lang 34,602 → 32,848 (56,271); Redis 70,567 →
+  48,020 (42,290); Prometheus 57,716 → 52,196 (52,662). Correct answers: 71 of 72 → 72 of
+  72. The Redis change includes the new C function nodes and the Vite change is inside the
+  run-to-run noise, so read the four rows as one result: the mean of the four medians falls
+  from 55.1k to 48.5k (Grep 57.1k) and accuracy does not fall.
+
 ### Measured
 
 `nexus-mcp-ci eval` quick tier, 30 questions, seed 7, default model, on pinned public repos.
