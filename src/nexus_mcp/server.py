@@ -283,8 +283,8 @@ def create_server():
     @mcp.tool(annotations=INDEXING, title="Index a project")
     @_audited
     async def index(
-        path: Annotated[str, "Absolute path to the codebase directory (or comma-separated paths)"],
-        paths: Annotated[str, "Additional comma-separated paths to index"] = "",
+        path: Annotated[str, "Absolute path of the project"],
+        paths: Annotated[str, "More paths, comma-separated"] = "",
         ctx: Context = None,
     ) -> dict[str, Any]:
         """Build or refresh the code index. Call it once per project, when `status` says
@@ -329,10 +329,8 @@ def create_server():
     @mcp.tool(annotations=READ_ONLY, title="Search code")
     @_audited
     def search(
-        query: Annotated[
-            str, "What to find, in plain words or code terms. Exact names (parse_config) first"
-        ],
-        limit: Annotated[int, "Max results (default 10)"] = 10,
+        query: Annotated[str, "What to find, in plain words or code terms"],
+        limit: Annotated[int, "Max results"] = 10,
     ) -> dict[str, Any]:
         """Find code by meaning or keyword: "where is...", "how does... work",
         "find the code that...". Returns ranked results with file and line range; the
@@ -350,9 +348,9 @@ def create_server():
     def find_symbol(
         symbol_name: Annotated[
             str,
-            "One name, or several with commas (e.g. 'create_server, TokenBudget, MAX_RETRIES')",
+            "One name, or several with commas",
         ],
-        exact: Annotated[bool, "True for exact match, False for fuzzy substring"] = True,
+        exact: Annotated[bool, "False matches part of a name"] = True,
     ) -> dict[str, Any]:
         """Get the whole code of functions, classes, methods or constants by name ("show
         me create_order"), with file, line range, callers and callees. Use it instead of a
@@ -368,15 +366,14 @@ def create_server():
     @mcp.tool(annotations=READ_ONLY, title="Call graph")
     @_audited
     def graph(
-        symbol_name: Annotated[str, "Name of the function/symbol to trace"],
+        symbol_name: Annotated[str, "Function or symbol to trace"],
         direction: Annotated[
             Literal["callers", "callees"],
-            "'callers' (who calls this) or 'callees' (what this calls)",
+            "'callers' or 'callees'",
         ] = "callers",
         transitive: Annotated[
             bool,
-            "True = everything that depends on the symbol, directly or indirectly. Use "
-            "before changing a shared symbol. Only valid with direction='callers'.",
+            "All direct and indirect dependents. Only with direction='callers'.",
         ] = False,
     ) -> dict[str, Any]:
         """Trace the call graph: who calls a function (direction='callers') or what it
@@ -394,7 +391,7 @@ def create_server():
     @_audited
     def analyze(
         path: Annotated[
-            str, "Optional relative path to filter analysis (subdirectory or file)"
+            str, "Relative directory or file to limit it to"
         ] = ""
     ) -> dict[str, Any]:
         """Review code quality of the project or one `path`: the most complex functions,
@@ -409,8 +406,7 @@ def create_server():
     def _map_impl(
         detail: Annotated[
             Literal["summary", "architecture", "full"],
-            "'summary' (files/languages/quality/top-modules), 'architecture' "
-            "(layers/dependencies/classes/entry points/hub symbols), or 'full' (both)",
+            "'summary', 'architecture' or 'full' (both)",
         ] = "summary",
     ) -> dict[str, Any]:
         """Get an overview of the project: "give me an overview", "how is this
@@ -434,12 +430,12 @@ def create_server():
     def memory(
         action: Annotated[
             Literal["store", "search", "delete"],
-            "'store' saves a note, 'search' finds notes by meaning, 'delete' removes notes",
+            "'store', 'search' or 'delete'",
         ],
-        content: Annotated[str, "The note to store (action='store')"] = "",
-        query: Annotated[str, "What to look for (action='search')"] = "",
-        tags: Annotated[str, "Comma-separated tags (all actions)"] = "",
-        memory_id: Annotated[str, "ID of the note to delete (action='delete')"] = "",
+        content: Annotated[str, "Note to store"] = "",
+        query: Annotated[str, "What to look for"] = "",
+        tags: Annotated[str, "Comma-separated tags"] = "",
+        memory_id: Annotated[str, "Note ID to delete"] = "",
     ) -> dict[str, Any]:
         """Keep and recall project knowledge across sessions: decisions, preferences,
         conventions. Use action='store' when the user says "remember that..." or a
