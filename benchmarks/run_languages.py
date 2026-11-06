@@ -87,10 +87,12 @@ def tier_retrieval(corpus, pinned, out_dir: Path, label: str) -> Dict[str, Any]:
         return cached
     suite = corpus["suite"]
     run_label = f"{label}-{corpus['name']}"
+    env = _child_env(pinned)
+    env["NEXUS_EVAL_WORK_DIR"] = str(out_dir / "retrieval-work")  # never shared with another run
     proc = subprocess.run(
         [str(pinned.python), "-m", "evals.retrieval.run", "--candidates", "bge-small-en",
          "--suites", suite, "--label", run_label],
-        capture_output=True, text=True, env=_child_env(pinned), cwd=str(REPO_ROOT),
+        capture_output=True, text=True, env=env, cwd=str(REPO_ROOT),
     )
     result_file = REPO_ROOT / "evals" / "results" / f"retrieval-{run_label}.json"
     if proc.returncode != 0 or not result_file.exists():

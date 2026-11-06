@@ -170,10 +170,10 @@ suites:
       - {id: disk-cache, query: "store build results on disk between runs", relevant: [cache/PackFileCacheStrategy.js]}
       - {id: mangle, query: "rename exports to short names to make the bundle smaller", relevant: [optimize/MangleExportsPlugin.js]}
       - {id: content-hash, query: "compute content hashes again after the final assets are written", relevant: [optimize/RealContentHashPlugin.js]}
-      - {id: progress, query: "report build progress as a percentage", relevant: [ProgressPlugin.js]}
+      - {id: progress, query: "report build progress as a percentage", relevant: [logging/ProgressPlugin.js]}
       - {id: compiler, query: "the main object that runs the build, emits the assets and holds the hooks", relevant: [Compiler.js]}
       - {id: module-factory, query: "create modules from requests with the loaders and rules that apply", relevant: [module/NormalModuleFactory.js]}
-      - {id: chunk-graph, query: "track which modules belong to which chunks", relevant: [ChunkGraph.js]}
+      - {id: chunk-graph, query: "track which modules belong to which chunks", relevant: [graph/ChunkGraph.js]}
       - {id: federation, query: "expose modules to another build at runtime", relevant: [container/ContainerPlugin.js, container/ModuleFederationPlugin.js]}
       - {id: define, query: "put values such as environment variables into the code at compile time", relevant: [define/DefinePlugin.js, define/EnvironmentPlugin.js]}
       - {id: stable-ids, query: "give modules stable numeric ids made from their names", relevant: [ids/DeterministicModuleIdsPlugin.js]}

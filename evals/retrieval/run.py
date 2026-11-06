@@ -35,7 +35,10 @@ from evals.retrieval import metrics
 EVAL_DIR = Path(__file__).resolve().parent.parent
 REPO_ROOT = EVAL_DIR.parent
 QUERIES_PATH = Path(__file__).resolve().parent / "queries.yaml"
-WORK_DIR = EVAL_DIR / ".claude-eval" / "retrieval"
+# Indexing is incremental, so a folder that two installs share lets the second reuse the
+# chunks of the first. `benchmarks/run_languages.py` sets this variable to a folder of its own
+# for each labelled run.
+WORK_DIR = Path(os.environ.get("NEXUS_EVAL_WORK_DIR") or EVAL_DIR / ".claude-eval" / "retrieval")
 RESULTS_DIR = EVAL_DIR / "results"
 SOURCE_FIRST_OVERFETCH = 4  # the same factor as core_api.SEARCH_OVERFETCH
 MODES = ("bm25", "vector", "hybrid-source-first", "hybrid-exact")

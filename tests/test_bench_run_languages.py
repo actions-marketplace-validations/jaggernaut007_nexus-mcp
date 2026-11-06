@@ -140,6 +140,31 @@ def test_tier_retrieval_a_crashed_run_without_suites_is_a_runtime_error(tmp_path
         rl.tier_retrieval(_corpus(), pinned, tmp_path, "t")
 
 
+def test_tier_retrieval_gives_each_labelled_run_its_own_index_folder(tmp_path, monkeypatch):
+    seen = {}
+    out = tmp_path / "evals" / "results"
+    out.mkdir(parents=True)
+    (out / "retrieval-t-demo.json").write_text(
+        json.dumps([{"candidate": "bge-small-en", "suites": {"demo": {"modes": {}}}}])
+    )
+    monkeypatch.setattr(rl, "REPO_ROOT", tmp_path)
+
+    class _Done:
+        returncode = 0
+        stderr = ""
+
+    def fake_run(cmd, **kw):
+        seen["env"] = kw["env"]
+        return _Done()
+
+    monkeypatch.setattr(rl.subprocess, "run", fake_run)
+    pinned = runner.PinnedNexus(venv=tmp_path / ".venv-x", version="2.2.2", ref="r")
+    work = tmp_path / "out"
+    work.mkdir()
+    rl.tier_retrieval(_corpus(), pinned, work, "t")
+    assert seen["env"]["NEXUS_EVAL_WORK_DIR"] == str(work / "retrieval-work")
+
+
 def test_run_corpus_a_key_error_in_a_tier_is_stored_as_an_error(stubbed, pinned, monkeypatch):
     def broken(*a, **k):
         raise KeyError("suites")
