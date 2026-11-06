@@ -1,0 +1,586 @@
+{
+  "id": "20261106-155137-66ef",
+  "created": "2026-11-06T15:51:37+00:00",
+  "source": {
+    "kind": "path",
+    "label": "vite",
+    "label_public": null,
+    "sha": null
+  },
+  "kept_index": false,
+  "env": {
+    "nexus_mcp_ci": "2.4.0",
+    "python": "3.12.13",
+    "os": "Darwin"
+  },
+  "tier": "quick",
+  "repo": {
+    "files": 429,
+    "chunks": 1868,
+    "size_band": "50-500 files",
+    "languages": [
+      "javascript",
+      "typescript"
+    ],
+    "index_seconds": 137.2
+  },
+  "questions": 30,
+  "seed": 7,
+  "summary": {
+    "grep": {
+      "questions": 30,
+      "hit_at_1": 0.433,
+      "hit_at_3": 0.633,
+      "median_tokens": 16519.5,
+      "median_ms": 215.6
+    },
+    "nexus": {
+      "questions": 30,
+      "hit_at_1": 0.833,
+      "hit_at_3": 0.933,
+      "median_tokens": 1285.5,
+      "median_ms": 35.1
+    }
+  },
+  "by_kind": {
+    "concept": {
+      "grep": {
+        "questions": 10,
+        "hit_at_1": 0.6,
+        "hit_at_3": 0.8,
+        "median_tokens": 13908.0,
+        "median_ms": 586.6
+      },
+      "nexus": {
+        "questions": 10,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "median_tokens": 1476.5,
+        "median_ms": 35.2
+      }
+    },
+    "described": {
+      "grep": {
+        "questions": 10,
+        "hit_at_1": 0.1,
+        "hit_at_3": 0.2,
+        "median_tokens": 72426.0,
+        "median_ms": 210.2
+      },
+      "nexus": {
+        "questions": 10,
+        "hit_at_1": 0.5,
+        "hit_at_3": 0.8,
+        "median_tokens": 1303.0,
+        "median_ms": 32.0
+      }
+    },
+    "lookup": {
+      "grep": {
+        "questions": 10,
+        "hit_at_1": 0.6,
+        "hit_at_3": 0.9,
+        "median_tokens": 10233.5,
+        "median_ms": 114.5
+      },
+      "nexus": {
+        "questions": 10,
+        "hit_at_1": 1.0,
+        "hit_at_3": 1.0,
+        "median_tokens": 1023.0,
+        "median_ms": 37.7
+      }
+    }
+  },
+  "verdict": {
+    "label": "Strong fit",
+    "token_saving": 0.922,
+    "hit3_gain": 0.3,
+    "reasons": [
+      "Tokens to reach the right file: Nexus-MCP 1286, Grep and Read 16520 (92% fewer with Nexus-MCP).",
+      "Right file in the top 3: 93% against 63%."
+    ]
+  },
+  "results": [
+    {
+      "id": "concept-BundledDev.triggerLazyBundling",
+      "kind": "concept",
+      "grep": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 12333,
+        "ms": 671.8
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1277,
+        "ms": 681.0
+      }
+    },
+    {
+      "id": "concept-resolvePostcssConfig",
+      "kind": "concept",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 71336,
+        "ms": 258.3
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1539,
+        "ms": 35.7
+      }
+    },
+    {
+      "id": "concept-isEntirelyImport",
+      "kind": "concept",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 14800,
+        "ms": 963.7
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1660,
+        "ms": 35.3
+      }
+    },
+    {
+      "id": "concept-matchImportsToPreloadMarkers",
+      "kind": "concept",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 8892,
+        "ms": 814.5
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1419,
+        "ms": 34.3
+      }
+    },
+    {
+      "id": "concept-minifyCSS",
+      "kind": "concept",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 16791,
+        "ms": 631.1
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1892,
+        "ms": 31.5
+      }
+    },
+    {
+      "id": "concept-watchPackageDataPlugin",
+      "kind": "concept",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 76564,
+        "ms": 435.8
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1487,
+        "ms": 30.7
+      }
+    },
+    {
+      "id": "concept-handlePrunedModules",
+      "kind": "concept",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 9110,
+        "ms": 534.9
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1133,
+        "ms": 339.6
+      }
+    },
+    {
+      "id": "concept-renderAssetUrlInJS",
+      "kind": "concept",
+      "grep": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 13016,
+        "ms": 244.7
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1512,
+        "ms": 35.2
+      }
+    },
+    {
+      "id": "concept-resolvePreviewOptions",
+      "kind": "concept",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 2939,
+        "ms": 542.1
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1266,
+        "ms": 46.2
+      }
+    },
+    {
+      "id": "concept-getRenderedModule",
+      "kind": "concept",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 16775,
+        "ms": 775.8
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1466,
+        "ms": 34.1
+      }
+    },
+    {
+      "id": "described-setFnpdCache",
+      "kind": "described",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 3363,
+        "ms": 228.0
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1255,
+        "ms": 32.2
+      }
+    },
+    {
+      "id": "described-EnvironmentPluginContainer._getPluginContext",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 87211,
+        "ms": 329.3
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 780,
+        "ms": 30.4
+      }
+    },
+    {
+      "id": "described-urlToBuiltUrl",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 60917,
+        "ms": 143.6
+      },
+      "nexus": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 18558,
+        "ms": 58.6
+      }
+    },
+    {
+      "id": "described-hasCorrectCase",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 71719,
+        "ms": 162.9
+      },
+      "nexus": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 638,
+        "ms": 31.4
+      }
+    },
+    {
+      "id": "described-resolvePlugins",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 82681,
+        "ms": 111.1
+      },
+      "nexus": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 20094,
+        "ms": 35.0
+      }
+    },
+    {
+      "id": "described-UserConfigExport",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 74309,
+        "ms": 192.5
+      },
+      "nexus": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 1987,
+        "ms": 28.8
+      }
+    },
+    {
+      "id": "described-generateWorkerEntryUrlExpr",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 78303,
+        "ms": 349.6
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1348,
+        "ms": 31.9
+      }
+    },
+    {
+      "id": "described-splitWorkerRequest",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 72768,
+        "ms": 240.5
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1435,
+        "ms": 32.8
+      }
+    },
+    {
+      "id": "described-getCssResolversKeys",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 18861,
+        "ms": 317.9
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1258,
+        "ms": 30.4
+      }
+    },
+    {
+      "id": "described-getShortName",
+      "kind": "described",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 72084,
+        "ms": 191.1
+      },
+      "nexus": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 654,
+        "ms": 33.8
+      }
+    },
+    {
+      "id": "lookup-setFnpdCache",
+      "kind": "lookup",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 2811,
+        "ms": 117.2
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 798,
+        "ms": 39.0
+      }
+    },
+    {
+      "id": "lookup-EnvironmentPluginContainer._getPluginContext",
+      "kind": "lookup",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 10090,
+        "ms": 203.2
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1172,
+        "ms": 46.2
+      }
+    },
+    {
+      "id": "lookup-urlToBuiltUrl",
+      "kind": "lookup",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 6393,
+        "ms": 110.7
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 880,
+        "ms": 35.6
+      }
+    },
+    {
+      "id": "lookup-Queue",
+      "kind": "lookup",
+      "grep": {
+        "hit1": false,
+        "hit3": false,
+        "tokens": 10377,
+        "ms": 101.0
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 907,
+        "ms": 32.3
+      }
+    },
+    {
+      "id": "lookup-hasCorrectCase",
+      "kind": "lookup",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 14672,
+        "ms": 113.7
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 671,
+        "ms": 34.1
+      }
+    },
+    {
+      "id": "lookup-resolvePlugins",
+      "kind": "lookup",
+      "grep": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 17508,
+        "ms": 115.3
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1912,
+        "ms": 38.6
+      }
+    },
+    {
+      "id": "lookup-UserConfigExport",
+      "kind": "lookup",
+      "grep": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 28656,
+        "ms": 107.0
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 686,
+        "ms": 39.3
+      }
+    },
+    {
+      "id": "lookup-generateWorkerEntryUrlExpr",
+      "kind": "lookup",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 7058,
+        "ms": 117.4
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1676,
+        "ms": 36.8
+      }
+    },
+    {
+      "id": "lookup-splitWorkerRequest",
+      "kind": "lookup",
+      "grep": {
+        "hit1": false,
+        "hit3": true,
+        "tokens": 7752,
+        "ms": 111.9
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1294,
+        "ms": 43.7
+      }
+    },
+    {
+      "id": "lookup-getCssResolversKeys",
+      "kind": "lookup",
+      "grep": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 16264,
+        "ms": 117.8
+      },
+      "nexus": {
+        "hit1": true,
+        "hit3": true,
+        "tokens": 1139,
+        "ms": 36.4
+      }
+    }
+  ]
+}

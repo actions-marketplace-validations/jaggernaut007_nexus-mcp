@@ -67,6 +67,31 @@ def test_build_stops_for_a_language_without_a_live_run(results):
         to_published.build(["Java"], "before", None, "2.2.2", "")
 
 
+def test_build_after_for_uses_the_run_of_that_language(results):
+    results("before", {"commons-lang": _row()})
+    results("final", {"commons-lang": _row(hit=0.9)})
+    results("v2.4.0", {"commons-lang": _row(hit=0.95)})
+    (entry,) = to_published.build(["Java"], "before", "final", "2.2.2", "pre",
+                                  {"Java": "v2.4.0"})
+    assert entry["after"]["quick_tier"]["nexus"]["hit_at_1"] == 0.95
+    assert entry["after"]["nexus_version"] == "2.4.0"
+
+
+def test_build_publishes_the_after_run_alone_without_a_before_live_run(results):
+    results("before", {"commons-lang": _row(live=False)})
+    results("v2.4.0", {"commons-lang": _row(hit=0.95)})
+    (entry,) = to_published.build(["Java"], "before", None, "2.2.2", "",
+                                  {"Java": "v2.4.0"})
+    assert "after" not in entry
+    assert entry["before"]["nexus_version"] == "2.4.0"
+    assert entry["before"]["live"]["nexus"]["correct"] == 6
+
+
+def test_label_version_reads_a_version_label():
+    assert to_published.label_version("v2.4.0", "x") == "2.4.0"
+    assert to_published.label_version("final", "x") == "x"
+
+
 def test_build_leaves_out_languages_that_are_not_named(results):
     php = dict(_row(language="PHP"), name="laravel")
     results("before", {"commons-lang": _row(), "laravel": php})

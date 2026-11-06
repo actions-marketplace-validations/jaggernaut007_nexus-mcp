@@ -11,7 +11,7 @@ numbers only from `benchmarks/published/results.json`.
 | `languages-final` | The token cuts (`11cfccc`): free tiers, and a live A/B stopped after 5 of 8 corpora |
 | `live-opt2` | Shorter tool text (`e5a9d9a`): the Nexus side of the live tier on 4 corpora |
 | `languages-v2.3.0` | The 2.4.0 code before it was renumbered (`0de5088`): free tiers for Python, TypeScript and JavaScript; stopped before the live tier |
-| `languages-v2.4.0` | 2.4.0: Python, TypeScript and JavaScript only |
+| `languages-v2.4.0` | 2.4.0: every tier for Python, TypeScript and JavaScript (Flask free tiers, Django live, Vite, webpack). The laptop slept during some webpack runs, so their `duration_ms` is long; their tokens are not affected |
 | `setup` | One file per pinned install: version, commit and install time |
 
 Each folder has:

@@ -36,6 +36,16 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **5 tools by default.** The server shows `index`, `search`, `find_symbol`, `graph` and
+  `map`. Set `NEXUS_EXTRA_TOOLS` to `status`, `analyze`, `memory` (comma-separated) or `all`
+  to show the others. Agents almost never called these three in the live benchmark, and
+  their descriptions cost about 750 tokens on each turn. The server instructions and the
+  skill no longer name them when they are hidden.
+- **Error, warning and exception classes rank after other source.** Their messages repeat
+  the words of a feature, so on webpack `*Warning.js` files ranked above the plugin that
+  does the work. A query that names an error keeps them in place. Retrieval hit@1, before
+  → after: `shop_repo` 0.50 → 0.62; `nexus_mcp` 0.71, Flask 0.68, Vite 0.47 and webpack
+  0.27 do not change.
 - **Less fixed text on every turn.** The tool descriptions, the parameter descriptions, the
   server instructions and the skill body are shorter. They were 3.6k tokens above the Grep
   condition on each turn, and tool results were the same size in both conditions, so this
@@ -78,6 +88,21 @@ around "no loss". `pytest` (1366 passed) and `ruff check .` are green.
 
 Token measure (north star): the change adds no tokens per query. Median tokens of the
 quick tier did not change on hiredis (755.5) or fmt (868.0).
+
+Live benchmark of 2.4.0 against 2.2.2 (`0430f01`), `claude -p`, Sonnet, medium effort,
+reduced isolation, 6 tasks × 3 reps per project. Median tokens per task, Nexus-MCP / Grep
+and Read, and correct answers:
+
+| Project | 2.2.2 | 2.4.0 | Correct (Nexus-MCP / Grep), 2.2.2 → 2.4.0 |
+|---|---|---|---|
+| Django (Python) | 69,144 / 59,562 | 54,038 / 47,846 | 6 / 5 → 5 / 5 of 6 |
+| Vite (TypeScript) | 57,268 / 71,166 | 52,411 / 69,790 | 6 / 6 → 6 / 6 of 6 |
+| webpack (JavaScript) | no run | 74,638 / 100,320 | 6 / 6 of 6 |
+
+Nexus-MCP uses 25% fewer tokens than Grep on Vite and 26% fewer on webpack. On Django it
+uses 22% fewer tokens than 2.2.2, but 13% more than Grep. The Grep side of Django also fell
+by 12k tokens between the two runs, so part of the change is run-to-run noise. The three
+projects cost $7.24 in all. Run logs are in `benchmarks/runs/languages-v2.4.0`.
 
 ## [2.2.2] - 2026-11-05
 

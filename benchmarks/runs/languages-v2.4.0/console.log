@@ -1,0 +1,299 @@
+step: install
+Using CPython 3.12.13
+Creating virtual environment at: benchmarks/.venv-v2.4.0
+Activate with: source benchmarks/.venv-v2.4.0/bin/activate
+Using Python 3.12.13 environment at: benchmarks/.venv-v2.4.0
+   Updating file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench (21b4e106c20e5832a10c00721b0c7e527cc63156)
+    Updated file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench (21b4e106c20e5832a10c00721b0c7e527cc63156)
+Resolved 110 packages in 1.29s
+Downloading transformers (12.4MiB)
+   Building nexus-mcp-ci @ git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156
+      Built nexus-mcp-ci @ git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156
+ Downloaded transformers
+Prepared 2 packages in 877ms
+Installed 110 packages in 1.01s
+ + aiofile==3.12.3
+ + annotated-doc==0.0.5
+ + annotated-types==0.8.0
+ + anyio==4.16.0
+ + ast-grep-py==0.51.1
+ + attrs==26.1.0
+ + authlib==1.9.5
+ + beartype==0.23.1
+ + cachetools==7.3.0
+ + caio==0.12.10
+ + certifi==2026.10.23
+ + cffi==2.1.1
+ + click==8.5.0
+ + cloudpickle==3.1.2
+ + coloredlogs==15.0.1
+ + cryptography==50.0.2
+ + cyclopts==5.3.3
+ + deprecation==2.1.0
+ + dnspython==2.9.2
+ + docstring-parser==0.18.0
+ + email-validator==2.3.0
+ + exceptiongroup==1.3.1
+ + fastmcp==4.1.6
+ + fastmcp-slim==4.1.6
+ + filelock==4.2.9
+ + flatbuffers==25.12.19
+ + fsspec==2026.9.0
+ + griffelib==2.4.1
+ + h11==0.16.0
+ + hf-xet==1.8.0
+ + httpcore2==2.16.0
+ + httpx2==2.16.0
+ + huggingface-hub==2.4.0
+ + humanfriendly==10.0
+ + idna==3.20
+ + jinja2==3.1.6
+ + joblib==1.6.0
+ + joserfc==1.8.0
+ + jsonref==1.1.0
+ + jsonschema==4.26.0
+ + jsonschema-path==0.5.0
+ + jsonschema-specifications==2025.9.1
+ + lance-namespace==0.13.0
+ + lance-namespace-urllib3-client==0.13.0
+ + lancedb==0.41.0
+ + markdown-it-py==4.2.0
+ + markupsafe==3.0.4
+ + mcp==2.3.0
+ + mcp-types==2.3.0
+ + mdurl==0.1.2
+ + mpmath==1.3.0
+ + narwhals==2.28.0
+ + networkx==3.7
+ + nexus-mcp-ci==2.4.0 (from git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156)
+ + numpy==2.5.4
+ + onnxruntime==1.23.2
+ + openapi-pydantic==0.6.0
+ + opentelemetry-api==1.45.2
+ + optimum==2.3.0
+ + packaging==26.3
+ + pathable==0.6.0
+ + pathspec==1.1.1
+ + platformdirs==4.14.5
+ + protobuf==7.36.2
+ + py-key-value-aio==0.4.6
+ + pyarrow==26.0.1
+ + pycparser==3.12
+ + pydantic==2.14.3
+ + pydantic-core==2.50.4
+ + pydantic-settings==2.16.2
+ + pygments==2.21.0
+ + pyjwt==2.15.1
+ + pyperclip==1.11.0
+ + python-dateutil==4.0.0
+ + python-dotenv==1.2.4
+ + python-multipart==0.0.33
+ + pyyaml==6.0.3
+ + referencing==0.37.0
+ + regex==2026.9.29
+ + rich==15.0.0
+ + rich-rst==2.2.0
+ + rpds-py==2026.9.1
+ + rustworkx==0.18.1
+ + safetensors==0.8.0
+ + scikit-learn==1.9.1
+ + scipy==1.18.1
+ + sentence-transformers==6.2.0
+ + setuptools==84.2.1
+ + shellingham==1.5.4
+ + sse-starlette==3.6.0
+ + starlette==1.10.0
+ + sympy==1.14.0
+ + threadpoolctl==3.8.0
+ + tokenizers==0.23.3
+ + torch==2.15.0
+ + tqdm==4.70.1
+ + transformers==5.22.2
+ + tree-sitter==0.21.3
+ + tree-sitter-languages==1.10.2
+ + truststore==0.10.5
+ + typer==0.28.0
+ + typing-extensions==4.16.0
+ + typing-inspection==0.4.5
+ + tzdata==2026.6
+ + uncalled-for==0.6.0
+ + urllib3==2.8.0
+ + uvicorn==0.54.0
+ + watchdog==7.1.0
+ + watchfiles==1.3.0
+ + websockets==17.4
+[install] nexus-mcp-ci 2.4.0 from 21b4e106c20e5832a10c00721b0c7e527cc63156 in /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0
+step: free tiers
+[corpora] flask already at d73fa1cdcb
+[index] flask with nexus-mcp-ci 2.4.0
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+W1106 15:47:09.761000 80427 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+[setup] flask indexed in 128.4s
+[flask] done: quick, retrieval, graph
+[corpora] django already at 318a316a4c
+[django] done: 
+[corpora] vite already at 483512809b
+[index] vite with nexus-mcp-ci 2.4.0
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+W1106 15:54:07.389000 82333 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+[setup] vite indexed in 137.4s
+[vite] done: quick, retrieval, graph
+[corpora] webpack already at f6366b0bc2
+[index] webpack with nexus-mcp-ci 2.4.0
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+W1106 16:13:25.797000 83018 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+[setup] webpack indexed in 540.1s
+[webpack] done: quick, retrieval, graph
+Wrote /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0.json
+step: live tier
+[corpora] flask already at d73fa1cdcb
+[flask] done: 
+[corpora] django already at 318a316a4c
+[index] django with nexus-mcp-ci 2.4.0
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+W1106 16:22:29.688000 83359 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+  warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
+[setup] django indexed in 3064.5s
+[1/36] dj-concept-signal-dispatch / baseline / rep 1
+    warm-up call for baseline
+[2/36] dj-concept-signal-dispatch / nexus / rep 1
+    warm-up call for nexus
+[3/36] dj-concept-field-validation / nexus / rep 1
+[4/36] dj-concept-field-validation / baseline / rep 1
+[5/36] dj-impact-sqlcompiler-as-sql / baseline / rep 1
+[6/36] dj-impact-sqlcompiler-as-sql / nexus / rep 1
+[7/36] dj-impact-field-validate / nexus / rep 1
+[8/36] dj-impact-field-validate / baseline / rep 1
+[9/36] dj-arch-request-to-query / baseline / rep 1
+[10/36] dj-arch-request-to-query / nexus / rep 1
+[11/36] dj-needle-charfield-class / nexus / rep 1
+[12/36] dj-needle-charfield-class / baseline / rep 1
+[13/36] dj-concept-signal-dispatch / nexus / rep 2
+[14/36] dj-concept-signal-dispatch / baseline / rep 2
+[15/36] dj-concept-field-validation / baseline / rep 2
+[16/36] dj-concept-field-validation / nexus / rep 2
+[17/36] dj-impact-sqlcompiler-as-sql / nexus / rep 2
+[18/36] dj-impact-sqlcompiler-as-sql / baseline / rep 2
+[19/36] dj-impact-field-validate / baseline / rep 2
+[20/36] dj-impact-field-validate / nexus / rep 2
+[21/36] dj-arch-request-to-query / nexus / rep 2
+[22/36] dj-arch-request-to-query / baseline / rep 2
+[23/36] dj-needle-charfield-class / baseline / rep 2
+[24/36] dj-needle-charfield-class / nexus / rep 2
+[25/36] dj-concept-signal-dispatch / baseline / rep 3
+[26/36] dj-concept-signal-dispatch / nexus / rep 3
+[27/36] dj-concept-field-validation / nexus / rep 3
+[28/36] dj-concept-field-validation / baseline / rep 3
+[29/36] dj-impact-sqlcompiler-as-sql / baseline / rep 3
+[30/36] dj-impact-sqlcompiler-as-sql / nexus / rep 3
+[31/36] dj-impact-field-validate / nexus / rep 3
+[32/36] dj-impact-field-validate / baseline / rep 3
+[33/36] dj-arch-request-to-query / baseline / rep 3
+[34/36] dj-arch-request-to-query / nexus / rep 3
+[35/36] dj-needle-charfield-class / nexus / rep 3
+[36/36] dj-needle-charfield-class / baseline / rep 3
+Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/django-live.jsonl
+[django] done: live
+[corpora] vite already at 483512809b
+[1/36] vt-concept-hmr / baseline / rep 1
+    warm-up call for baseline
+[2/36] vt-concept-hmr / nexus / rep 1
+    warm-up call for nexus
+[3/36] vt-concept-prebundle / nexus / rep 1
+[4/36] vt-concept-prebundle / baseline / rep 1
+[5/36] vt-impact-transform-request / baseline / rep 1
+[6/36] vt-impact-transform-request / nexus / rep 1
+[7/36] vt-impact-create-server / nexus / rep 1
+[8/36] vt-impact-create-server / baseline / rep 1
+[9/36] vt-arch-request-path / baseline / rep 1
+[10/36] vt-arch-request-path / nexus / rep 1
+[11/36] vt-needle-createserver-line / nexus / rep 1
+[12/36] vt-needle-createserver-line / baseline / rep 1
+[13/36] vt-concept-hmr / nexus / rep 2
+[14/36] vt-concept-hmr / baseline / rep 2
+[15/36] vt-concept-prebundle / baseline / rep 2
+[16/36] vt-concept-prebundle / nexus / rep 2
+[17/36] vt-impact-transform-request / nexus / rep 2
+[18/36] vt-impact-transform-request / baseline / rep 2
+[19/36] vt-impact-create-server / baseline / rep 2
+[20/36] vt-impact-create-server / nexus / rep 2
+[21/36] vt-arch-request-path / nexus / rep 2
+[22/36] vt-arch-request-path / baseline / rep 2
+[23/36] vt-needle-createserver-line / baseline / rep 2
+[24/36] vt-needle-createserver-line / nexus / rep 2
+[25/36] vt-concept-hmr / baseline / rep 3
+[26/36] vt-concept-hmr / nexus / rep 3
+[27/36] vt-concept-prebundle / nexus / rep 3
+[28/36] vt-concept-prebundle / baseline / rep 3
+[29/36] vt-impact-transform-request / baseline / rep 3
+[30/36] vt-impact-transform-request / nexus / rep 3
+[31/36] vt-impact-create-server / nexus / rep 3
+[32/36] vt-impact-create-server / baseline / rep 3
+[33/36] vt-arch-request-path / baseline / rep 3
+[34/36] vt-arch-request-path / nexus / rep 3
+[35/36] vt-needle-createserver-line / nexus / rep 3
+[36/36] vt-needle-createserver-line / baseline / rep 3
+Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/vite-live.jsonl
+[vite] done: live
+[corpora] webpack already at f6366b0bc2
+[1/36] wp-concept-split-chunks / baseline / rep 1
+    warm-up call for baseline
+[2/36] wp-concept-split-chunks / nexus / rep 1
+    warm-up call for nexus
+[3/36] wp-concept-pack-cache / nexus / rep 1
+[4/36] wp-concept-pack-cache / baseline / rep 1
+    warm-up call for baseline
+[5/36] wp-impact-add-entry / baseline / rep 1
+[6/36] wp-impact-add-entry / nexus / rep 1
+    warm-up call for nexus
+[7/36] wp-impact-handle-module-creation / nexus / rep 1
+[8/36] wp-impact-handle-module-creation / baseline / rep 1
+[9/36] wp-arch-build / baseline / rep 1
+[10/36] wp-arch-build / nexus / rep 1
+[11/36] wp-needle-modulegraph-line / nexus / rep 1
+[12/36] wp-needle-modulegraph-line / baseline / rep 1
+[13/36] wp-concept-split-chunks / nexus / rep 2
+[14/36] wp-concept-split-chunks / baseline / rep 2
+    warm-up call for baseline
+[15/36] wp-concept-pack-cache / baseline / rep 2
+[16/36] wp-concept-pack-cache / nexus / rep 2
+    warm-up call for nexus
+[17/36] wp-impact-add-entry / nexus / rep 2
+[18/36] wp-impact-add-entry / baseline / rep 2
+[19/36] wp-impact-handle-module-creation / baseline / rep 2
+[20/36] wp-impact-handle-module-creation / nexus / rep 2
+[21/36] wp-arch-build / nexus / rep 2
+[22/36] wp-arch-build / baseline / rep 2
+[23/36] wp-needle-modulegraph-line / baseline / rep 2
+[24/36] wp-needle-modulegraph-line / nexus / rep 2
+[25/36] wp-concept-split-chunks / baseline / rep 3
+[26/36] wp-concept-split-chunks / nexus / rep 3
+[27/36] wp-concept-pack-cache / nexus / rep 3
+[28/36] wp-concept-pack-cache / baseline / rep 3
+[29/36] wp-impact-add-entry / baseline / rep 3
+[30/36] wp-impact-add-entry / nexus / rep 3
+[31/36] wp-impact-handle-module-creation / nexus / rep 3
+[32/36] wp-impact-handle-module-creation / baseline / rep 3
+[33/36] wp-arch-build / baseline / rep 3
+[34/36] wp-arch-build / nexus / rep 3
+[35/36] wp-needle-modulegraph-line / nexus / rep 3
+[36/36] wp-needle-modulegraph-line / baseline / rep 3
+Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/webpack-live.jsonl
+[webpack] done: live
+Wrote /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0.json
+live exit 0

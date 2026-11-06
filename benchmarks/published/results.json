@@ -348,9 +348,9 @@
         }
       },
       "after": {
-        "nexus_version": "2.4.0 pre-release (11cfccc)",
+        "nexus_version": "2.4.0",
         "date": "2026-11-06",
-        "index_seconds": 112.9,
+        "index_seconds": 137.2,
         "quick_tier": {
           "grep": {
             "hit_at_1": 0.433,
@@ -369,14 +369,59 @@
         },
         "live": {
           "baseline": {
-            "median_tokens": 70482,
+            "median_tokens": 69790,
             "cost_usd": 0.059,
             "correct": 6,
             "of": 6
           },
           "nexus": {
-            "median_tokens": 54986,
-            "cost_usd": 0.047,
+            "median_tokens": 52411,
+            "cost_usd": 0.046,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
+    },
+    {
+      "language": "JavaScript",
+      "project": "webpack/webpack",
+      "url": "https://github.com/webpack/webpack",
+      "pin": "f6366b0bc2afbf1f5494f33e81f2bd0588b802cc",
+      "files": 822,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.4.0",
+        "date": "2026-11-06",
+        "index_seconds": 530.3,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.367,
+            "median_tokens": 25634.0
+          },
+          "nexus": {
+            "hit_at_1": 0.667,
+            "median_tokens": 1251.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.2,
+        "graph": {
+          "fn_nodes": 5030,
+          "calls_per_fn": 1.38
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 100320,
+            "cost_usd": 0.077,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 74638,
+            "cost_usd": 0.068,
             "correct": 6,
             "of": 6
           }

@@ -5,7 +5,10 @@ so a language that does not win is not shown.
 
 Usage:
     python -m benchmarks.to_published --before before --after final \
-        --languages TypeScript,Java,C++ [--after-version "2.4.0 pre-release (11cfccc)"]
+        --languages TypeScript,Java,C++ [--after-version "2.4.0 pre-release (11cfccc)"] \
+        [--after-for TypeScript=v2.4.0]
+
+A language with no live run in `--before` gets its after run as its only published run.
 
 Then run `python scripts/publish_results.py` to rewrite the README, the site and llms.txt.
 """
@@ -96,26 +99,42 @@ def language_entry(
     return entry
 
 
+def label_version(label: str, default: str) -> str:
+    """The Nexus-MCP version of a run label: "v2.4.0" is "2.4.0", else the default."""
+    return label[1:] if label[:2] in {f"v{d}" for d in "0123456789"} else default
+
+
 def build(languages: List[str], before: str, after: Optional[str],
-          before_version: str, after_version: str) -> List[Dict[str, Any]]:
-    """Published entries for each named language, in the order given."""
+          before_version: str, after_version: str,
+          after_for: Optional[Dict[str, str]] = None) -> List[Dict[str, Any]]:
+    """Published entries for each named language, in the order given.
+
+    `after_for` maps a language to the label of its own "after" run, in place of `after`.
+    """
+    after_for = after_for or {}
     b_rows = load_rows(before)
-    a_rows = load_rows(after) if after else {}
     out = []
     for lang in languages:
+        a_label = after_for.get(lang, after)
+        a_rows = load_rows(a_label) if a_label else {}
+        a_version = label_version(a_label, after_version) if a_label in after_for.values() \
+            else after_version
         names = [n for n, r in b_rows.items() if r["language"] == lang and _ok(r.get("live"))]
         if not names:
             names = [n for n, r in a_rows.items() if r["language"] == lang and _ok(r.get("live"))]
         if not names:
             sys.exit(f"No corpus with a live run for {lang}")
         name = names[0]
-        after_row = a_rows.get(name)
+        before_row, after_row = b_rows.get(name), a_rows.get(name)
         if after_row and not _ok(after_row.get("live")):
             # An after run without the live tier would show "x → –" in the live columns.
             # Publish the complete before run only.
             after_row = None
-        out.append(language_entry(name, b_rows.get(name, a_rows.get(name)), after_row,
-                                  before_version, after_version))
+        if before_row is None or not _ok(before_row.get("live")):
+            # No before run with the live tier: publish the after run as the only run.
+            out.append(language_entry(name, after_row, None, a_version, ""))
+            continue
+        out.append(language_entry(name, before_row, after_row, before_version, a_version))
     return out
 
 
@@ -126,9 +145,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     p.add_argument("--languages", required=True, help="Comma-separated, in display order")
     p.add_argument("--before-version", default="2.2.2")
     p.add_argument("--after-version", default="")
+    p.add_argument("--after-for", action="append", default=[], metavar="LANGUAGE=LABEL",
+                   help="Use another after run for one language, such as TypeScript=v2.4.0")
     args = p.parse_args(argv)
+    after_for = dict(s.split("=", 1) for s in args.after_for)
     langs = build([s.strip() for s in args.languages.split(",")], args.before, args.after,
-                  args.before_version, args.after_version or args.after or "")
+                  args.before_version, args.after_version or args.after or "", after_for)
     data = json.loads(PUBLISHED.read_text())
     data["languages"] = langs
     PUBLISHED.write_text(json.dumps(data, indent=2) + "\n")
