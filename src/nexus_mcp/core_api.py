@@ -979,8 +979,8 @@ def search(
             response["warning"] = search_warning
         if len(results) > COMPACT_TOP_RESULTS:
             response["hint"] = (
-                f"The first {COMPACT_TOP_RESULTS} hold the whole code; the others only the "
-                "signature. Get more code with one find_symbol call, not a read or grep."
+                f"The first {COMPACT_TOP_RESULTS} hold the whole code; the others the "
+                "signature only. Get more code with one find_symbol call, not a read or grep."
             )
         return response
 
