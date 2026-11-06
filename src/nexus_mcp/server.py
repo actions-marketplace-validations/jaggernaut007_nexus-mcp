@@ -49,6 +49,25 @@ Use your built-in grep or file read when you know the exact file or string. Resu
 be a little old: read the file before you edit it.
 """
 
+# The instruction line that names each optional tool. It is removed when the tool is off.
+_OPTIONAL_TOOL_LINES = {
+    "analyze": '- "most complex code", "dead code" -> `analyze`\n',
+    "memory": "- a decision or note to keep across sessions -> `memory`\n",
+}
+
+
+def instructions_for(hidden_tools: set[str]) -> str:
+    """Return SERVER_INSTRUCTIONS without the lines for tools that the server hides."""
+    text = SERVER_INSTRUCTIONS
+    for name in hidden_tools:
+        text = text.replace(_OPTIONAL_TOOL_LINES.get(name, ""), "")
+    if "memory" in hidden_tools:
+        text = text.replace(
+            ", how the project is laid out, and what was decided earlier",
+            ", and how the project is laid out",
+        )
+    return text
+
 
 class JsonFormatter(logging.Formatter):
     """JSON structured log formatter for production use."""
@@ -76,13 +95,19 @@ def create_server():
     except Exception:
         _nexus_version = "unknown"
 
-    mcp = FastMCP("Nexus-MCP", instructions=SERVER_INSTRUCTIONS, version=_nexus_version)
-
-    # --- Middleware: permissions, rate limiting, audit ---
-
+    from nexus_mcp.config import OPTIONAL_TOOLS
     from nexus_mcp.config import get_settings as _get_settings
 
     _settings = _get_settings()
+    _hidden_tools = set(OPTIONAL_TOOLS) - _settings.enabled_optional_tools()
+
+    mcp = FastMCP(
+        "Nexus-MCP",
+        instructions=instructions_for(_hidden_tools),
+        version=_nexus_version,
+    )
+
+    # --- Middleware: permissions, rate limiting, audit ---
 
     from nexus_mcp.middleware.audit import AuditLogger
 
@@ -287,8 +312,8 @@ def create_server():
         paths: Annotated[str, "More paths, comma-separated"] = "",
         ctx: Context = None,
     ) -> dict[str, Any]:
-        """Build or refresh the code index. Call it once per project, when `status` says
-        `indexed` is false or a tool says "No codebase indexed". Pass an absolute path,
+        """Build or refresh the code index. Call it once per project, when a tool says
+        "No codebase indexed". Pass an absolute path,
         or comma-separated paths for a monorepo. A file watcher then keeps the index
         fresh. Large repositories take a while."""
         guard_err = _guard("index")
@@ -456,6 +481,11 @@ def create_server():
         return core_api.memory(
             action, content=content, query=query, tags=tags, memory_id=memory_id
         )
+
+    # Each tool description is sent on every turn. The optional tools stay off unless
+    # NEXUS_EXTRA_TOOLS names them (config.OPTIONAL_TOOLS gives the reason).
+    if _hidden_tools:
+        mcp.disable(names=_hidden_tools, components={"tool"})
 
     return mcp
 
