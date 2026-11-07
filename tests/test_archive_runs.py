@@ -64,6 +64,16 @@ def test_archive_stops_on_other_credential_shapes(tmp_path, line):
         archive_runs.archive(tmp_path / "none", tmp_path / "runs", {"x": str(log)})
 
 
+def test_archive_copies_nothing_when_a_later_file_holds_a_secret(tmp_path):
+    results, runs = tmp_path / "results", tmp_path / "runs"
+    _write(results / "languages-a" / "vite-live.jsonl")  # clean, and first in order
+    log = tmp_path / "run.log"
+    log.write_text("+ GH_TOKEN=" + "abcdef0123456789\n")
+    with pytest.raises(SystemExit):
+        archive_runs.archive(results, runs, {"x": str(log)})
+    assert not runs.exists()
+
+
 def test_archive_keeps_a_redacted_line(tmp_path):
     log = tmp_path / "run.log"
     log.write_text("+ CLAUDE_CODE_OAUTH_TOKEN=[REDACTED]\nmax_tokens=4096\n")

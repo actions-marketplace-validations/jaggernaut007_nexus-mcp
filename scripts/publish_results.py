@@ -158,6 +158,12 @@ def language_cell(
     return first if second == first else f"{first}{arrow}{second}"
 
 
+def file_count(entry: Dict) -> str:
+    """"1,234 files", or "files not counted" when the quick tier did not run or crashed."""
+    files = entry.get("files")
+    return f"{files:,} files" if isinstance(files, int) else "files not counted"
+
+
 def language_setup(entry: Dict) -> str:
     """The agent setup of the live runs, such as "sonnet, medium effort, bare"."""
     effort = f"{entry['effort']} effort" if entry.get("effort") else None
@@ -180,7 +186,7 @@ def languages_md(langs: List[Dict]) -> List[str]:
         name = f"[{e['project']}]({e['url']})" if e.get("url") else e["project"]
         cells = [language_cell(e, g, c) for _, g, c in LANGUAGE_COLUMNS]
         lines.append(
-            f"| {e['language']} | {name} ({e['files']:,} files) | "
+            f"| {e['language']} | {name} ({file_count(e)}) | "
             + " | ".join(cells)
             + f" | {language_setup(e)} |"
         )
@@ -519,7 +525,7 @@ def languages_html(langs: List[Dict]) -> str:
         )
         rows.append(
             f'<tr><th scope="row">{html.escape(e["language"])}</th>'
-            f"<td>{name} ({e['files']:,} files{pin})</td>{cells}"
+            f"<td>{name} ({file_count(e)}{pin})</td>{cells}"
             f"<td>{html.escape(language_setup(e))}</td></tr>"
         )
     note = re.sub(r"`([^`]+)`", r"<code>\1</code>", html.escape(LANGUAGE_NOTE))

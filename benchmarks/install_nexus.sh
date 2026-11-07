@@ -36,6 +36,9 @@ if [ -f "$venv/NEXUS_REF" ] && [ "$(cat "$venv/NEXUS_REF")" = "$sha" ]; then
 fi
 
 rm -rf "$venv"
+# The index folders of this label were built by the old commit: a new parser must not run
+# on them (runner.py keys them by the venv name, not the commit).
+rm -rf "$SCRIPT_DIR/indexes/.venv-$label"
 uv venv --python "${NEXUS_BENCH_PYTHON:-3.12}" "$venv"
 uv pip install --python "$venv/bin/python" "nexus-mcp-ci @ git+file://$PROJECT_ROOT@$sha"
 echo "$sha" > "$venv/NEXUS_REF"

@@ -97,3 +97,19 @@ def test_build_leaves_out_languages_that_are_not_named(results):
     results("before", {"commons-lang": _row(), "laravel": php})
     entries = to_published.build(["Java"], "before", None, "2.2.2", "")
     assert [e["language"] for e in entries] == ["Java"]
+
+
+def test_run_entry_counts_only_the_graph_rows_of_the_corpus_language():
+    # Chromium `base/` at 2.2.2: no C++ nodes, but its Java and Python files had some.
+    graph = {
+        "cpp": {"functions": 0, "calls": 0},
+        "c": {"functions": 0, "calls": 0},
+        "java": {"functions": 4659, "calls": 5764},
+        "python": {"functions": 921, "calls": 1200},
+    }
+    row = {"language": "C++", "graph": graph}
+    assert to_published.run_entry(row, "2.2.2")["graph"] == {"fn_nodes": 0, "calls_per_fn": 0}
+    row = {"language": "Java", "graph": graph}
+    assert to_published.run_entry(row, "2.2.2")["graph"] == {
+        "fn_nodes": 4659, "calls_per_fn": 1.24,
+    }

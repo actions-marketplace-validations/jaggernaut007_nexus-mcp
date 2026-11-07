@@ -135,3 +135,18 @@ def test_strip_agent_config_removes_nested_files_and_keeps_git(tmp_path):
     assert removed == ["CLAUDE.md", "pkg/.claude", "pkg/.mcp.json", "pkg/sub/CLAUDE.md"]
     assert (tmp_path / ".git" / "x" / "CLAUDE.md").exists()
     assert (tmp_path / "pkg" / "AGENTS.md").exists()
+
+
+def test_graph_totals_use_the_rows_of_the_language():
+    graph = {
+        "typescript": {"functions": 10, "calls": 20},
+        "tsx": {"functions": 5, "calls": 5},
+        "javascript": {"functions": 100, "calls": 1},
+        "c": {"functions": 3, "calls": 3},
+        "cpp": {"functions": 7, "calls": 14},
+    }
+    assert corpora.graph_totals(graph, "TypeScript") == (15, 25)
+    assert corpora.graph_totals(graph, "javascript") == (100, 1)
+    assert corpora.graph_totals(graph, "C++") == (10, 17)  # a `.h` file can be C or C++
+    assert corpora.graph_totals(graph, "Go") == (0, 0)
+    assert corpora.graph_totals(graph, "Klingon") == (125, 43)  # unknown: every row

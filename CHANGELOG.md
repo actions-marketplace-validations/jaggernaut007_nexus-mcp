@@ -68,6 +68,23 @@ All notable changes to this project will be documented in this file.
   - The archive script and `install_nexus.sh` refuse a run label with `/` or `..`.
   - A corpus checkout loses `CLAUDE.md`, `.claude` and `.mcp.json` at every depth, not
     only at the top.
+- **Code review of this branch.**
+  - The published C++ "calls per function" counted the Java, Python and Rust files of
+    Chromium `base/`. A corpus now counts only the graph rows of its own language. The
+    C++ entry (2.2.2) changes from 5,745 function nodes and 1.39 calls per function to 0
+    and 0: 2.2.2 had no C++ graph nodes. TypeScript changes from 1,721 and 1.38 to 1,689
+    and 1.40.
+  - `references` lists templates, `.vue`, `.toml`, `.yaml` and other config files again,
+    after the code. Only translations, prose, maps and lock files are a count.
+  - `def` lines of other methods are left out only for a method of one class. The pattern
+    also knows PHP, Rust and Go heads.
+  - `overrides.subclasses` counted a class twice when a stub file (`.pyi`) defined the
+    method too.
+  - A C call to a function with the name of a struct gets its edge.
+  - `search` drops a one-line result next to its body only in C and C++ files: a one-line
+    JavaScript `init` is a definition of its own.
+  - `publish_results.py` no longer stops on a language with no file count.
+  - `install_nexus.sh` deletes the index folders of a label when it installs a new commit.
 - **C# and Dart files stopped the whole index.** The ast-grep ids `c_sharp` and `dart` do not
   exist. ast-grep-py then raises a `BaseException` panic that `except Exception` does not
   catch. C# now uses `csharp`; Dart has no id and is skipped.
@@ -81,7 +98,12 @@ All notable changes to this project will be documented in this file.
   `map`. Set `NEXUS_EXTRA_TOOLS` to `status`, `analyze`, `memory` (comma-separated) or `all`
   to show the others. Agents almost never called these three in the live benchmark, and
   their descriptions cost about 750 tokens on each turn. The server instructions and the
-  skill no longer name them when they are hidden.
+  skill no longer name them when they are hidden. **Upgrade note:** `memory` stays on
+  when the storage folder already holds memories, so memories of 2.2.x stay reachable.
+  The names in `NEXUS_EXTRA_TOOLS` are not case-sensitive.
+- **The index format is 8.** An index of 2.2.x is rebuilt once at the first start. Without
+  the rebuild, unchanged files keep no class `bases` (so `graph` shows no `overrides`) and
+  no symbols or graph nodes for Rust, PHP, C# and C/C++.
 - **Error, warning and exception classes rank after other source.** Their messages repeat
   the words of a feature, so on webpack `*Warning.js` files ranked above the plugin that
   does the work. A query that names an error keeps them in place. Retrieval hit@1, before

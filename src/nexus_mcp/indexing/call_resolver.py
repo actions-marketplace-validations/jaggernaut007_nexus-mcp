@@ -283,7 +283,11 @@ def _resolve_plain(
     implicit_self = own_methods and caller.language in IMPLICIT_SELF_LANGUAGES
 
     def keep(node: UniversalNode) -> bool:
-        if node.node_type == NodeType.CLASS or not _is_method(node):
+        if node.node_type == NodeType.CLASS:
+            # A C struct is never called: `stat_info(1)` with a `struct stat_info` and a
+            # function `stat_info` must bind to the function, not stay ambiguous.
+            return caller.language != "c"
+        if not _is_method(node):
             return True
         # Java, C++ and C# call their own methods without a receiver (`helper()`).
         return implicit_self and node.metadata.get("parent_class") == own_class

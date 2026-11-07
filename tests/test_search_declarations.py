@@ -24,6 +24,17 @@ def test_drop_declarations_of_defined_names_keeps_a_prototype_without_a_body():
     assert _drop_declarations_of_defined_names(results) == results
 
 
+def test_drop_declarations_of_defined_names_keeps_a_one_line_definition_outside_c():
+    # Two JS modules each define `init`; the one-liner is a real definition, not a prototype.
+    results = [_r("init", "b.js", 10, 20), _r("init", "a.js", 1, 1), _r("init", "c.go", 4, 4)]
+    assert _drop_declarations_of_defined_names(results) == results
+
+
+def test_drop_declarations_of_defined_names_uses_the_language_field():
+    results = [_r("f", "src/f.inl", 1, 9), dict(_r("f", "src/f.inl", 30, 30), language="cpp")]
+    assert _drop_declarations_of_defined_names(results) == results[:1]
+
+
 def test_drop_declarations_of_defined_names_keeps_a_one_line_function_of_another_name():
     results = [_r("f", "a.py", 3, 3), _r("g", "a.py", 5, 9)]
     assert _drop_declarations_of_defined_names(results) == results

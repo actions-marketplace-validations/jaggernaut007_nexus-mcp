@@ -139,6 +139,14 @@ def test_languages_md_has_one_cell_per_header():
     assert len(widths) == 1
 
 
+def test_languages_without_a_file_count_do_not_crash():
+    # to_published writes "files": None when the quick tier crashed (C# on 2.2.2).
+    entry = dict(BEFORE_ONLY, files=None)
+    row = next(line for line in publish.languages_md([entry]) if line.startswith("| C# |"))
+    assert "(files not counted)" in row
+    assert "files not counted" in publish.languages_html([entry])
+
+
 def test_language_cell_missing_after_value():
     getter = publish._num(".0%", "quick_tier", "nexus", "hit_at_1")
     entry = dict(BEFORE_ONLY, after={"nexus_version": "2.3.0"})

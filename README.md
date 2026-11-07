@@ -53,10 +53,10 @@ Results per language:
 
 | Language | Project | Nexus-MCP version | Index time (s) | Right file first: Grep and Read | Right file first: Nexus-MCP | Tokens to the right file: Grep and Read | Tokens to the right file: Nexus-MCP | Search hit@1 | Calls per function | Live tokens: Grep and Read | Live tokens: Nexus-MCP | Correct: Grep and Read | Correct: Nexus-MCP | Agent |
 |---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| TypeScript | [vitejs/vite](https://github.com/vitejs/vite) (429 files) | 2.2.2 → 2.4.0 | 362.6 → 137.2 | 43% | 83% | 16,520 | 1,322 → 1,286 | 0.47 | 1.38 | 69,790 | 57,268 → 52,411 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+| TypeScript | [vitejs/vite](https://github.com/vitejs/vite) (429 files) | 2.2.2 → 2.4.0 | 362.6 → 137.2 | 43% | 83% | 16,520 | 1,322 → 1,286 | 0.47 | 1.40 | 69,790 | 57,268 → 52,411 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
 | JavaScript | [webpack/webpack](https://github.com/webpack/webpack) (822 files) | 2.4.0 | 530.3 | 37% | 67% | 25,634 | 1,251 | 0.20 | 1.38 | 100,320 | 74,638 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
 | Java | [apache/commons-lang](https://github.com/apache/commons-lang) (264 files) | 2.2.2 → 2.4.0 pre-release (11cfccc) | 633.3 → 265.5 | 23% | 87% | 48,176 | 1,277 → 1,241 | 0.73 | 0.75 | 50,448 | 34,601 → 32,862 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
-| C++ | [chromium/chromium](https://chromium.googlesource.com/chromium/src) (3,641 files) | 2.2.2 | 4,373.5 | 37% | 83% | 16,096 | 953 | 0.40 | 1.39 | 70,495 | 60,622 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+| C++ | [chromium/chromium](https://chromium.googlesource.com/chromium/src) (3,641 files) | 2.2.2 | 4,373.5 | 37% | 83% | 16,096 | 953 | 0.40 | 0.00 | 70,495 | 60,622 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
 
 One row for each language, on one pinned public project. A Nexus-MCP cell with an arrow shows the value before and after a fix: before → after. A Grep and Read cell shows the latest run. Right file first and tokens come from `nexus-mcp-ci eval` (no LLM); search hit@1 from the retrieval suite; live tokens and correct answers from the live benchmark.
 

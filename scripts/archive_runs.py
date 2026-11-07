@@ -111,16 +111,17 @@ def archive(
     from the environment and the Keychain); a file that holds one is refused.
     """
     secrets = live_secrets() if secrets is None else secrets
-    written = []
+    # Check every file before the first copy, so a refusal leaves nothing half archived.
+    planned: list[tuple[str, Path]] = []
     for path, rel in log_files(results):
         text = check_clean(path, secrets)
         label = check_label(run_label(rel))
         dest = runs / label / (rel.name if len(rel.parts) == 1 else Path(*rel.parts[1:]))
-        written.append(_copy(text, dest))
+        planned.append((text, dest))
     for label, log in (logs or {}).items():
         text = check_clean(Path(log), secrets)
-        written.append(_copy(text, runs / check_label(label) / "console.log"))
-    return written
+        planned.append((text, runs / check_label(label) / "console.log"))
+    return [_copy(text, dest) for text, dest in planned]
 
 
 def scrub_existing(runs: Path = RUNS) -> int:

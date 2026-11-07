@@ -119,13 +119,29 @@ class Settings:
 
     def enabled_optional_tools(self) -> set[str]:
         """Return the optional tools that NEXUS_EXTRA_TOOLS turns on."""
-        wanted = {n.strip() for n in self.extra_tools.split(",") if n.strip()}
+        wanted = {n.strip().lower() for n in self.extra_tools.split(",") if n.strip()}
         if "all" in wanted:
             return set(OPTIONAL_TOOLS)
         unknown = wanted - set(OPTIONAL_TOOLS)
         if unknown:
             logger.warning("NEXUS_EXTRA_TOOLS: unknown tools %s", sorted(unknown))
         return wanted & set(OPTIONAL_TOOLS)
+
+    def has_stored_memories(self) -> bool:
+        """True when the `memories` table of this storage folder holds at least one row.
+
+        A user of 2.2.x who stored memories keeps the `memory` tool after the upgrade,
+        though it is off by default. A folder with no table costs no LanceDB import.
+        """
+        if not (self.lancedb_path / "memories.lance").exists():
+            return False
+        try:
+            import lancedb
+
+            return lancedb.connect(str(self.lancedb_path)).open_table("memories").count_rows() > 0
+        except Exception as e:  # noqa: BLE001 - a broken table must not stop the server
+            logger.warning("Could not read the memories table: %s", e)
+            return False
 
     @property
     def storage_path(self) -> Path:

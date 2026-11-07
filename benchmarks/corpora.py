@@ -14,7 +14,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Optional
+from typing import Any, Dict, Iterable, List, Optional, Tuple
 
 import yaml
 
@@ -24,6 +24,33 @@ REPOS_DIR = BENCH_DIR / "repos"
 TIERS = ("quick", "retrieval", "graph", "live")
 # Files that Claude Code reads on its own. A corpus must not bring them into a run.
 AGENT_CONFIG = ("CLAUDE.md", "CLAUDE.local.md", ".claude", ".mcp.json")
+
+
+# The rows of a graph-coverage result (evals/graph_coverage.py) that belong to a corpus
+# language. A corpus holds files of other languages too (Chromium `base/` has Java, Python
+# and Rust), and their nodes must not count for it. A C or C++ `.h` file can be either.
+GRAPH_KEYS = {
+    "python": ("python",),
+    "typescript": ("typescript", "tsx"),
+    "javascript": ("javascript",),
+    "java": ("java",),
+    "c#": ("csharp",),
+    "php": ("php",),
+    "c++": ("cpp", "c"),
+    "c": ("c", "cpp"),
+    "go": ("go",),
+    "rust": ("rust",),
+}
+
+
+def graph_totals(graph: Dict[str, Any], language: str) -> Tuple[int, int]:
+    """(function nodes, CALLS edges) of the rows of ``language`` in a graph-coverage result.
+
+    An unknown language falls back to every row.
+    """
+    keys = GRAPH_KEYS.get(language.strip().lower())
+    rows = [v for k, v in graph.items() if keys is None or k in keys]
+    return sum(v["functions"] for v in rows), sum(v["calls"] for v in rows)
 
 
 def load(path: Path = MANIFEST) -> List[Dict[str, Any]]:

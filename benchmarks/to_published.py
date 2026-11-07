@@ -19,6 +19,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from benchmarks.corpora import graph_totals
+
 ROOT = Path(__file__).resolve().parent.parent
 RESULTS_DIR = ROOT / "benchmarks" / "results"
 PUBLISHED = ROOT / "benchmarks" / "published" / "results.json"
@@ -53,8 +55,7 @@ def run_entry(row: Dict[str, Any], version: str) -> Dict[str, Any]:
         out["retrieval_hit_at_1"] = round(r["modes"][RETRIEVAL_MODE]["hit@1"], 2)
     g = row.get("graph")
     if _ok(g):
-        fns = sum(v["functions"] for v in g.values())
-        calls = sum(v["calls"] for v in g.values())
+        fns, calls = graph_totals(g, row.get("language", ""))
         out["graph"] = {"fn_nodes": fns, "calls_per_fn": round(calls / fns, 2) if fns else 0}
     live = row.get("live")
     if _ok(live) and "conditions" in live:

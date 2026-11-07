@@ -100,6 +100,10 @@ def create_server():
 
     _settings = _get_settings()
     _hidden_tools = set(OPTIONAL_TOOLS) - _settings.enabled_optional_tools()
+    if "memory" in _hidden_tools and _settings.has_stored_memories():
+        # Memories stored before 2.4.0 stay reachable after the upgrade.
+        _hidden_tools.discard("memory")
+        logger.info("The memory tool is on: this storage folder holds memories.")
 
     mcp = FastMCP(
         "Nexus-MCP",

@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from benchmarks.corpora import graph_totals
+
 RESULTS_DIR = Path(__file__).resolve().parent / "results"
 COLUMNS = ("corpus", "language", "quick n/g hit@1", "tokens n/g", "retrieval@1", "fn nodes",
            "calls/fn", "live tok n/g", "live ok n/g")
@@ -52,8 +54,7 @@ def cells(row: Dict[str, Any]) -> List[str]:
     elif _status(g):
         fn = cpf = _status(g)
     else:
-        fns = sum(v["functions"] for v in g.values())
-        calls = sum(v["calls"] for v in g.values())
+        fns, calls = graph_totals(g, row.get("language", ""))
         fn, cpf = str(fns), f"{calls / fns:.2f}" if fns else "0"
     live = row.get("live")
     if live is None:

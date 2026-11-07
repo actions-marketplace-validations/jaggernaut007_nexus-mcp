@@ -17,7 +17,7 @@ import re
 import resource
 import sys
 import threading
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, List, Optional
 
 from nexus_mcp import __version__
@@ -496,13 +496,17 @@ def _overrides(state, methods: List[UniversalNode]) -> Optional[dict[str, Any]]:
     graph = state.graph_engine
     by_file: dict[str, list[str]] = {}
     seen: set[str] = set()
-    subclass_count = 0
+    subclass_ids: set[str] = set()
+    family: dict[str, list[UniversalNode]] = {}  # one closure per owner name
     for method in methods:
         owner = (method.metadata or {}).get("parent_class")
         if not owner:
             continue
-        subclasses = _subclasses(graph, owner)
-        subclass_count += len(subclasses)
+        if owner not in family:
+            family[owner] = _subclasses(graph, owner)
+        subclasses = family[owner]
+        # Matches in `fields.py` and `fields.pyi` share one owner: count each class once.
+        subclass_ids.update(c.id for c in subclasses)
         places = {(c.name, c.location.file_path) for c in subclasses}
         for node in graph.find_nodes_by_name(method.name, exact=True):
             cls = (node.metadata or {}).get("parent_class")
@@ -517,7 +521,7 @@ def _overrides(state, methods: List[UniversalNode]) -> Optional[dict[str, Any]]:
         return None
     return {
         "total": len(seen),
-        "subclasses": subclass_count,
+        "subclasses": len(subclass_ids),
         "files": _collapse_test_symbols(by_file),
     }
 
@@ -736,6 +740,8 @@ FULL_SNIPPET_CHARS = 2000
 # after test files move down (see `fusion.demote_test_files`). Fusion gets 2 x `limit`.
 SEARCH_OVERFETCH = 4
 MAX_REFERENCE_LINES = 60  # source lines with their text; test files are counts only
+# Files that can hold a C or C++ prototype (a one-line declaration of a function).
+_C_FAMILY_SUFFIXES = frozenset({".c", ".h", ".cc", ".cpp", ".cxx", ".hh", ".hpp", ".hxx"})
 MAX_REFERENCE_LINES_PER_FILE = 8
 MAX_TEST_SYMBOLS_PER_FILE = 3  # a test file with more callers shows a count of the rest
 # Fields that help ranking or debugging but not an agent's answer. `signature` and
@@ -842,14 +848,25 @@ def _drop_declarations_of_defined_names(results: list[dict]) -> list[dict]:
     """Drop a one-line declaration whose name has a body elsewhere in the results.
 
     A C or C++ prototype (`removeExpire(redisDb *db, robj *key)` in `server.h`) is a chunk of
-    its own. Next to the definition it repeats the signature and takes a result slot.
+    its own. Next to the definition it repeats the signature and takes a result slot. Only
+    C and C++ files have such prototypes: a one-line `init` in `a.js` is a definition of
+    its own and stays.
     """
 
     def one_line(r: dict) -> bool:
         return r.get("line_start") is not None and r.get("line_start") == r.get("line_end")
 
+    def c_family(r: dict) -> bool:
+        if r.get("language") in ("c", "cpp"):
+            return True
+        path = str(r.get("filepath") or r.get("file_path") or "")
+        return PurePosixPath(path).suffix.lower() in _C_FAMILY_SUFFIXES
+
     defined = {r.get("symbol_name") for r in results if r.get("symbol_name") and not one_line(r)}
-    return [r for r in results if not (one_line(r) and r.get("symbol_name") in defined)]
+    return [
+        r for r in results
+        if not (one_line(r) and c_family(r) and r.get("symbol_name") in defined)
+    ]
 
 
 def search(
@@ -1526,9 +1543,9 @@ def _add_references(
     Call edges are a lower bound. In the benchmark traces the agent ran its own grep
     after `graph` in 5 of 6 impact tasks to check them; this list makes that unnecessary.
 
-    With graph ``matches`` (the symbol has a node), `def` lines of other methods with the
-    same name only add to a count, and files that name the class of the method or a
-    subclass come first. On Django `SQLCompiler.as_sql` listed `contrib/gis` first and
+    When all graph ``matches`` are methods of one class, `def` lines of other methods with
+    the same name only add to a count, and files that name the class or a subclass come
+    first. On Django `SQLCompiler.as_sql` listed `contrib/gis` first and
     the agent then ran 22 turns of grep and reads (issue #31).
     """
     from nexus_mcp.engines.live_grep import LiveGrepEngine
@@ -1546,7 +1563,9 @@ def _add_references(
                 max_lines=max_lines if len(roots) > 1 else MAX_REFERENCE_LINES,
                 max_lines_per_file=MAX_REFERENCE_LINES_PER_FILE,
                 related_names=related,
-                skip_definitions=bool(matches),
+                # Only for a method of one class: its overrides are listed apart. For a
+                # bare name of several classes the `def` lines are the only list of them.
+                skip_definitions=bool(related),
             )
         except Exception as e:  # noqa: BLE001 - references are an addition, never a failure
             logger.warning("Reference search failed: %s", e)

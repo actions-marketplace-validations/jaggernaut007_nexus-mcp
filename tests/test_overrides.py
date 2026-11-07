@@ -114,6 +114,17 @@ def test_graph_method_without_subclass_override_has_no_overrides(fields_repo, tm
     assert "overrides" not in core_api.graph("IntegerField.to_python")
 
 
+def test_graph_overrides_count_each_subclass_once_with_a_stub_file(fields_repo, tmp_path):
+    # A `.pyi` stub gives a second `Field.validate` node with the same owner name.
+    (fields_repo / "pkg" / "fields.pyi").write_text(
+        "class Field:\n    def validate(self, value): ...\n"
+    )
+    _index(fields_repo, tmp_path)
+    out = core_api.graph("Field.validate")
+    assert out["overrides"]["subclasses"] == 4
+    assert out["overrides"]["total"] == 3
+
+
 def test_find_symbol_qualified_method_returns_its_code(fields_repo, tmp_path):
     _index(fields_repo, tmp_path)
     out = core_api.find_symbol("Field.validate, SlugField::validate")

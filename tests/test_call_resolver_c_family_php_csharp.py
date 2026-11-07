@@ -72,6 +72,20 @@ def test_resolve_calls_c_function_pointer_gets_no_edge(tmp_path):
     assert all(name != "read" for _, name, _ in _callees(graph, "main"))
 
 
+def test_resolve_calls_c_function_with_the_name_of_a_struct(tmp_path):
+    # C has no constructor call, so a struct of the same name is never the callee.
+    files = {"src/stat.c": (
+        "struct stat_info { int n; };\n"
+        "int stat_info(int x) { return x; }\n"
+        "int caller(void) { return stat_info(1); }\n"
+    )}
+    graph = _graph(tmp_path, files)
+    assert _callees(graph, "caller") == {(None, "stat_info", "stat.c")}
+    edges_to = [n for n in graph.find_nodes_by_name("stat_info")
+                if n.node_type == NodeType.CLASS and graph.get_callers(n.id)]
+    assert edges_to == []
+
+
 CPP_FILES = {
     "app/widget.h": (
         "namespace app {\n"

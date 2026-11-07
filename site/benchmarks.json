@@ -329,8 +329,8 @@
         },
         "retrieval_hit_at_1": 0.47,
         "graph": {
-          "fn_nodes": 1721,
-          "calls_per_fn": 1.38
+          "fn_nodes": 1689,
+          "calls_per_fn": 1.4
         },
         "live": {
           "baseline": {
@@ -364,8 +364,8 @@
         },
         "retrieval_hit_at_1": 0.47,
         "graph": {
-          "fn_nodes": 1721,
-          "calls_per_fn": 1.38
+          "fn_nodes": 1689,
+          "calls_per_fn": 1.4
         },
         "live": {
           "baseline": {
@@ -534,8 +534,8 @@
         },
         "retrieval_hit_at_1": 0.4,
         "graph": {
-          "fn_nodes": 5745,
-          "calls_per_fn": 1.39
+          "fn_nodes": 0,
+          "calls_per_fn": 0
         },
         "live": {
           "baseline": {

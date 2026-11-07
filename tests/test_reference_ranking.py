@@ -61,6 +61,31 @@ def test_references_definition_pattern_matches_js_function(tmp_path):
     assert refs["files"]["a.js"] == ["4: load(1);", "5: const load2 = load;"]
 
 
+@pytest.mark.parametrize("source,name", [
+    ("<?php\nclass A {\n  public static function load($x) {}\n}\n", "a.php"),
+    ("impl A {\n    pub(crate) fn load(&self) {}\n}\n", "a.rs"),
+    ("func (r *A) load() {}\n", "a.go"),
+    ("export default async function load() {}\n", "a.ts"),
+])
+def test_references_skip_definitions_knows_other_languages(tmp_path, source, name):
+    (tmp_path / name).write_text(source + "load();\n")
+    refs = LiveGrepEngine(str(tmp_path)).references("load", skip_definitions=True)
+    assert refs["definitions"] == 1
+    assert list(refs["files"].values()) == [[f"{source.count(chr(10)) + 1}: load();"]]
+
+
+def test_references_keep_templates_and_config_after_code(tmp_path):
+    (tmp_path / "views.py").write_text("def render_total(cart):\n    return 1\n")
+    (tmp_path / "cart.html").write_text("{{ render_total(cart) }}\n")
+    (tmp_path / "Cart.vue").write_text("<p>{{ render_total(cart) }}</p>\n")
+    (tmp_path / "pyproject.toml").write_text('tool = "app.views:render_total"\n')
+    (tmp_path / "NOTES.md").write_text("render_total sums the cart\n")
+    (tmp_path / "fr.po").write_text('msgid "render_total"\n')
+    refs = LiveGrepEngine(str(tmp_path)).references("render_total")
+    assert list(refs["files"]) == ["views.py", "Cart.vue", "cart.html", "pyproject.toml"]
+    assert refs["non_code"] == {"files": 2, "lines": 2}
+
+
 def test_graph_method_references_rank_family_and_skip_defs(repo, tmp_path):
     from tests.conftest import _setup_indexed
 
@@ -76,9 +101,11 @@ def test_graph_bare_name_of_many_classes_keeps_path_order(repo, tmp_path):
 
     asyncio.run(_setup_indexed(repo, tmp_path / ".nexus"))
     refs = core_api.graph("run")["references"]
-    # `run` is a method of Other, Base and Child: no one class to rank by.
+    # `run` is a method of Other, Base and Child: no one class to rank by, and no
+    # `overrides` list, so the `def` lines stay: they are the only list of the methods.
     assert list(refs["files"]) == ["pkg/aaa.py", "pkg/base.py", "pkg/zzz.py"]
-    assert refs["definitions"] == 3
+    assert "definitions" not in refs
+    assert "2: def run(self):" in refs["files"]["pkg/aaa.py"]
 
 
 def test_class_family_needs_one_owner(repo, tmp_path):

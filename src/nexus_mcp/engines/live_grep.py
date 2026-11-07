@@ -18,6 +18,19 @@ REFERENCES_TIMEOUT_S = 10
 REFERENCE_TEXT_CHARS = 110
 # At most this many class names rank the reference files (a class and its subclasses).
 MAX_RELATED_NAMES = 200
+# Files whose lines are noise for "where is this name used": translations, prose, maps and
+# lock files. They add only to the `non_code` count. Templates, `.vue`, `.toml`, `.yaml` and
+# other files that can use a name keep their lines. On Django the word `validate` had 100+
+# `.po` files, which took the line budget before the code.
+NOISE_SUFFIXES = frozenset({
+    ".po", ".pot", ".mo", ".md", ".rst", ".txt", ".adoc", ".svg", ".map", ".lock", ".csv",
+    ".tsv", ".log", ".ipynb",
+})
+# Modifiers in front of a function or method head (PHP, Rust, TypeScript, C#-like).
+_DEF_MODIFIERS = (
+    r"(?:(?:export|default|public|protected|private|internal|static|abstract|final|async|"
+    r"override|virtual|unsafe|const|extern|pub(?:\([\w:]+\))?)\s+)*"
+)
 # ripgrep skips hidden and git-ignored paths by itself; plain grep needs the list.
 _GREP_SKIP_DIRS = (
     ".git", ".nexus*", ".venv", "venv", "node_modules", "__pycache__", "dist", "build",
@@ -141,10 +154,10 @@ class LiveGrepEngine:
 
         Source files come first, each with the text of its lines (``"line: code"``).
         Test files come as a count of lines for each file. A source file past the
-        ``max_lines`` budget comes as a count in ``more_files``. A file that is not code
-        (no extension of the language registry: docs, translations, data) adds only to
-        ``non_code`` (files and lines). ``total_files`` and ``total_lines`` always count
-        everything found.
+        ``max_lines`` budget comes as a count in ``more_files``. Templates and config files
+        come after the code. A noise file (``NOISE_SUFFIXES``: translations, prose, lock
+        files) adds only to ``non_code`` (files and lines). ``total_files`` and
+        ``total_lines`` always count everything found.
 
         ``related_names`` (the class of a method and its subclasses): source files that
         name one of them come first, so the line budget goes to the code of that class.
@@ -175,8 +188,10 @@ class LiveGrepEngine:
         if related and by_file:
             listed = self._word_grep(related[:MAX_RELATED_NAMES], list_files=True) or ""
             near = {_clean_path(p) for p in listed.splitlines() if p}
+        # `def`, `function`, `fn` and `func` heads, a Go method with its receiver included.
         definition = re.compile(
-            rf"^(?:export\s+)?(?:async\s+)?(?:def|function\s*\*?)\s+{re.escape(name)}\b"
+            rf"^{_DEF_MODIFIERS}(?:def|function\s*\*?|fn|func(?:\s*\([^)]*\))?)\s*"
+            rf"&?\s*{re.escape(name)}\b"
         )
 
         files: Dict[str, List[str]] = {}
@@ -187,7 +202,13 @@ class LiveGrepEngine:
         code_suffixes = get_supported_extensions()
         budget = max_lines
         truncated = False
-        for path in sorted(by_file, key=lambda p: (is_test_path(p), p not in near, p)):
+
+        def order(p: str) -> tuple:
+            # Tests last; then the files of the class family; code before templates/config.
+            suffix = PurePosixPath(p).suffix.lower()
+            return (is_test_path(p), p not in near, suffix not in code_suffixes, p)
+
+        for path in sorted(by_file, key=order):
             hits = by_file[path]
             if skip_definitions and not is_test_path(path):
                 kept = [h for h in hits if not definition.match(h[1])]
@@ -195,9 +216,7 @@ class LiveGrepEngine:
                 hits = kept
                 if not hits:
                     continue
-            if PurePosixPath(path).suffix.lower() not in code_suffixes:
-                # Docs, translations (`.po`) and data files: on Django the word `validate`
-                # had 100+ locale files, which took the line budget before the code.
+            if PurePosixPath(path).suffix.lower() in NOISE_SUFFIXES:
                 non_code["files"] += 1
                 non_code["lines"] += len(hits)
                 continue
