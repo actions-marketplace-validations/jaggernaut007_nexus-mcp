@@ -57,6 +57,17 @@ All notable changes to this project will be documented in this file.
 
 ### Fixed
 
+- **Security review of this branch.**
+  - Without ripgrep, `graph` references used plain `grep`, which also read git-ignored and
+    hidden files, such as a `local_settings.py`. In a git repo the fallback is now
+    `git grep`, which skips ignored files. Plain `grep` drops hidden paths.
+  - `scripts/archive_runs.py` refuses more credential shapes: GitHub, AWS and Hugging Face
+    tokens, private keys, and `NAME=value` secret lines. It also refuses any file that
+    holds the live token value from the environment or the Keychain. It writes the home
+    folder as `~`. The run logs already committed were rewritten in the same way.
+  - The archive script and `install_nexus.sh` refuse a run label with `/` or `..`.
+  - A corpus checkout loses `CLAUDE.md`, `.claude` and `.mcp.json` at every depth, not
+    only at the top.
 - **C# and Dart files stopped the whole index.** The ast-grep ids `c_sharp` and `dart` do not
   exist. ast-grep-py then raises a `BaseException` panic that `except Exception` does not
   catch. C# now uses `csharp`; Dart has no id and is skipped.

@@ -39,7 +39,7 @@
 [34/36] dj-arch-request-to-query / nexus / rep 3
 [35/36] dj-needle-charfield-class / nexus / rep 3
 [36/36] dj-needle-charfield-class / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/django-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/django-live.jsonl
 [django] done: live
 [corpora] vite already at 483512809b
 [1/36] vt-concept-hmr / baseline / rep 1
@@ -80,7 +80,7 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] vt-arch-request-path / nexus / rep 3
 [35/36] vt-needle-createserver-line / nexus / rep 3
 [36/36] vt-needle-createserver-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/vite-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/vite-live.jsonl
 [vite] done: live
 [corpora] webpack already at f6366b0bc2
 [webpack] done: 
@@ -123,56 +123,56 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] cl-arch-reflection-tostring / nexus / rep 3
 [35/36] cl-needle-stopwatch-line / nexus / rep 3
 [36/36] cl-needle-stopwatch-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/commons-lang-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/commons-lang-live.jsonl
 [commons-lang] done: live
 [corpora] newtonsoft-json already at 52fa3aef1f
 [index] newtonsoft-json with nexus-mcp-ci 2.2.2
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 
 thread '<unnamed>' (397960) panicked at crates/pyo3/src/lib.rs:44:37:
 called `Result::unwrap()` on an `Err` value: LanguageNotSupported("c_sharp")
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 Traceback (most recent call last):
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/_preindex_one.py", line 95, in <module>
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/_preindex_one.py", line 95, in <module>
     main()
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/_preindex_one.py", line 62, in main
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/_preindex_one.py", line 62, in main
     result = asyncio.run(result)
              ^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 195, in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 195, in run
     return runner.run(main)
            ^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 118, in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/runners.py", line 118, in run
     return self._loop.run_until_complete(task)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/base_events.py", line 691, in run_until_complete
     return future.result()
            ^^^^^^^^^^^^^^^
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/server.py", line 189, in async_wrapper
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/server.py", line 189, in async_wrapper
     result = await fn(*args, **kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/server.py", line 339, in index
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/server.py", line 339, in index
     return await core_api.index(path, paths, progress_callback=progress_callback)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/core_api.py", line 621, in index
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/core_api.py", line 621, in index
     result, state = await asyncio.shield(asyncio.to_thread(_locked_index))
                     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/threads.py", line 25, in to_thread
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/asyncio/threads.py", line 25, in to_thread
     return await loop.run_in_executor(None, func_call)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 59, in run
+  File "~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/concurrent/futures/thread.py", line 59, in run
     result = self.fn(*self.args, **self.kwargs)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/core_api.py", line 609, in _locked_index
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/core_api.py", line 609, in _locked_index
     result = _pipeline.index(codebase_path, _cb)
              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/indexing/pipeline.py", line 280, in index
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/indexing/pipeline.py", line 280, in index
     self._astgrep.parse_file(str(filepath), universal_graph)
-  File "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/parsing/astgrep_parser.py", line 214, in parse_file
+  File "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/parsing/astgrep_parser.py", line 214, in parse_file
     root = SgRoot(content, ast_grep_id)
            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 pyo3_runtime.PanicException: called `Result::unwrap()` on an `Err` value: LanguageNotSupported("c_sharp")
-[newtonsoft-json] index tier failed: Indexing /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/repos/newtonsoft-json with /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2 failed
+[newtonsoft-json] index tier failed: Indexing ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/repos/newtonsoft-json with ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2 failed
 [newtonsoft-json] done: 
 [corpora] laravel already at 7d6d8e8613
 [1/36] lv-concept-queue-worker / baseline / rep 1
@@ -213,7 +213,7 @@ pyo3_runtime.PanicException: called `Result::unwrap()` on an `Err` value: Langua
 [34/36] lv-arch-dispatch / nexus / rep 3
 [35/36] lv-needle-pipeline-line / nexus / rep 3
 [36/36] lv-needle-pipeline-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/laravel-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/laravel-live.jsonl
 [laravel] done: live
 [corpora] chromium-base already at d8ebdd2598
 [1/36] cr-concept-weakptr-invalidate / baseline / rep 1
@@ -254,7 +254,7 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] cr-needle-json-max-depth / nexus / rep 3
 [35/36] cr-arch-task-scheduling / nexus / rep 3
 [36/36] cr-arch-task-scheduling / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/chromium-base-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/chromium-base-live.jsonl
 [chromium-base] done: live
 [corpora] redis already at a05f30c971
 [1/36] rd-concept-eviction / baseline / rep 1
@@ -295,7 +295,7 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] rd-arch-command-path / nexus / rep 3
 [35/36] rd-needle-dict-line / nexus / rep 3
 [36/36] rd-needle-dict-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/redis-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/redis-live.jsonl
 [redis] done: live
 [corpora] prometheus already at 4bfb6bb5b3
 [1/36] pm-concept-compaction / baseline / rep 1
@@ -336,7 +336,7 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] pm-arch-query-path / nexus / rep 3
 [35/36] pm-needle-bucket-quantile-line / nexus / rep 3
 [36/36] pm-needle-bucket-quantile-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/prometheus-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/prometheus-live.jsonl
 [prometheus] done: live
 [corpora] tokio already at 695a07dd5e
 [1/36] tk-concept-oneshot / baseline / rep 1
@@ -377,6 +377,6 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] tk-arch-spawn / nexus / rep 3
 [35/36] tk-needle-semaphore-line / nexus / rep 3
 [36/36] tk-needle-semaphore-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/tokio-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before/tokio-live.jsonl
 [tokio] done: live
-Wrote /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before.json
+Wrote ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-before.json

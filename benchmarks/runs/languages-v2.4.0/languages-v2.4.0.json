@@ -710,7 +710,7 @@
           }
         }
       },
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/flask",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/flask",
       "index_meta": {
         "index_seconds": 128.4,
         "peak_rss_mb": 1032,
@@ -749,7 +749,7 @@
       "label": "v2.4.0",
       "nexus_version": "2.4.0",
       "nexus_ref": "21b4e106c20e5832a10c00721b0c7e527cc63156",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/django",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/django",
       "index_meta": {
         "index_seconds": 3064.5,
         "peak_rss_mb": 1369,
@@ -1511,7 +1511,7 @@
           }
         }
       },
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/vite",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/vite",
       "index_meta": {
         "index_seconds": 137.4,
         "peak_rss_mb": 950,
@@ -2293,7 +2293,7 @@
           }
         }
       },
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/webpack",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.4.0/webpack",
       "index_meta": {
         "index_seconds": 540.1,
         "peak_rss_mb": 1181,

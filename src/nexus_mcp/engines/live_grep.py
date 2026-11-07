@@ -30,6 +30,11 @@ def _clean_path(path: str) -> str:
     return path[2:] if path.startswith("./") else path
 
 
+def _is_hidden(path: str) -> bool:
+    """True for a path with a hidden part (`.env.py`, `.config/x.py`), as ripgrep skips."""
+    return any(part.startswith(".") for part in PurePosixPath(path).parts)
+
+
 class LiveGrepEngine:
     """Live search using ripgrep (rg) with a fallback to standard grep."""
 
@@ -37,6 +42,21 @@ class LiveGrepEngine:
         self.workspace_path = Path(workspace_path) if workspace_path else Path.cwd()
         self.rg_path = shutil.which("rg")
         self.grep_path = shutil.which("grep")
+        self.git_path = shutil.which("git")
+
+    def _in_git_work_tree(self) -> bool:
+        """True when git is available and the workspace is inside a git work tree."""
+        if not self.git_path:
+            return False
+        try:
+            proc = subprocess.run(
+                [self.git_path, "rev-parse", "--is-inside-work-tree"],
+                capture_output=True, text=True, check=False,
+                cwd=str(self.workspace_path), timeout=REFERENCES_TIMEOUT_S,
+            )
+        except (OSError, subprocess.SubprocessError):
+            return False
+        return proc.returncode == 0 and proc.stdout.strip() == "true"
 
     def search(self, query: str, limit: int = 20) -> List[Dict[str, Any]]:
         """Search for query in workspace. Favors ripgrep, falls back to grep."""
@@ -71,12 +91,22 @@ class LiveGrepEngine:
             cmd = [self.rg_path, "--word-regexp", "--fixed-strings", "--no-messages",
                    "--color", "never"]
             cmd += ["--files-with-matches"] if list_files else ["--no-heading", "--line-number"]
+            cmd += patterns + ["."]
+        elif self._in_git_work_tree():
+            # Like ripgrep, `git grep` skips git-ignored files (a local settings file with a
+            # secret must not reach the agent as text).
+            cmd = [self.git_path, "grep", "--untracked", "--exclude-standard", "-I", "-w",
+                   "-F", "--no-color"]
+            cmd += ["-l"] if list_files else ["-n"]
+            cmd += patterns + ["--", "."]
         elif self.grep_path:
+            # Hidden files are dropped after the search (`_is_hidden`): macOS grep matches an
+            # --exclude glob against the whole path, GNU grep against the file name.
             cmd = [self.grep_path, "-rlIwF" if list_files else "-rnIwF"]
             cmd += [f"--exclude-dir={d}" for d in _GREP_SKIP_DIRS]
+            cmd += patterns + ["."]
         else:
             return None
-        cmd += patterns + ["."]
         try:
             proc = subprocess.run(
                 cmd, capture_output=True, text=True, check=False,
@@ -85,7 +115,13 @@ class LiveGrepEngine:
         except (OSError, subprocess.SubprocessError) as e:
             logger.warning("Reference search failed: %s", e)
             return None
-        return proc.stdout
+        if self.rg_path:
+            return proc.stdout
+        # Without ripgrep, drop hidden files as ripgrep would (`git grep` keeps tracked ones).
+        return "\n".join(
+            line for line in proc.stdout.splitlines()
+            if not _is_hidden(_clean_path(line if list_files else line.split(":", 1)[0]))
+        )
 
     def references(
         self,

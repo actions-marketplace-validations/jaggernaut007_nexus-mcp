@@ -3,11 +3,11 @@ Using CPython 3.12.13
 Creating virtual environment at: benchmarks/.venv-v2.3.0
 Activate with: source benchmarks/.venv-v2.3.0/bin/activate
 Using Python 3.12.13 environment at: benchmarks/.venv-v2.3.0
-   Updating file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench (0de5088bcf52a7187aa3721efc3702df151a3e29)
-    Updated file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench (0de5088bcf52a7187aa3721efc3702df151a3e29)
+   Updating file://~/dev/nexus-mcp/.claude/worktrees/lang-bench (0de5088bcf52a7187aa3721efc3702df151a3e29)
+    Updated file://~/dev/nexus-mcp/.claude/worktrees/lang-bench (0de5088bcf52a7187aa3721efc3702df151a3e29)
 Resolved 110 packages in 1.13s
-   Building nexus-mcp-ci @ git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@0de5088bcf52a7187aa3721efc3702df151a3e29
-      Built nexus-mcp-ci @ git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@0de5088bcf52a7187aa3721efc3702df151a3e29
+   Building nexus-mcp-ci @ git+file://~/dev/nexus-mcp/.claude/worktrees/lang-bench@0de5088bcf52a7187aa3721efc3702df151a3e29
+      Built nexus-mcp-ci @ git+file://~/dev/nexus-mcp/.claude/worktrees/lang-bench@0de5088bcf52a7187aa3721efc3702df151a3e29
 Prepared 2 packages in 359ms
 Installed 110 packages in 849ms
  + aiofile==3.12.3
@@ -63,7 +63,7 @@ Installed 110 packages in 849ms
  + mpmath==1.3.0
  + narwhals==2.28.0
  + networkx==3.7
- + nexus-mcp-ci==2.3.0 (from git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@0de5088bcf52a7187aa3721efc3702df151a3e29)
+ + nexus-mcp-ci==2.3.0 (from git+file://~/dev/nexus-mcp/.claude/worktrees/lang-bench@0de5088bcf52a7187aa3721efc3702df151a3e29)
  + numpy==2.5.4
  + onnxruntime==1.23.2
  + openapi-pydantic==0.6.0
@@ -120,19 +120,19 @@ Installed 110 packages in 849ms
  + watchdog==7.1.0
  + watchfiles==1.3.0
  + websockets==17.4
-[install] nexus-mcp-ci 2.3.0 from 0de5088bcf52a7187aa3721efc3702df151a3e29 in /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0
+[install] nexus-mcp-ci 2.3.0 from 0de5088bcf52a7187aa3721efc3702df151a3e29 in ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0
 + export PYTHONPATH=src
 + PYTHONPATH=src
-+ PY=/Users/shreyas/dev/nexus-mcp/.venv/bin/python
++ PY=~/dev/nexus-mcp/.venv/bin/python
 + LANGS=Python,TypeScript,JavaScript
-+ /Users/shreyas/dev/nexus-mcp/.venv/bin/python -m benchmarks.run_languages --nexus-venv benchmarks/.venv-v2.3.0 --label v2.3.0 --languages Python,TypeScript,JavaScript --tiers quick,retrieval,graph
++ ~/dev/nexus-mcp/.venv/bin/python -m benchmarks.run_languages --nexus-venv benchmarks/.venv-v2.3.0 --label v2.3.0 --languages Python,TypeScript,JavaScript --tiers quick,retrieval,graph
 [corpora] flask already at d73fa1cdcb
 [index] flask with nexus-mcp-ci 2.3.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 14:43:44.900000 69312 .venv-v2.3.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 [setup] flask indexed in 104.2s
 [flask] done: quick, retrieval, graph
@@ -140,10 +140,10 @@ Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF
 [django] done: 
 [corpora] vite already at 483512809b
 [index] vite with nexus-mcp-ci 2.3.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 14:50:11.358000 69682 .venv-v2.3.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 [setup] vite indexed in 154.6s
 [vite] done: quick, retrieval, graph
@@ -158,25 +158,25 @@ step: free tiers
 [vite] done: quick, retrieval, graph
 [corpora] webpack already at f6366b0bc2
 [index] webpack with nexus-mcp-ci 2.3.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 15:18:05.834000 75222 .venv-v2.3.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 [setup] webpack indexed in 572.8s
 [webpack] done: quick, retrieval, graph
-Wrote /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.3.0.json
+Wrote ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.3.0.json
 step: live tier
 [corpora] flask already at d73fa1cdcb
 [flask] done: 
 [corpora] django already at 318a316a4c
 [index] django with nexus-mcp-ci 2.3.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 15:27:42.736000 75928 .venv-v2.3.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.3.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
-/Users/shreyas/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
+~/.local/share/uv/python/cpython-3.12.13-macos-aarch64-none/lib/python3.12/multiprocessing/resource_tracker.py:279: UserWarning: resource_tracker: There appear to be 1 leaked semaphore objects to clean up at shutdown
   warnings.warn('resource_tracker: There appear to be %d '

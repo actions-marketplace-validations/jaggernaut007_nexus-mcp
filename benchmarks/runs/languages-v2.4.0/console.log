@@ -3,12 +3,12 @@ Using CPython 3.12.13
 Creating virtual environment at: benchmarks/.venv-v2.4.0
 Activate with: source benchmarks/.venv-v2.4.0/bin/activate
 Using Python 3.12.13 environment at: benchmarks/.venv-v2.4.0
-   Updating file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench (21b4e106c20e5832a10c00721b0c7e527cc63156)
-    Updated file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench (21b4e106c20e5832a10c00721b0c7e527cc63156)
+   Updating file://~/dev/nexus-mcp/.claude/worktrees/lang-bench (21b4e106c20e5832a10c00721b0c7e527cc63156)
+    Updated file://~/dev/nexus-mcp/.claude/worktrees/lang-bench (21b4e106c20e5832a10c00721b0c7e527cc63156)
 Resolved 110 packages in 1.29s
 Downloading transformers (12.4MiB)
-   Building nexus-mcp-ci @ git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156
-      Built nexus-mcp-ci @ git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156
+   Building nexus-mcp-ci @ git+file://~/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156
+      Built nexus-mcp-ci @ git+file://~/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156
  Downloaded transformers
 Prepared 2 packages in 877ms
 Installed 110 packages in 1.01s
@@ -65,7 +65,7 @@ Installed 110 packages in 1.01s
  + mpmath==1.3.0
  + narwhals==2.28.0
  + networkx==3.7
- + nexus-mcp-ci==2.4.0 (from git+file:///Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156)
+ + nexus-mcp-ci==2.4.0 (from git+file://~/dev/nexus-mcp/.claude/worktrees/lang-bench@21b4e106c20e5832a10c00721b0c7e527cc63156)
  + numpy==2.5.4
  + onnxruntime==1.23.2
  + openapi-pydantic==0.6.0
@@ -122,15 +122,15 @@ Installed 110 packages in 1.01s
  + watchdog==7.1.0
  + watchfiles==1.3.0
  + websockets==17.4
-[install] nexus-mcp-ci 2.4.0 from 21b4e106c20e5832a10c00721b0c7e527cc63156 in /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0
+[install] nexus-mcp-ci 2.4.0 from 21b4e106c20e5832a10c00721b0c7e527cc63156 in ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0
 step: free tiers
 [corpora] flask already at d73fa1cdcb
 [index] flask with nexus-mcp-ci 2.4.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 15:47:09.761000 80427 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 [setup] flask indexed in 128.4s
 [flask] done: quick, retrieval, graph
@@ -138,35 +138,35 @@ Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF
 [django] done: 
 [corpora] vite already at 483512809b
 [index] vite with nexus-mcp-ci 2.4.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 15:54:07.389000 82333 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 [setup] vite indexed in 137.4s
 [vite] done: quick, retrieval, graph
 [corpora] webpack already at f6366b0bc2
 [index] webpack with nexus-mcp-ci 2.4.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 16:13:25.797000 83018 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 [setup] webpack indexed in 540.1s
 [webpack] done: quick, retrieval, graph
-Wrote /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0.json
+Wrote ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0.json
 step: live tier
 [corpora] flask already at d73fa1cdcb
 [flask] done: 
 [corpora] django already at 318a316a4c
 [index] django with nexus-mcp-ci 2.4.0
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 W1106 16:22:29.688000 83359 .venv-v2.4.0/lib/python3.12/site-packages/torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
 Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
-/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
+~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.4.0/lib/python3.12/site-packages/tree_sitter/__init__.py:36: FutureWarning: Language(path, name) is deprecated. Use Language(ptr, name) instead.
   warn("{} is deprecated. Use {} instead.".format(old, new), FutureWarning)
 [setup] django indexed in 3064.5s
 [1/36] dj-concept-signal-dispatch / baseline / rep 1
@@ -207,7 +207,7 @@ Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF
 [34/36] dj-arch-request-to-query / nexus / rep 3
 [35/36] dj-needle-charfield-class / nexus / rep 3
 [36/36] dj-needle-charfield-class / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/django-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/django-live.jsonl
 [django] done: live
 [corpora] vite already at 483512809b
 [1/36] vt-concept-hmr / baseline / rep 1
@@ -248,7 +248,7 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] vt-arch-request-path / nexus / rep 3
 [35/36] vt-needle-createserver-line / nexus / rep 3
 [36/36] vt-needle-createserver-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/vite-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/vite-live.jsonl
 [vite] done: live
 [corpora] webpack already at f6366b0bc2
 [1/36] wp-concept-split-chunks / baseline / rep 1
@@ -293,7 +293,7 @@ Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/be
 [34/36] wp-arch-build / nexus / rep 3
 [35/36] wp-needle-modulegraph-line / nexus / rep 3
 [36/36] wp-needle-modulegraph-line / baseline / rep 3
-Wrote 36 records to /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/webpack-live.jsonl
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0/webpack-live.jsonl
 [webpack] done: live
-Wrote /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0.json
+Wrote ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-v2.4.0.json
 live exit 0

@@ -86,16 +86,25 @@ def head(path: Path) -> Optional[str]:
 
 
 def strip_agent_config(path: Path) -> List[str]:
-    """Delete the agent config files at the top of a checkout. Returns the names deleted."""
+    """Delete the agent config files at every depth of a checkout.
+
+    Claude Code also loads a `CLAUDE.md` of a subfolder when it reads files there, so a
+    nested one could give the benchmark agent instructions. Returns the deleted paths,
+    relative to ``path``.
+    """
     removed = []
-    for name in AGENT_CONFIG:
-        target = path / name
-        if target.is_dir():
+    targets = sorted(
+        (p for name in AGENT_CONFIG for p in path.rglob(name) if ".git" not in p.parts),
+        key=lambda p: len(p.parts),
+    )
+    for target in targets:
+        if not target.exists() and not target.is_symlink():
+            continue  # inside a folder deleted before it
+        if target.is_dir() and not target.is_symlink():
             shutil.rmtree(target)
-            removed.append(name)
-        elif target.exists():
+        else:
             target.unlink()
-            removed.append(name)
+        removed.append(target.relative_to(path).as_posix())
     return removed
 
 

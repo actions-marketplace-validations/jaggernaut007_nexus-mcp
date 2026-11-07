@@ -19,6 +19,11 @@ if [ $# -ne 2 ]; then
 fi
 ref="$1"
 label="$2"
+# The label becomes a folder name that `rm -rf` deletes: refuse `/`, `..` and other path parts.
+if ! [[ "$label" =~ ^[A-Za-z0-9._-]+$ ]] || [ "$label" = "." ] || [ "$label" = ".." ]; then
+  echo "bad label: '$label' (use letters, digits, '.', '_', '-')" >&2
+  exit 2
+fi
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"

@@ -710,7 +710,7 @@
           }
         }
       },
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/flask",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/flask",
       "index_meta": {
         "index_seconds": 91.8,
         "peak_rss_mb": 1056,
@@ -749,7 +749,7 @@
       "label": "py-fix",
       "nexus_version": "2.4.0",
       "nexus_ref": "53594adb47bdde7c28de53375268b51f18a143c9",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/django",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/django",
       "index_meta": {
         "index_seconds": 2558.0,
         "peak_rss_mb": 1439,
@@ -1511,7 +1511,7 @@
           }
         }
       },
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/vite",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/vite",
       "index_meta": {
         "index_seconds": 112.1,
         "peak_rss_mb": 1156,
@@ -2260,7 +2260,7 @@
           }
         }
       },
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/webpack",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-py-fix/webpack",
       "index_meta": {
         "index_seconds": 478.5,
         "peak_rss_mb": 1351,

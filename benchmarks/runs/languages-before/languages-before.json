@@ -10,7 +10,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/flask",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/flask",
       "quick": {
         "id": "20261105-140355-574f",
         "created": "2026-11-05T14:03:55+00:00",
@@ -749,7 +749,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/django",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/django",
       "index_meta": {
         "index_seconds": 6223.6,
         "peak_rss_mb": 1270,
@@ -810,7 +810,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/vite",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/vite",
       "quick": {
         "id": "20261105-141238-89c0",
         "created": "2026-11-05T14:12:38+00:00",
@@ -1592,7 +1592,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/webpack",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/webpack",
       "quick": {
         "id": "20261105-143825-07ed",
         "created": "2026-11-05T14:38:25+00:00",
@@ -2341,7 +2341,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/commons-lang",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/commons-lang",
       "quick": {
         "id": "20261105-150610-7166",
         "created": "2026-11-05T15:06:10+00:00",
@@ -3097,7 +3097,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/laravel",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/laravel",
       "quick": {
         "unsupported": true,
         "reason": "No source code was indexed"
@@ -3297,7 +3297,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/chromium-base",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/chromium-base",
       "quick": {
         "id": "20261105-163112-fbd9",
         "created": "2026-11-05T16:31:12+00:00",
@@ -4118,7 +4118,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/redis",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/redis",
       "quick": {
         "id": "20261105-172831-8e40",
         "created": "2026-11-05T17:28:31+00:00",
@@ -4899,7 +4899,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/prometheus",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/prometheus",
       "quick": {
         "id": "20261105-174518-7ee7",
         "created": "2026-11-05T17:45:18+00:00",
@@ -5671,7 +5671,7 @@
       "label": "before",
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
-      "index": "/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/tokio",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-v2.2.2/tokio",
       "quick": {
         "unsupported": true,
         "reason": "No source code was indexed"
@@ -5863,13 +5863,13 @@
       "nexus_version": "2.2.2",
       "nexus_ref": "0430f01d2f1196e51dd3f8a3602222a9f9c3f27f",
       "quick": {
-        "error": "(str(filepath), universal_graph)\n  File \"/Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/parsing/astgrep_parser.py\", line 214, in parse_file\n    root = SgRoot(content, ast_grep_id)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\npyo3_runtime.PanicException: called `Result::unwrap()` on an `Err` value: LanguageNotSupported(\"c_sharp\")\n"
+        "error": "(str(filepath), universal_graph)\n  File \"~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2/lib/python3.12/site-packages/nexus_mcp/parsing/astgrep_parser.py\", line 214, in parse_file\n    root = SgRoot(content, ast_grep_id)\n           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^\npyo3_runtime.PanicException: called `Result::unwrap()` on an `Err` value: LanguageNotSupported(\"c_sharp\")\n"
       },
       "retrieval": {
         "error": "    root = SgRoot(content, ast_grep_id) |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^ | pyo3_runtime.PanicException: called `Result::unwrap()` on an `Err` value: LanguageNotSupported(\"c_sharp\")"
       },
       "index": {
-        "error": "Indexing /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/repos/newtonsoft-json with /Users/shreyas/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2 failed"
+        "error": "Indexing ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/repos/newtonsoft-json with ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-v2.2.2 failed"
       },
       "index_meta": null
     }

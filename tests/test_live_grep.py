@@ -118,3 +118,30 @@ def test_references_os_error_returns_none(temp_workspace, monkeypatch):
 
 def test_references_empty_name_returns_none(temp_workspace):
     assert LiveGrepEngine(str(temp_workspace)).references("Class.") is None
+
+
+def _no_rg(engine):
+    engine.rg_path = None
+    return engine
+
+
+def test_references_git_grep_fallback_skips_ignored_files(tmp_path):
+    import subprocess
+
+    subprocess.run(["git", "init", "-q", str(tmp_path)], check=True)
+    (tmp_path / ".gitignore").write_text("local_settings.py\n")
+    (tmp_path / "app.py").write_text("SECRET_KEY = settings.SECRET_KEY\n")
+    (tmp_path / "local_settings.py").write_text("SECRET_KEY = 'do-not-leak'\n")
+    engine = _no_rg(LiveGrepEngine(str(tmp_path)))
+    refs = engine.references("SECRET_KEY")
+    assert list(refs["files"]) == ["app.py"]
+    assert "do-not-leak" not in str(refs)
+
+
+def test_references_grep_fallback_skips_hidden_files(tmp_path):
+    (tmp_path / "app.py").write_text("token = load()\n")
+    (tmp_path / ".hidden.py").write_text("token = 'abc'\n")
+    engine = _no_rg(LiveGrepEngine(str(tmp_path)))
+    engine.git_path = None
+    refs = engine.references("token")
+    assert list(refs["files"]) == ["app.py"]
