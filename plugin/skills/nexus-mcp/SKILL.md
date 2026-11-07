@@ -5,15 +5,10 @@ description: Answer questions about how a codebase works with the nexus-mcp tool
 
 # Using nexus-mcp
 
-Tool names are bare; your client may add a prefix. The server instructions say which tool
-answers which question. This page adds only what they do not.
+The server instructions and the tool descriptions say which tool answers which question.
+Three more points:
 
-- No setup call is needed. If a tool answers "No codebase indexed", call `index` once
-  with the absolute project path. A `warning` field means a background reindex runs.
-- Put all the names in one `find_symbol` call, not a grep or read for each.
-- A long class comes back as an outline. Ask for `Class.method` to get a method's code.
-- Do not use it when you know the exact file or string, for a project of a few thousand
-  lines, or for files outside the indexed path.
-- Call edges are static and name-based: callbacks, reflection and dynamic dispatch do not
-  appear, and a name shared by several definitions gets no edge. Treat callers as a lower
-  bound; `references` in the same result shows every line with the name.
+- Put all the names you need in one `find_symbol` call, not one call or read per name.
+- A `warning` field means a background reindex runs, so a result can be a little old.
+- For a project of a few thousand lines, or files outside the indexed path, read the
+  files directly.

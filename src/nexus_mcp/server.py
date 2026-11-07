@@ -316,10 +316,9 @@ def create_server():
         paths: Annotated[str, "More paths, comma-separated"] = "",
         ctx: Context = None,
     ) -> dict[str, Any]:
-        """Build or refresh the code index. Call it once per project, when a tool says
-        "No codebase indexed". Pass an absolute path,
-        or comma-separated paths for a monorepo. A file watcher then keeps the index
-        fresh. Large repositories take a while."""
+        """Build the code index. Call it only when a tool says "No codebase indexed".
+        Pass an absolute path, or comma-separated paths for a monorepo. A file watcher
+        then keeps it fresh."""
         guard_err = _guard("index")
         if guard_err:
             return guard_err
@@ -365,8 +364,7 @@ def create_server():
         "find the code that...". Returns ranked results with file and line range; the
         first three carry the whole function or class. Exact names in the query
         (`parse_config RetryPolicy`) bring their definitions first. For the full code of
-        a cut result, call `find_symbol`. For a known file or exact string, grep or read
-        is as good."""
+        a cut result, call `find_symbol`."""
         guard_err = _guard("search")
         if guard_err:
             return guard_err
@@ -384,9 +382,8 @@ def create_server():
         """Get the whole code of functions, classes, methods or constants by name ("show
         me create_order"), with file, line range, callers and callees. Use it instead of a
         file read or grep for a definition. Pass several names in one call. A class over
-        2,000 characters gives an outline; ask for "Class.method" for one method. Code
-        over 6,000 characters is cut and marked `(truncated)`. exact=false matches part
-        of a name. For every use of a name, use `graph`."""
+        2,000 characters gives an outline; ask for "Class.method" for one method. For
+        every use of a name, use `graph`."""
         guard_err = _guard("find_symbol")
         if guard_err:
             return guard_err

@@ -114,6 +114,25 @@ def test_graph_method_without_subclass_override_has_no_overrides(fields_repo, tm
     assert "overrides" not in core_api.graph("IntegerField.to_python")
 
 
+def test_graph_defined_in_names_the_file_of_the_symbol(fields_repo, tmp_path):
+    _index(fields_repo, tmp_path)
+    out = core_api.graph("Field.validate")
+    assert out["defined_in"] == {"pkg/fields.py": ["Field.validate:2"]}
+    assert list(out)[:2] == ["symbol", "defined_in"]  # read before callers and overrides
+    deep = core_api.graph("Field.validate", transitive=True)
+    assert deep["defined_in"] == {"pkg/fields.py": ["Field.validate:2"]}
+
+
+def test_graph_defined_in_is_left_out_for_a_name_with_many_definitions(
+    fields_repo, tmp_path, monkeypatch
+):
+    _index(fields_repo, tmp_path)
+    out = core_api.graph("validate")  # 5 classes define it
+    assert sum(len(v) for v in out["defined_in"].values()) == 5
+    monkeypatch.setattr(core_api, "MAX_DEFINED_IN", 4)
+    assert "defined_in" not in core_api.graph("validate")
+
+
 def test_graph_overrides_count_each_subclass_once_with_a_stub_file(fields_repo, tmp_path):
     # A `.pyi` stub gives a second `Field.validate` node with the same owner name.
     (fields_repo / "pkg" / "fields.pyi").write_text(

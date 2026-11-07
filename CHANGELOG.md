@@ -55,6 +55,16 @@ All notable changes to this project will be documented in this file.
   the graph counts do not change on Flask, Vite and webpack. Run logs are in
   `benchmarks/runs/languages-py-fix`.
 
+- **`graph` names the file of the symbol itself (`defined_in`).** On Django the impact
+  task on `Field.validate` got the overrides in 2 turns, but in 2 of 6 runs the answer
+  left out `fields/__init__.py`, where `Field.validate` is, and the scorer marked it
+  wrong. A name with more than 5 definitions gets no `defined_in`.
+- **Less repeated text on each turn.** The skill body now holds only what the server
+  instructions and the tool descriptions do not say. The `index`, `search` and
+  `find_symbol` descriptions lose sentences that another text already says. Fixed text
+  (skill, instructions and 5 tool schemas, estimated as characters / 4): about 1,420 →
+  1,240 tokens on each turn. Not yet measured in a live run.
+
 ### Fixed
 
 - **Security review of this branch.**

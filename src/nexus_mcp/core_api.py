@@ -376,6 +376,28 @@ def _serialize_node_compact(
     }
 
 
+MAX_DEFINED_IN = 5  # a bare name with more definitions than this gets no `defined_in`
+
+
+def _defined_in(state, matches: List[UniversalNode]) -> Optional[dict[str, list[str]]]:
+    """Where the asked symbol itself is defined, as `file -> ["Class.method:line"]`.
+
+    An impact answer must name the file of the symbol, not only its callers and overrides.
+    On Django `graph("Field.validate")` gave the overrides, and the agent left out
+    `fields/__init__.py` in 2 of 6 runs. None for a name with many definitions: the
+    callers and references already cover it.
+    """
+    if not matches or len(matches) > MAX_DEFINED_IN:
+        return None
+    grouped: dict[str, list[str]] = {}
+    for node in matches:
+        short = _serialize_node_compact(node, state.codebase_path)
+        owner = (node.metadata or {}).get("parent_class")
+        label = f"{owner}.{node.name}" if owner else node.name
+        grouped.setdefault(short["file"], []).append(f"{label}:{short['start_line']}")
+    return grouped
+
+
 def _group_by_file(
     nodes: List[UniversalNode], codebase_path: Optional[Path] = None
 ) -> dict[str, list[str]]:
@@ -1461,8 +1483,11 @@ def _graph_immediate(
                 seen.add(related.id)
                 related_nodes.append(related)
 
-    result = {
-        "symbol": symbol_name,
+    result: dict[str, Any] = {"symbol": symbol_name}
+    defined_in = _defined_in(state, matches)
+    if defined_in:
+        result["defined_in"] = defined_in
+    result |= {
         "direction": direction,
         "total": len(related_nodes),
         direction: (
@@ -1604,8 +1629,11 @@ def _graph_transitive_impact(
                 short = _serialize_node_compact(caller, state.codebase_path)
                 by_file.setdefault(short["file"], []).append(short["name"])
 
-    result: dict[str, Any] = {
-        "symbol": symbol_name,
+    result: dict[str, Any] = {"symbol": symbol_name}
+    defined_in = _defined_in(state, matches)
+    if defined_in:
+        result["defined_in"] = defined_in
+    result |= {
         "direction": "callers",
         "transitive": True,
         "max_depth": max_depth,
