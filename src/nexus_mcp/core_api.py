@@ -438,8 +438,103 @@ def _serialize_relationship(rel: UniversalRelationship) -> dict[str, Any]:
 
 
 def _resolve_symbol(graph, name: str, exact: bool = True) -> List[UniversalNode]:
-    """Find nodes by name in the graph."""
-    return graph.find_nodes_by_name(name, exact=exact)
+    """Find nodes by name in the graph.
+
+    A method is in the graph by its bare name, with its class in ``parent_class``. So a
+    name with no node of its own, such as `Field.validate` or `SQLCompiler::as_sql`, gives
+    the methods of that name whose class has the name of the part before it.
+    """
+    nodes = graph.find_nodes_by_name(name, exact=exact)
+    if nodes or not exact:
+        return nodes
+    return _qualified_methods(graph, name)
+
+
+def _qualified_methods(graph, name: str) -> List[UniversalNode]:
+    """The methods that a `Class.method` or `Class::method` name points at, or []."""
+    parts = [p for p in re.split(r"\.|::", name) if p]
+    if len(parts) < 2:
+        return []
+    owner, method = parts[-2], parts[-1]
+    return [
+        n for n in graph.find_nodes_by_name(method, exact=True)
+        if n.node_type == NodeType.FUNCTION and (n.metadata or {}).get("parent_class") == owner
+    ]
+
+
+def _subclasses(graph, class_name: str) -> List[UniversalNode]:
+    """Every class that inherits from ``class_name``, directly or through other classes.
+
+    Bases are names, as the parser records them (`metadata["bases"]`), so two classes of the
+    same name in different modules are one class here. The answer is a lower bound: a base
+    given by an expression (`extends mix(A)`) is not seen.
+    """
+    children: dict[str, list[UniversalNode]] = {}
+    for node in graph.get_nodes_by_type(NodeType.CLASS):
+        for base in (node.metadata or {}).get("bases", ()):
+            children.setdefault(base, []).append(node)
+    found: dict[str, UniversalNode] = {}
+    todo = [class_name]
+    seen_names = {class_name}
+    while todo:
+        for child in children.get(todo.pop(), ()):
+            if child.id in found:
+                continue
+            found[child.id] = child
+            if child.name not in seen_names:
+                seen_names.add(child.name)
+                todo.append(child.name)
+    return list(found.values())
+
+
+def _overrides(state, methods: List[UniversalNode]) -> Optional[dict[str, Any]]:
+    """The methods of subclasses that override one of ``methods``, by file.
+
+    The answer to "which subclasses override X.m and must change with it". Each entry is
+    `Class.method:line`. Returns None when no method has a class, or no subclass overrides it.
+    """
+    graph = state.graph_engine
+    by_file: dict[str, list[str]] = {}
+    seen: set[str] = set()
+    subclass_count = 0
+    for method in methods:
+        owner = (method.metadata or {}).get("parent_class")
+        if not owner:
+            continue
+        subclasses = _subclasses(graph, owner)
+        subclass_count += len(subclasses)
+        places = {(c.name, c.location.file_path) for c in subclasses}
+        for node in graph.find_nodes_by_name(method.name, exact=True):
+            cls = (node.metadata or {}).get("parent_class")
+            if node.id in seen or (cls, node.location.file_path) not in places:
+                continue
+            seen.add(node.id)
+            short = _serialize_node_compact(node, state.codebase_path)
+            by_file.setdefault(short["file"], []).append(
+                f"{cls}.{node.name}:{node.location.start_line}"
+            )
+    if not by_file:
+        return None
+    return {
+        "total": len(seen),
+        "subclasses": subclass_count,
+        "files": _collapse_test_symbols(by_file),
+    }
+
+
+def _add_overrides(result: dict[str, Any], state, matches: List[UniversalNode]) -> None:
+    """Add the subclass overrides of the matched methods to a `graph` callers result.
+
+    Only when every match is a method of one class (`Field.validate`, or a bare name with
+    one owner). A bare name such as `validate` with many owners would list the overrides of
+    unrelated classes.
+    """
+    owners = {(n.metadata or {}).get("parent_class") for n in matches}
+    if len(owners) != 1 or None in owners:
+        return
+    overrides = _overrides(state, matches)
+    if overrides:
+        result["overrides"] = overrides
 
 
 def _filter_location_list(items: list, filter_path: str) -> list:
@@ -1365,6 +1460,7 @@ def _graph_immediate(
             'detail="compact" names all of them.'
         )
     if direction == "callers":
+        _add_overrides(result, state, matches)
         _add_references(result, state, symbol_name)
     return result
 
@@ -1481,6 +1577,7 @@ def _graph_transitive_impact(
             f"impacted_symbols shows the first {MAX_FULL_NODES} of {len(all_impacted)}. "
             "impacted_files names all of them."
         )
+    _add_overrides(result, state, matches)
     _add_references(result, state, symbol_name)
     return result
 

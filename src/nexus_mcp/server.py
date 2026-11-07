@@ -405,8 +405,9 @@ def create_server():
         calls ('callees'). transitive=true lists everything that depends on it; use it
         before you change, rename or delete a shared function ("what breaks if I change
         X"). A callers result also has `references`, every whole-word use of the name,
-        so no grep is needed. Edges are static: calls through callbacks, reflection or
-        dynamic dispatch show only in `references`."""
+        so no grep is needed. For a method, pass `Class.method`: the result also lists the
+        `overrides` in subclasses. Edges are static: calls through callbacks, reflection
+        or dynamic dispatch show only in `references`."""
         guard_err = _guard("graph")
         if guard_err:
             return guard_err

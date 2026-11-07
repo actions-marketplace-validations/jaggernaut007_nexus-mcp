@@ -699,6 +699,9 @@ class AstGrepParser:
                     language=language,
                     line_count=rng.end.line - rng.start.line + 1,
                 )
+                bases = self._class_bases(match, language)
+                if bases:
+                    class_node.metadata["bases"] = bases
                 graph.add_node(class_node)
 
                 graph.add_relationship(UniversalRelationship(
@@ -713,6 +716,42 @@ class AstGrepParser:
                 continue
 
         return count
+
+    @staticmethod
+    def _class_bases(match, language: str) -> List[str]:
+        """The names of the base classes of a Python, JavaScript or TypeScript class.
+
+        A dotted base keeps its last part (`models.Field` is `Field`), because the graph
+        names classes without their module. A keyword argument (`metaclass=Meta`) and a
+        computed base (`extends mix(A)`) give no name. TypeScript `implements` names count
+        too: a class must define the methods of its interface. Other languages give [].
+        """
+        if language == "python":
+            holder = match.field("superclasses")
+            parts = holder.children() if holder else []
+        elif language in ("javascript", "typescript", "tsx"):
+            heritage = next((c for c in match.children() if c.kind() == "class_heritage"), None)
+            if heritage is None:
+                return []
+            parts = []
+            for child in heritage.children():
+                if child.kind() in ("extends_clause", "implements_clause"):
+                    parts.extend(child.children())
+                else:
+                    parts.append(child)  # JavaScript: `extends Base` has no clause node
+        else:
+            return []
+        names: List[str] = []
+        for part in parts:
+            kind = part.kind()
+            if kind == "subscript":  # Generic[T]
+                part = part.field("value") or part
+                kind = part.kind()
+            if kind in ("identifier", "type_identifier", "attribute", "member_expression"):
+                name = part.text().rsplit(".", 1)[-1].strip()
+                if name and name not in names:
+                    names.append(name)
+        return names
 
     @staticmethod
     def _c_class_name(match) -> Optional[str]:

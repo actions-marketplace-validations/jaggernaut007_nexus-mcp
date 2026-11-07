@@ -8,7 +8,7 @@ import logging
 import os
 import shutil
 import subprocess
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Dict, List, Optional
 
 logger = logging.getLogger(__name__)
@@ -63,10 +63,13 @@ class LiveGrepEngine:
 
         Source files come first, each with the text of its lines (``"line: code"``).
         Test files come as a count of lines for each file. A source file past the
-        ``max_lines`` budget comes as a count in ``more_files``. ``total_files`` and
-        ``total_lines`` always count everything found.
+        ``max_lines`` budget comes as a count in ``more_files``. A file that is not code
+        (no extension of the language registry: docs, translations, data) adds only to
+        ``non_code`` (files and lines). ``total_files`` and ``total_lines`` always count
+        everything found.
         """
         from nexus_mcp.engines.fusion import is_test_path
+        from nexus_mcp.parsing.language_registry import get_supported_extensions
 
         name = name.rsplit(".", 1)[-1].strip()
         if not name:
@@ -102,10 +105,18 @@ class LiveGrepEngine:
         files: Dict[str, List[str]] = {}
         more_files: Dict[str, int] = {}
         test_files: Dict[str, int] = {}
+        non_code = {"files": 0, "lines": 0}
+        code_suffixes = get_supported_extensions()
         budget = max_lines
         truncated = False
         for path in sorted(by_file, key=lambda p: (is_test_path(p), p)):
             hits = by_file[path]
+            if PurePosixPath(path).suffix.lower() not in code_suffixes:
+                # Docs, translations (`.po`) and data files: on Django the word `validate`
+                # had 100+ locale files, which took the line budget before the code.
+                non_code["files"] += 1
+                non_code["lines"] += len(hits)
+                continue
             if is_test_path(path):
                 test_files[path] = len(hits)
                 continue
@@ -127,6 +138,8 @@ class LiveGrepEngine:
             result["more_files"] = more_files
         if test_files:
             result["test_files"] = test_files
+        if non_code["files"]:
+            result["non_code"] = non_code
         return result
 
     def _search_rg(self, query: str, limit: int) -> List[Dict[str, Any]]:
