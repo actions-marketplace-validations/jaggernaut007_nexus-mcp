@@ -25,6 +25,36 @@ All notable changes to this project will be documented in this file.
   language numbers are published yet. The CSV has new columns for the language rows.
   North star: no change (output only).
 
+- **`Class.method` names and subclass overrides in `graph` (issue #31).** On Django,
+  `graph("Field.validate")` gave no callers and `find_symbol("Field.validate")` gave "not
+  found", so the agent ran 5 to 8 greps on each impact task.
+  - The parser records the base classes of each class in Python, JavaScript and TypeScript.
+  - `find_symbol` and `graph` accept `Class.method` and `Class::method`.
+  - For a method of one class, `graph` also lists the `overrides` in subclasses.
+  - `references` gives only a count (`non_code`) for files that are not code. On Django the
+    word `validate` had 100+ `.po` files, which used the line budget before the code.
+  - Bases are names, so two classes with one name merge. Treat the overrides as a lower
+    bound.
+
+  Live benchmark on Django, `claude -p`, Sonnet, medium effort, reduced isolation, 6 tasks ×
+  3 reps, 2.4.0 → this change (Grep and Read in brackets):
+  - Median of the 18 runs: 52,410 (46,570) → 52,280 (46,523) tokens.
+  - Sum of the 18 runs: 1,496,136 (1,283,308) → 1,459,415 (1,225,952) tokens; fresh tokens
+    217,904 (164,843) → 149,809 (168,238); cost $1.357 ($1.101) → $1.043 ($1.106).
+  - Correct answers: 15 (16) → 16 (16) of 18.
+  - The impact task on `Field.validate`: median 102,845 → 33,242 tokens, 12 → 2 turns. It
+    is the only Django task where Nexus-MCP uses fewer tokens than Grep.
+  - The median of the 6 task medians (the summary table value) goes from 54,038 (47,846) to
+    43,210 (52,202). This value moves with one task, so do not read it as a win.
+  - Nexus-MCP costs less than Grep on Django and has 11% fewer fresh tokens. Its tokens are
+    still 12% higher by median and 19% higher by sum: each turn adds about 5k tokens of
+    fixed text, read again from the cache. The `SQLCompiler.as_sql` task still takes 22
+    turns. Django is not a win.
+
+  Accuracy gate: the quick tier, retrieval hit@1 (Flask 0.59, Vite 0.47, webpack 0.20) and
+  the graph counts do not change on Flask, Vite and webpack. Run logs are in
+  `benchmarks/runs/languages-py-fix`.
+
 ### Fixed
 
 - **C# and Dart files stopped the whole index.** The ast-grep ids `c_sharp` and `dart` do not
