@@ -207,6 +207,8 @@ def main(argv: Optional[List[str]] = None) -> int:
     parser.add_argument("--nexus-venv", type=Path, required=True)
     parser.add_argument("--label", required=True, help="before, after, or a release name")
     parser.add_argument("--languages", default="", help="Comma-separated; default all")
+    parser.add_argument("--corpora", default="",
+                        help="Comma-separated corpus names (e.g. django); default all")
     parser.add_argument("--tiers", default=",".join(ALL_TIERS))
     parser.add_argument("--reps", type=int, default=runner.DEFAULT_REPS)
     parser.add_argument("--model", default=runner.DEFAULT_MODEL)
@@ -218,11 +220,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     if unknown:
         parser.error(f"unknown tiers: {sorted(unknown)}")
     langs = [s for s in args.languages.split(",") if s.strip()] or None
+    names = [s for s in args.corpora.split(",") if s.strip()] or None
     pinned = runner.load_pinned(args.nexus_venv)
     summary_path = RESULTS_DIR / f"languages-{args.label}.json"
     summary = _cached(summary_path) or {"label": args.label, "rows": {}}
     code = 0
-    for corpus in corpora.select(corpora.load(), langs):
+    for corpus in corpora.select(corpora.load(), langs, names=names):
         try:
             row = run_corpus(corpus, pinned, tiers, args.label, args)
         except runner.UsageLimitReached as exc:

@@ -60,8 +60,12 @@ The last command writes `benchmarks/results/languages-<label>.json`. A finished 
 not run again. If the usage limit stops a live run, the command exits with code 3. Run
 the same command later to resume.
 
-Use `--languages Rust,Go` and `--tiers quick,retrieval,graph` to run a part. The three
-free tiers never start a paid run.
+Use `--languages Rust,Go` and `--tiers quick,retrieval,graph` to run a part. Use
+`--corpora django,home-assistant` to run some corpora of a language. The three free tiers
+never start a paid run.
+
+`home-assistant` is the large-repo test: the whole `home-assistant/core` repo, about 26,000
+Python files, live tier only. Its index takes hours.
 
 ## Rules of a fair comparison
 

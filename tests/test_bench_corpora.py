@@ -81,6 +81,23 @@ def test_select_filters_by_language_and_tier():
     assert len(corpora.select(entries)) == 2
 
 
+def test_select_filters_by_names():
+    entries = [
+        {"name": "django", "language": "Python", "tiers": ["live"]},
+        {"name": "flask", "language": "Python", "tiers": ["quick"]},
+        {"name": "home-assistant", "language": "Python", "tiers": ["live"]},
+    ]
+    picked = corpora.select(entries, ["Python"], names=["django", " home-assistant"])
+    assert [c["name"] for c in picked] == ["django", "home-assistant"]
+    assert corpora.select(entries, names=["nope"]) == []
+
+
+def test_manifest_has_the_large_python_corpus():
+    ha = [c for c in corpora.load() if c["name"] == "home-assistant"]
+    assert ha and ha[0]["language"] == "Python" and ha[0]["tiers"] == ["live"]
+    assert ha[0]["pin"].startswith("5b0d396")
+
+
 def test_checkout_is_sparse_pinned_and_has_no_agent_config(tmp_path, upstream):
     corpus = _corpus(upstream, sparse=["src"])
     dest = corpora.checkout(corpus, tmp_path / "repos")

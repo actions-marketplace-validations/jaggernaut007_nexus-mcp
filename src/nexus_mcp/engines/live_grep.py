@@ -6,20 +6,28 @@ Provides 100% code coverage for unindexed or newly created files.
 import json
 import logging
 import os
+import re
 import shutil
 import subprocess
 from pathlib import Path, PurePosixPath
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Sequence
 
 logger = logging.getLogger(__name__)
 
 REFERENCES_TIMEOUT_S = 10
 REFERENCE_TEXT_CHARS = 110
+# At most this many class names rank the reference files (a class and its subclasses).
+MAX_RELATED_NAMES = 200
 # ripgrep skips hidden and git-ignored paths by itself; plain grep needs the list.
 _GREP_SKIP_DIRS = (
     ".git", ".nexus*", ".venv", "venv", "node_modules", "__pycache__", "dist", "build",
     ".mypy_cache", ".pytest_cache", ".ruff_cache", ".tox",
 )
+
+
+def _clean_path(path: str) -> str:
+    """A grep path without the leading `./`."""
+    return path[2:] if path.startswith("./") else path
 
 
 class LiveGrepEngine:
@@ -50,8 +58,42 @@ class LiveGrepEngine:
         logger.warning("Neither ripgrep nor grep found on system.")
         return []
 
+    def _word_grep(self, names: Sequence[str], list_files: bool) -> Optional[str]:
+        """Run a whole-word, fixed-string search for ``names`` from the workspace root.
+
+        With ``list_files`` the output is one path per line, else ``path:line:text``.
+        Returns None when neither ripgrep nor grep is available or the search fails.
+        """
+        patterns: List[str] = []
+        for n in names:
+            patterns += ["-e", n]
+        if self.rg_path:
+            cmd = [self.rg_path, "--word-regexp", "--fixed-strings", "--no-messages",
+                   "--color", "never"]
+            cmd += ["--files-with-matches"] if list_files else ["--no-heading", "--line-number"]
+        elif self.grep_path:
+            cmd = [self.grep_path, "-rlIwF" if list_files else "-rnIwF"]
+            cmd += [f"--exclude-dir={d}" for d in _GREP_SKIP_DIRS]
+        else:
+            return None
+        cmd += patterns + ["."]
+        try:
+            proc = subprocess.run(
+                cmd, capture_output=True, text=True, check=False,
+                cwd=str(self.workspace_path), timeout=REFERENCES_TIMEOUT_S,
+            )
+        except (OSError, subprocess.SubprocessError) as e:
+            logger.warning("Reference search failed: %s", e)
+            return None
+        return proc.stdout
+
     def references(
-        self, name: str, max_lines: int = 60, max_lines_per_file: int = 8
+        self,
+        name: str,
+        max_lines: int = 60,
+        max_lines_per_file: int = 8,
+        related_names: Optional[Sequence[str]] = None,
+        skip_definitions: bool = False,
     ) -> Optional[Dict[str, Any]]:
         """Every line where ``name`` appears as a whole word, as a short answer.
 
@@ -67,50 +109,56 @@ class LiveGrepEngine:
         (no extension of the language registry: docs, translations, data) adds only to
         ``non_code`` (files and lines). ``total_files`` and ``total_lines`` always count
         everything found.
+
+        ``related_names`` (the class of a method and its subclasses): source files that
+        name one of them come first, so the line budget goes to the code of that class.
+        ``skip_definitions``: a ``def name`` or ``function name`` line defines a method of
+        the same name in another class. It is not a use, so it only adds to
+        ``definitions`` (a line count). On Django 91 of the 283 `as_sql` lines were such
+        definitions, and the budget ran out before it reached `db/models/sql`.
         """
         from nexus_mcp.engines.fusion import is_test_path
         from nexus_mcp.parsing.language_registry import get_supported_extensions
 
-        name = name.rsplit(".", 1)[-1].strip()
+        name = re.split(r"\.|::", name)[-1].strip()
         if not name:
             return None
-        if self.rg_path:
-            cmd = [
-                self.rg_path, "--no-heading", "--line-number", "--word-regexp",
-                "--fixed-strings", "--no-messages", "--color", "never", "-e", name, ".",
-            ]
-        elif self.grep_path:
-            cmd = [self.grep_path, "-rnIwF"]
-            cmd += [f"--exclude-dir={d}" for d in _GREP_SKIP_DIRS]
-            cmd += ["-e", name, "."]
-        else:
-            return None
-        try:
-            proc = subprocess.run(
-                cmd, capture_output=True, text=True, check=False,
-                cwd=str(self.workspace_path), timeout=REFERENCES_TIMEOUT_S,
-            )
-        except (OSError, subprocess.SubprocessError) as e:
-            logger.warning("Reference search failed: %s", e)
+        output = self._word_grep([name], list_files=False)
+        if output is None:
             return None
 
         by_file: Dict[str, List[tuple]] = {}
-        for line in proc.stdout.splitlines():
+        for line in output.splitlines():
             parts = line.split(":", 2)
             if len(parts) < 3 or not parts[1].isdigit():
                 continue
-            path = parts[0][2:] if parts[0].startswith("./") else parts[0]
-            by_file.setdefault(path, []).append((int(parts[1]), parts[2].strip()))
+            by_file.setdefault(_clean_path(parts[0]), []).append((int(parts[1]), parts[2].strip()))
+
+        near: set = set()
+        related = [n for n in (related_names or ()) if n and n != name]
+        if related and by_file:
+            listed = self._word_grep(related[:MAX_RELATED_NAMES], list_files=True) or ""
+            near = {_clean_path(p) for p in listed.splitlines() if p}
+        definition = re.compile(
+            rf"^(?:export\s+)?(?:async\s+)?(?:def|function\s*\*?)\s+{re.escape(name)}\b"
+        )
 
         files: Dict[str, List[str]] = {}
         more_files: Dict[str, int] = {}
         test_files: Dict[str, int] = {}
         non_code = {"files": 0, "lines": 0}
+        definitions = 0
         code_suffixes = get_supported_extensions()
         budget = max_lines
         truncated = False
-        for path in sorted(by_file, key=lambda p: (is_test_path(p), p)):
+        for path in sorted(by_file, key=lambda p: (is_test_path(p), p not in near, p)):
             hits = by_file[path]
+            if skip_definitions and not is_test_path(path):
+                kept = [h for h in hits if not definition.match(h[1])]
+                definitions += len(hits) - len(kept)
+                hits = kept
+                if not hits:
+                    continue
             if PurePosixPath(path).suffix.lower() not in code_suffixes:
                 # Docs, translations (`.po`) and data files: on Django the word `validate`
                 # had 100+ locale files, which took the line budget before the code.
@@ -140,6 +188,8 @@ class LiveGrepEngine:
             result["test_files"] = test_files
         if non_code["files"]:
             result["non_code"] = non_code
+        if definitions:
+            result["definitions"] = definitions
         return result
 
     def _search_rg(self, query: str, limit: int) -> List[Dict[str, Any]]:

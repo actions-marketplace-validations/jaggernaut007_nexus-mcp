@@ -37,6 +37,16 @@ corpora:
       - dj-arch-request-to-query
       - dj-needle-charfield-class
 
+  # The large-repo test: about 26,000 Python files, the whole repo. Pin from the task file.
+  - name: home-assistant
+    language: Python
+    repo: home-assistant/core
+    url: https://github.com/home-assistant/core.git
+    pin: 5b0d396bd84113aabf694d23cdbddbdaf574ca78
+    sparse: []
+    tiers: [live]
+    tasks: benchmarks/tasks/home-assistant.yaml
+
   - name: vite
     language: TypeScript
     repo: vitejs/vite

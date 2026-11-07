@@ -50,13 +50,16 @@ def select(
     corpora: List[Dict[str, Any]],
     languages: Optional[Iterable[str]] = None,
     tier: Optional[str] = None,
+    names: Optional[Iterable[str]] = None,
 ) -> List[Dict[str, Any]]:
-    """The corpora of the given languages (case-insensitive) and tier. None: all."""
+    """The corpora of the given languages (case-insensitive), tier and names. None: all."""
     wanted = {lang.strip().lower() for lang in languages} if languages else None
+    named = {n.strip() for n in names} if names else None
     return [
         c for c in corpora
         if (wanted is None or c["language"].lower() in wanted)
         and (tier is None or tier in c["tiers"])
+        and (named is None or c["name"] in named)
     ]
 
 

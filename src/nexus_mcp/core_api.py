@@ -1461,7 +1461,7 @@ def _graph_immediate(
         )
     if direction == "callers":
         _add_overrides(result, state, matches)
-        _add_references(result, state, symbol_name)
+        _add_references(result, state, symbol_name, matches)
     return result
 
 
@@ -1494,20 +1494,46 @@ def _merge_references(found: list[tuple[Path, dict[str, Any]]]) -> dict[str, Any
         merged["total_files"] += refs.get("total_files", 0)
         merged["total_lines"] += refs.get("total_lines", 0)
         merged["truncated"] = merged["truncated"] or refs.get("truncated", False)
+        if refs.get("definitions"):
+            merged["definitions"] = merged.get("definitions", 0) + refs["definitions"]
+        if refs.get("non_code"):
+            nc = merged.setdefault("non_code", {"files": 0, "lines": 0})
+            nc["files"] += refs["non_code"]["files"]
+            nc["lines"] += refs["non_code"]["lines"]
         for key in ("files", "more_files", "test_files"):
             for path, value in refs.get(key, {}).items():
                 merged.setdefault(key, {})[f"{root.name}/{path}"] = value
     return merged
 
 
-def _add_references(result: dict[str, Any], state, symbol_name: str) -> None:
+def _class_family(state, matches: List[UniversalNode]) -> List[str]:
+    """The class of the matched methods and its subclasses, when all matches share a class."""
+    owners = {(n.metadata or {}).get("parent_class") for n in matches}
+    if len(owners) != 1 or None in owners:
+        return []
+    owner = owners.pop()
+    return [owner] + sorted({c.name for c in _subclasses(state.graph_engine, owner)} - {owner})
+
+
+def _add_references(
+    result: dict[str, Any],
+    state,
+    symbol_name: str,
+    matches: Optional[List[UniversalNode]] = None,
+) -> None:
     """Add every whole-word text use of the symbol name to a `graph` callers result.
 
     Call edges are a lower bound. In the benchmark traces the agent ran its own grep
     after `graph` in 5 of 6 impact tasks to check them; this list makes that unnecessary.
+
+    With graph ``matches`` (the symbol has a node), `def` lines of other methods with the
+    same name only add to a count, and files that name the class of the method or a
+    subclass come first. On Django `SQLCompiler.as_sql` listed `contrib/gis` first and
+    the agent then ran 22 turns of grep and reads (issue #31).
     """
     from nexus_mcp.engines.live_grep import LiveGrepEngine
 
+    related = _class_family(state, matches) if matches else []
     roots = _index_roots(state)
     # Each root of a multi-root index gets a share of the line budget, and its paths get
     # the root's folder name in front, so that `src/a.py` of two roots stays apart.
@@ -1519,6 +1545,8 @@ def _add_references(result: dict[str, Any], state, symbol_name: str) -> None:
                 symbol_name,
                 max_lines=max_lines if len(roots) > 1 else MAX_REFERENCE_LINES,
                 max_lines_per_file=MAX_REFERENCE_LINES_PER_FILE,
+                related_names=related,
+                skip_definitions=bool(matches),
             )
         except Exception as e:  # noqa: BLE001 - references are an addition, never a failure
             logger.warning("Reference search failed: %s", e)
@@ -1578,7 +1606,7 @@ def _graph_transitive_impact(
             "impacted_files names all of them."
         )
     _add_overrides(result, state, matches)
-    _add_references(result, state, symbol_name)
+    _add_references(result, state, symbol_name, matches)
     return result
 
 
