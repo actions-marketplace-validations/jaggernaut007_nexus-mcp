@@ -377,6 +377,9 @@ Run `benchmarks/` on your own project before you rely on it.
 
 ## The 8 Tools
 
+**New in v2.4.2:** every `uvx` launch pins Python 3.12, so the install works when the default
+Python is 3.13 or 3.14.
+
 **New in v2.4.1:** symbols, graph nodes and call edges for C, C++, C#, PHP and Rust;
 `Class.method` names and subclass overrides in `graph`; and a size cap on large `graph`
 results. By default the server shows only `index`, `search`, `find_symbol`, `graph` and

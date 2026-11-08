@@ -1,6 +1,6 @@
 {
   "name": "nexus-mcp",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "Local code search, call graph and project memory for Gemini CLI, in fewer tokens. Needs uv.",
   "mcpServers": {
     "nexus-mcp": {
@@ -8,7 +8,7 @@
       "args": [
         "--python",
         "3.12",
-        "nexus-mcp-ci==2.4.1"
+        "nexus-mcp-ci==2.4.2"
       ]
     }
   },
