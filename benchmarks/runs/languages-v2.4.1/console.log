@@ -167,3 +167,52 @@ Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/resu
 [home-assistant] done: live
 Wrote ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-path-rule.json
 live exit 0
+step: install check
+[install] ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/.venv-path-rule already holds 195090c51c78b671e632d10e841422c50ec50e0f
+step: copy index
+301M	benchmarks/indexes/.venv-path-rule/django
+2.9G	benchmarks/indexes/.venv-path-rule/home-assistant
+step: live django
+[corpora] django already at 318a316a4c
+[1/36] dj-concept-signal-dispatch / baseline / rep 1
+    warm-up call for baseline
+[2/36] dj-concept-signal-dispatch / nexus / rep 1
+    warm-up call for nexus
+[3/36] dj-concept-field-validation / nexus / rep 1
+[4/36] dj-concept-field-validation / baseline / rep 1
+[5/36] dj-impact-sqlcompiler-as-sql / baseline / rep 1
+[6/36] dj-impact-sqlcompiler-as-sql / nexus / rep 1
+[7/36] dj-impact-field-validate / nexus / rep 1
+[8/36] dj-impact-field-validate / baseline / rep 1
+[9/36] dj-arch-request-to-query / baseline / rep 1
+[10/36] dj-arch-request-to-query / nexus / rep 1
+[11/36] dj-needle-charfield-class / nexus / rep 1
+[12/36] dj-needle-charfield-class / baseline / rep 1
+[13/36] dj-concept-signal-dispatch / nexus / rep 2
+[14/36] dj-concept-signal-dispatch / baseline / rep 2
+[15/36] dj-concept-field-validation / baseline / rep 2
+[16/36] dj-concept-field-validation / nexus / rep 2
+[17/36] dj-impact-sqlcompiler-as-sql / nexus / rep 2
+[18/36] dj-impact-sqlcompiler-as-sql / baseline / rep 2
+[19/36] dj-impact-field-validate / baseline / rep 2
+[20/36] dj-impact-field-validate / nexus / rep 2
+[21/36] dj-arch-request-to-query / nexus / rep 2
+[22/36] dj-arch-request-to-query / baseline / rep 2
+[23/36] dj-needle-charfield-class / baseline / rep 2
+[24/36] dj-needle-charfield-class / nexus / rep 2
+[25/36] dj-concept-signal-dispatch / baseline / rep 3
+[26/36] dj-concept-signal-dispatch / nexus / rep 3
+[27/36] dj-concept-field-validation / nexus / rep 3
+[28/36] dj-concept-field-validation / baseline / rep 3
+[29/36] dj-impact-sqlcompiler-as-sql / baseline / rep 3
+[30/36] dj-impact-sqlcompiler-as-sql / nexus / rep 3
+[31/36] dj-impact-field-validate / nexus / rep 3
+[32/36] dj-impact-field-validate / baseline / rep 3
+[33/36] dj-arch-request-to-query / baseline / rep 3
+[34/36] dj-arch-request-to-query / nexus / rep 3
+[35/36] dj-needle-charfield-class / nexus / rep 3
+[36/36] dj-needle-charfield-class / baseline / rep 3
+Wrote 36 records to ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-path-rule/django-live.jsonl
+[django] done: live
+Wrote ~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/results/languages-path-rule.json
+live exit 0

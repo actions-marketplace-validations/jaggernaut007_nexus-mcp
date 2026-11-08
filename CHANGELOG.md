@@ -175,16 +175,28 @@ All notable changes to this project will be documented in this file.
   and a reader cannot open it. The results already give the full path. The new rule tells
   the agent to copy that path for each file, function or class that it names. It applies
   in every project, and it adds about 60 tokens to the instructions.
-  - Live A/B of `195090c` on Home Assistant (`benchmarks/runs/languages-path-rule`),
-    Sonnet at medium effort, 6 tasks × 3 reps, on a copy of the defs-fix index.
-  - Nexus against Grep: sum 880,904 / 1,730,618; median 42,396 / 65,990; fresh 152,801 /
-    187,939; cost $0.870 / $1.273; correct 18 / 17 of 18; fact score 0.917 / 0.889;
-    combined 0.949 / 0.917; tasks with fewer tokens 5 of 6. The gate passes.
-  - Before (graph-cap run, `cf1bb7a`): Nexus correct 15 of 18, sum 1,046,718, cost $0.972.
+  - Live A/B of `195090c` on Home Assistant and Django (`benchmarks/runs/languages-v2.4.1`),
+    Sonnet at medium effort, 6 tasks × 3 reps, on copies of the defs-fix indexes.
+    `195090c` differs from the 2.4.1 commit only in the version string, so the runs are
+    filed as 2.4.1. Each record keeps `nexus_ref` 195090c and has a `nexus_version_note`.
+  - Home Assistant, Nexus against Grep: sum 880,904 / 1,730,618; median 42,396 / 65,990;
+    fresh 152,801 / 187,939; cost $0.870 / $1.273; correct 18 / 17 of 18; fact score
+    0.917 / 0.889; combined 0.949 / 0.917; tasks with fewer tokens 5 of 6. The gate passes.
+    Before (graph-cap run, `cf1bb7a`): Nexus correct 15 of 18, sum 1,046,718, cost $0.972.
     The `async_setup_component` task went from 1 to 3 of 3 correct, with a median of
     53,219 tokens (before 72,656; Grep 76,403).
-  - Grep's totals change much from run to run (sum 2,350,456 in the graph-cap run), so the
-    token gap is less certain than the accuracy result. Django is not rerun with this rule.
+  - Django, Nexus against Grep: sum 1,008,351 / 1,372,604; median 32,788 / 46,588; fresh
+    131,646 / 170,208; cost $0.841 / $1.151; correct 17 / 16 of 18; combined 0.882 /
+    0.819; tasks with fewer tokens 2 of 6. The gate passes. Before (graph-cap run): Nexus
+    correct 16 of 18, sum 884,896, cost $0.728.
+  - Open item: on Django the `SQLCompiler.as_sql` task rose from a median of 33,573 to
+    133,787 tokens (Grep 209,738). All 3 runs made 2 to 7 `graph` calls and walked the
+    transitive chain by hand, with longer answers. 1 of 3 runs before the rule did the same,
+    so part of the rise is run-to-run noise. The rule can also push the agent to look up a
+    path for each function it names.
+  - Both repos together, Nexus: sum 1,931,614 → 1,889,255 tokens; correct 31 → 35 of 36.
+    Grep's totals change much from run to run (Home Assistant sum 2,350,456 in the
+    graph-cap run), so the token gaps are less certain than the accuracy results.
 
 - **5 tools by default.** The server shows `index`, `search`, `find_symbol`, `graph` and
   `map`. Set `NEXUS_EXTRA_TOOLS` to `status`, `analyze`, `memory` (comma-separated) or `all`
