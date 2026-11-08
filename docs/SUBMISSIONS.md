@@ -1,21 +1,22 @@
 # Submission texts
 
-Ready-to-paste text for each listing. Release 2.4.2 is live on every automatic channel
+Ready-to-paste text for each listing. Release 2.4.5 is live on every automatic channel
 (checked 2026-11-08): PyPI, the official MCP Registry, the GHCR image and the `.mcpb` file on the
-GitHub release. Every `uvx` route runs `uvx --python 3.12 nexus-mcp-ci==2.4.2`. See
+GitHub release. Every `uvx` route runs `uvx --python 3.12 nexus-mcp-ci==2.4.5`. See
 [DISTRIBUTION.md](DISTRIBUTION.md) for the steps and the order.
 
 ## Status of each listing
 
 | Listing | Status |
 |---|---|
-| PyPI (`nexus-mcp-ci`) | 2.4.2, automatic on release |
-| Official MCP Registry (`io.github.jaggernaut007/nexus-mcp`) | 2.4.2 is the latest (with `--python 3.12`), automatic on release |
-| GHCR image `ghcr.io/jaggernaut007/nexus-mcp` | tags `2.4.2`, `2.4.1`, `2.3.0` and `latest`, public |
+| PyPI (`nexus-mcp-ci`) | 2.4.5, automatic on release |
+| Official MCP Registry (`io.github.jaggernaut007/nexus-mcp`) | 2.4.5 is the latest (with `--python 3.12`), automatic on release |
+| GHCR image `ghcr.io/jaggernaut007/nexus-mcp` | tags `2.4.5` back to `2.4.1`, `2.3.0` and `latest`, public |
+| GitHub Marketplace (the Action in `action.yml`) | listed 2026-11-08 from the v2.4.5 release: `https://github.com/marketplace/actions/nexus-mcp` |
 | Claude Desktop extension (`nexus-mcp.mcpb`) | attached to the GitHub release |
 | Glama, awesome-mcp-servers (`punkpeye`), Context7 | listed |
-| Cline marketplace | ready to submit: the install test with Cline passed on 2.4.5 (2026-11-08), after fixes in 2.4.2 to 2.4.5 |
-| Docker MCP Catalog | entry in `docker/mcp-registry/`, pull request to `docker/mcp-registry` |
+| Cline marketplace | submitted 2026-11-08, in review: [cline/mcp-marketplace#3629](https://github.com/cline/mcp-marketplace/issues/3629). The install test with Cline passed on 2.4.5, after fixes in 2.4.2 to 2.4.5 |
+| Docker MCP Catalog | submitted 2026-11-08, in review: [docker/mcp-registry#6802](https://github.com/docker/mcp-registry/pull/6802). The entry builds the 2.4.2 commit; the later fixes are for `setup` and Cline, which the image does not use |
 | Cursor Marketplace | submitted 2026-11-08, in review |
 | Anthropic plugin directory | refused 2026-11-08: local MCP servers only from a Verified organization (see below) |
 | mcpservers.org | listed 2026-11-08: `https://mcpservers.org/servers/glama-ai-mcp-servers-jaggernaut007-nexus-mcp` |
@@ -85,11 +86,19 @@ Give these limits with the numbers:
 
 ## Cline (`cline/mcp-marketplace`, a GitHub issue)
 
-Title: `Add Nexus-MCP (local code search and call graph)`
+Submitted on 2026-11-08 as
+[cline/mcp-marketplace#3629](https://github.com/cline/mcp-marketplace/issues/3629), with the
+fields of the repository's issue form:
 
-Body: use the short description above, then: "Repository: <repo URL>. Logo attached (400x400).
-`llms-install.md` in the repository tells an agent how to install it. I tested the install with
-Cline." Test with Cline first. Cline asks for that test.
+- Title: `[Server Submission]: Nexus-MCP (local code search and call graph)`.
+- Repository URL, and the logo URL
+  `https://raw.githubusercontent.com/jaggernaut007/Nexus-MCP/main/site/logo-400.png` (400x400).
+- The two test boxes (Cline installs it from `llms-install.md`; the server is stable).
+- Additional information: the short description, the `setup --client cline` command, the
+  Cline test on 2.4.5, the default tools and the published numbers.
+
+The issue was made with `gh`, not the web form, so it has no `server-submission` label. A
+maintainer can add it.
 
 ## Docker MCP Catalog (`docker/mcp-registry`, a pull request)
 
