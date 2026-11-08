@@ -214,8 +214,4 @@ by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) ([ADR-001](docs/adr/ADR
 
 ## License
 
-[MIT](LICENSE). Free for any use, including at work. Versions 2.0.1 to 2.2.3 were released
-under the PolyForm Noncommercial License 1.0.0; anyone who got one of those versions keeps
-those terms. Every new release is MIT.
-
-If Nexus-MCP saves you tokens at work, a star or a sponsorship is welcome. Neither is required.
+[MIT](LICENSE).
