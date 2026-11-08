@@ -66,7 +66,7 @@
       "downloadUrl": "https://pypi.org/project/nexus-mcp-ci/",
       "installUrl": "https://pypi.org/project/nexus-mcp-ci/",
       "codeRepository": "https://github.com/jaggernaut007/Nexus-MCP",
-      "license": "https://polyformproject.org/licenses/noncommercial/1.0.0",
+      "license": "https://opensource.org/licenses/MIT",
       "isAccessibleForFree": true,
       "author": {
         "@id": "https://jaggernaut007.github.io/nexus-mcp/#author"
@@ -128,7 +128,7 @@
           "name": "Is Nexus-MCP free?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Yes, for personal, research, education and other noncommercial use. The source is public on GitHub under the PolyForm Noncommercial 1.0.0 license. Commercial use needs a separate license from the maintainer."
+            "text": "Yes. Nexus-MCP is open source under the MIT license, for any use, including at work."
           }
         },
         {
@@ -277,7 +277,7 @@
             <div><dt>Runs</dt><dd>Locally. No API keys.</dd></div>
             <div><dt>Transport</dt><dd>MCP over stdio</dd></div>
             <div><dt>Languages</dt><dd>25+ (tree-sitter)</dd></div>
-            <div><dt>License</dt><dd>PolyForm Noncommercial 1.0.0</dd></div>
+            <div><dt>License</dt><dd>MIT. Free for any use, including at work.</dd></div>
             <div data-downloads hidden><dt>Downloads</dt><dd><a href="https://pepy.tech/projects/nexus-mcp-ci" rel="noopener"><span data-downloads-count></span> total</a> on PyPI (<a href="https://pypistats.org/packages/nexus-mcp-ci" rel="noopener">pypistats</a>)</dd></div>
             <div><dt>Listed on</dt><dd><a href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">PyPI</a>, <a href="https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP" rel="noopener">Glama</a>, <a href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">GitHub</a></dd></div>
           </dl>
@@ -555,11 +555,13 @@
 
         <ol class="steps">
           <li>
-            <h3>Install the package</h3>
-            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>pip install nexus-mcp-ci</code><button class="copy" data-copy="pip install nexus-mcp-ci" aria-label="Copy">Copy</button></div>
+            <h3>Install and connect, with one command</h3>
+            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx nexus-mcp-ci setup</code><button class="copy" data-copy="uvx nexus-mcp-ci setup" aria-label="Copy">Copy</button></div>
+            <p class="note">Needs <a href="https://docs.astral.sh/uv/" rel="noopener">uv</a>. It finds your MCP clients, shows each change, and asks before it writes. Or tell your agent: &ldquo;Install Nexus-MCP from github.com/jaggernaut007/Nexus-MCP&rdquo;.</p>
+            <p class="note">One click: <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=nexus-mcp&amp;config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJuZXh1cy1tY3AtY2kiXX0%3D">Add to Cursor</a> &middot; <a href="https://vscode.dev/redirect/mcp/install?name=nexus-mcp&amp;config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22nexus-mcp-ci%22%5D%7D" rel="noopener">Add to VS Code</a></p>
           </li>
           <li>
-            <h3>Connect your agent</h3>
+            <h3>Or connect by hand</h3>
             <div class="tabs" role="tablist" aria-label="MCP client">
               <button role="tab" aria-selected="true" aria-controls="tab-cc" id="t-cc">Claude Code</button>
               <button role="tab" aria-selected="false" aria-controls="tab-plugin" id="t-plugin" tabindex="-1">Claude Code plugin</button>
@@ -600,6 +602,7 @@
       </div>
     </section>
 
+
     <!-- FAQ -->
     <section class="section faq" id="faq">
       <div class="wrap faq-wrap">
@@ -630,7 +633,7 @@
           </details>
           <details>
             <summary>Is Nexus-MCP free?</summary>
-            <p>Yes, for personal, research, education and other noncommercial use. The source is public on GitHub under the <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE" rel="noopener">PolyForm Noncommercial 1.0.0</a> license. Commercial use needs a separate license from the maintainer.</p>
+            <p>Yes. The source is public on GitHub under the <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE" rel="noopener">MIT</a> license. You can use it for any purpose, including at work.</p>
           </details>
           <details>
             <summary>Does my code leave my machine?</summary>
@@ -673,7 +676,7 @@
 
   <footer class="footer">
     <div class="wrap footer-inner">
-      <p>© <span data-year>2026</span> Shreyas Jagannath · <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE">PolyForm Noncommercial 1.0.0</a></p>
+      <p>© <span data-year>2026</span> Shreyas Jagannath · <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE">MIT</a></p>
       <p><a href="https://github.com/jaggernaut007/Nexus-MCP#readme">Docs</a> · <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">PyPI</a> · <a href="https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP" rel="noopener">Glama</a> · <a href="llms.txt">llms.txt</a></p>
     </div>
   </footer>

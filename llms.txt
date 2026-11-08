@@ -1,6 +1,6 @@
 # Nexus-MCP
 
-> Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Source-available under PolyForm Noncommercial 1.0.0.
+> Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
 
 Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexes codebases into three engines (vector embeddings, BM25 keyword index, rustworkx code graph) and fuses the vector and BM25 results via Reciprocal Rank Fusion. In live benchmarks (v2.1.0, Claude Sonnet, 12 questions per project, 3 runs each) agents with Nexus-MCP used 55 to 35 turns on a private 460-file project (cost -22%) and 93 to 71 turns on django (cost -3%, inside the run-to-run noise), with the same accuracy. See docs/EVALS.md. Supports 25+ programming languages via dual parsing (tree-sitter + ast-grep).
 
@@ -31,9 +31,10 @@ Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexe
 
 ## Install
 
+- Default (needs uv): `uvx nexus-mcp-ci setup --client <claude-code|codex|gemini|cursor|vscode|windsurf|claude-desktop|cline> --yes`. It adds the server and the skill. An agent can follow [llms-install.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/llms-install.md).
+- Claude Code plugin: `/plugin marketplace add jaggernaut007/Nexus-MCP`, then `/plugin install nexus-mcp@nexus-mcp`
 - PyPI: `pip install nexus-mcp-ci` (or `pip install nexus-mcp-ci[gpu]` for all extras)
 - From source: `git clone https://github.com/jaggernaut007/Nexus-MCP && cd Nexus-MCP && ./setup.sh`
-- Add to Claude Code: `claude mcp add nexus-mcp -- nexus-mcp-ci`
 
 ## Getting Started
 

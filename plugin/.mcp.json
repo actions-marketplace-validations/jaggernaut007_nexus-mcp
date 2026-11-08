@@ -1,8 +1,10 @@
 {
   "mcpServers": {
     "nexus-mcp": {
-      "command": "nexus-mcp-ci",
-      "args": []
+      "command": "uvx",
+      "args": [
+        "nexus-mcp-ci==2.4.1"
+      ]
     }
   }
 }

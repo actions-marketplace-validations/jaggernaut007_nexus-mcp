@@ -287,6 +287,85 @@ uses 22% fewer tokens than 2.2.2, but 13% more than Grep. The Grep side of Djang
 by 12k tokens between the two runs, so part of the change is run-to-run noise. The three
 projects cost $7.24 in all. Run logs are in `benchmarks/runs/languages-v2.4.0`.
 
+## [2.3.0] - 2026-11-06
+
+### Added
+
+- **`nexus-mcp-ci setup`: one command to install the server and its skill.** It finds Claude
+  Code, Claude Desktop, Cursor, VS Code, Windsurf, Gemini CLI, Codex and Cline on the machine,
+  shows each change, and asks before it writes. `--dry-run` writes nothing, `--yes` does not
+  ask, `--client` picks one, `--uninstall` removes what it wrote. An agent can run it from
+  `llms-install.md` ("Install Nexus-MCP from the repository URL"). It keeps the other servers
+  in a config file and refuses a config that is not valid JSON.
+- **More install channels.** A Claude Desktop extension (`mcpb/`, built by `publish.yml`; it is
+  also a plain way to install it by hand), a Gemini CLI extension, VS Code and Cursor
+  install links, a `docker/Dockerfile.stdio` image pushed to GHCR, and a composite GitHub
+  Action (`action.yml`). `scripts/bump_version.py` sets every pinned version at once.
+  [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md) lists each channel and the owner steps.
+- **Cursor plugin.** `.cursor-plugin/marketplace.json` and `plugin/.cursor-plugin/plugin.json`
+  reuse the skill and the `uvx` launch. `bump_version.py` and `check_docs.py` cover the new file.
+  [docs/SUBMISSIONS.md](docs/SUBMISSIONS.md) holds ready-to-paste text for each listing.
+
+### Changed
+
+- **Licence: PolyForm Noncommercial 1.0.0 → MIT** ([ADR-024](docs/adr/ADR-024-mit-licence.md)),
+  to remove the barrier for companies and directories that accept only OSI licences. Every new
+  release is MIT. Versions 2.0.1 to 2.2.3 keep the PolyForm terms for those who got them. A paid
+  commercial tier (a Polar licence key, built and tested in the sandbox during this cycle) was
+  dropped before release, and its code is not in this release. The server again makes no
+  network call of its own.
+- The Claude Code plugin starts the server with `uvx nexus-mcp-ci==X`, so it needs `uv` and no
+  `pip install`. The README quickstart now starts with "ask your agent" and `uvx nexus-mcp-ci setup`.
+- The skill has an install section for a client with no nexus tools. The always-loaded files
+  (rules, `AGENTS.md` block, `gemini-context.md`) and the benchmark loaders cut it.
+
+### Removed
+
+- `smithery.yaml`. Smithery shut down its CLI, API and accounts on 31 October 2026 and stays
+  only as a curated public directory, so there is nothing to publish there.
+
+### North star
+
+- Tokens: no change for any user. `status()` is the same 204 characters (51 tokens, 4
+  characters per token). The skill text in the benchmark and the eval is unchanged: the loaders
+  cut the new install section.
+- Retrieval gate, hit@1 in `hybrid-exact` mode, before (commit 0430f01) and after, same
+  command (`python -m evals.retrieval.run --single bge-small-en`), each in a clean checkout:
+  `nexus_mcp` 0.67 and 0.67, `shop_repo` 0.50 and 0.62. hit@5: 0.92 and 0.92, 1.00 and 1.00.
+  The gate holds: hit@1 did not fall. Only two of the four suites ran (`flask` and `jobscout`
+  have no checkout here). No retrieval code changed. The `nexus_mcp` suite indexes this source,
+  so it grew from 773 to 854 chunks. The `shop_repo` gain is not explained by the diff: its
+  chunks are the same, BM25 and vector hit@1 are equal, and only the two fused modes moved
+  (one query of eight). Two baseline runs gave the same 0.50, and two runs of this branch gave
+  0.62, so it is not run-to-run noise. Treat it as unexplained, not as an improvement.
+
+## [2.2.3] - 2026-11-06
+
+### Added
+
+- **The server stops by itself when the session is done.** A new module, `lifecycle.py`
+  ([ADR-022](docs/adr/ADR-022-server-lifecycle-and-exit.md)), stops the server:
+  - after 3 hours with no tool call (`NEXUS_IDLE_TIMEOUT`, in seconds; `0` turns it off). A
+    tool call or an index that runs is not idle time;
+  - when the client process that started it is gone, also when the stdin pipe stays open
+    (`NEXUS_EXIT_ON_PARENT_EXIT`, default `true`);
+  - on SIGHUP (the terminal closed), as on SIGTERM and SIGINT.
+  After an idle stop, reconnect the server in the client (`/mcp` in Claude Code). The stored
+  index attaches again.
+
+### Fixed
+
+- **The server did not exit after SIGTERM.** It logged "Nexus-MCP shutdown complete." and was
+  still running 20 s later: the interpreter exit waited for a thread. Each stop now runs the
+  cleanup with a deadline (`NEXUS_SHUTDOWN_TIMEOUT`, default 10 s) and ends the process with
+  `os._exit`. Measured after the fix: exit 0 in 0.01 s after SIGTERM. A watchdog ends a
+  cleanup that hangs, and a second signal ends the process at once (exit code 1).
+- **The shutdown saved the graph while an index changed it.** The save now waits for the
+  running index. If the index still runs at the deadline, the graph is not saved, and the next
+  start finds the index out of date.
+- North star: no tool output changes, so the tokens of the benchmark do not change. hit@1 is
+  not affected (no change to parsing, indexing or search).
+
 ## [2.2.2] - 2026-11-05
 
 ### Added

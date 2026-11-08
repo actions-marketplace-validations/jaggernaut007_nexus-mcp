@@ -1,6 +1,6 @@
 # Nexus-MCP
 
-> Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Source-available under PolyForm Noncommercial 1.0.0.
+> Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
 
 This file contains the complete project documentation for Nexus-MCP, concatenated for LLM consumption.
 
@@ -14,7 +14,7 @@ This file contains the complete project documentation for Nexus-MCP, concatenate
 [![PyPI downloads](https://static.pepy.tech/badge/nexus-mcp-ci)](https://pepy.tech/projects/nexus-mcp-ci)
 [![PyPI downloads (pypistats)](https://img.shields.io/endpoint?url=https%3A%2F%2Fjaggernaut007.github.io%2Fnexus-mcp%2Fdownloads-badge.json)](https://pypistats.org/packages/nexus-mcp-ci)
 [![Python 3.10–3.12](https://img.shields.io/badge/python-3.10--3.12-blue)](https://pypi.org/project/nexus-mcp-ci/)
-[![License: PolyForm Noncommercial 1.0.0](https://img.shields.io/badge/license-PolyForm%20Noncommercial%201.0.0-blue.svg)](#license)
+[![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![CI](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml/badge.svg)](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml)
 [![Glama MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/card.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
 
@@ -155,33 +155,53 @@ Every location, the shell commands that do the same, and the uninstall steps:
 
 ## Quickstart (60 seconds)
 
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/). Nothing else.
+
+**Ask your agent.** Open your agent (Claude Code, Codex, Cursor, Gemini CLI) in your project
+and say:
+
+> Install Nexus-MCP from https://github.com/jaggernaut007/Nexus-MCP
+
+The agent reads [`llms-install.md`](llms-install.md) and runs one command. You can run the
+same command yourself:
+
 ```bash
-# 1. Install
-pip install nexus-mcp-ci
-
-# 2. Register with Claude Code
-claude mcp add nexus-mcp -- nexus-mcp-ci
-
-# 3. Verify: start Claude Code in your project and run /mcp
-#    nexus-mcp should be listed as connected
+uvx nexus-mcp-ci setup
 ```
 
-The server sends its own usage instructions when it connects, so Claude knows which tool
-answers which question without any extra setup. Ask something like "where do we retry
-failed payments?" and it will call `search` (and `index` once, the first time in a project).
+`setup` finds the MCP clients on your machine, shows each change, and asks before it writes
+anything. It adds the server and a short skill that tells the agent when to use each tool.
+Add `--dry-run` to see the changes only, `--client codex` to pick one client, and
+`--uninstall` to remove what it wrote. Then reload your client (or start a new session) and
+ask something like "where do we retry failed payments?". The agent calls `search`, and
+`index` once, the first time in a project.
 
-### Claude Code plugin (recommended)
+The server sends its own usage instructions when it connects, so the agent knows which tool
+answers which question even without the skill.
 
-The plugin registers the server and adds a short routing skill that teaches Claude when to
-reach for each tool. Install the Python package first, then:
+Other ways in, each with the same server:
+
+- **VS Code:** [Install in VS Code](https://vscode.dev/redirect/mcp/install?name=nexus-mcp&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22nexus-mcp-ci%22%5D%7D)
+- **Cursor:** the "Add to Cursor" button on the [website](https://jaggernaut007.github.io/nexus-mcp/#install)
+- **Claude Desktop:** download `nexus-mcp.mcpb` from the [latest release](https://github.com/jaggernaut007/Nexus-MCP/releases/latest) and open it
+- **Gemini CLI:** `gemini extensions install https://github.com/jaggernaut007/Nexus-MCP`
+- **Docker:** `docker run -i --rm -v "$PWD:/workspace" -v nexus-data:/data ghcr.io/jaggernaut007/nexus-mcp`
+- **GitHub Actions:** [`uses: jaggernaut007/Nexus-MCP@v2`](docs/GITHUB-ACTION.md)
+
+All channels, and what each needs: [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).
+
+### Claude Code plugin
+
+The plugin registers the server and the same routing skill. It runs the server through
+`uvx`, so it needs only uv, no `pip install`:
 
 ```
 /plugin marketplace add jaggernaut007/Nexus-MCP
 /plugin install nexus-mcp@nexus-mcp
 ```
 
-Do not register the server twice. If you use the plugin, skip the `claude mcp add` line.
-Tool names differ by route: `mcp__nexus-mcp__search` after `claude mcp add nexus-mcp`,
+Use `setup` or the plugin for Claude Code, not both, or the server is registered twice.
+Tool names differ by route: `mcp__nexus-mcp__search` after `setup`,
 `mcp__plugin_nexus-mcp_nexus-mcp__search` through the plugin. The rest of this README
 writes bare names (`search`) and you do not need the prefix in prompts.
 
@@ -363,6 +383,10 @@ Run `benchmarks/` on your own project before you rely on it.
 ---
 
 ## The 8 Tools
+
+**New in v2.3.0 (no breaking change):** `uvx nexus-mcp-ci setup` installs the server and the
+skill into your MCP clients, new install routes cover Claude Desktop, Gemini CLI, VS Code,
+Cursor, Docker and GitHub Actions, and the license is now MIT. The MCP tools do not change.
 
 **New in v2.2.0 (no breaking change):** `nexus-mcp-ci eval` measures Nexus-MCP on your own
 code ([Evaluate](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md)), and
@@ -554,6 +578,9 @@ All settings via `NEXUS_` environment variables:
 | `NEXUS_AUTO_RESTORE` | `true` | A new server process reattaches to the stored index, so `status` is already `indexed: true` |
 | `NEXUS_WARM_START` | `true` | Attach the index and load the embedding model in the background while the server starts, so the first `search` does not wait about 7 s. The model then uses its memory (about 370 MB) from the start of each session |
 | `NEXUS_STALENESS_CHECK_INTERVAL` | `15` | Seconds between `status()`/`search()` staleness checks (throttled, not per-call) |
+| `NEXUS_IDLE_TIMEOUT` | `10800` | Stop the server after this many seconds with no tool call (3 hours). `0` turns it off |
+| `NEXUS_EXIT_ON_PARENT_EXIT` | `true` | Stop the server when the client process that started it is gone |
+| `NEXUS_SHUTDOWN_TIMEOUT` | `10` | Longest wait for a running index at shutdown; the process then exits |
 | `NEXUS_MAX_FILE_SIZE_MB` | `10` | Skip files larger than this |
 | `NEXUS_CHUNK_MAX_CHARS` | `4000` | Max chars per code chunk |
 | `NEXUS_EMBEDDING_BATCH_SIZE` | `32` | Chunks per embedding batch. Lower it to cut peak RAM while indexing |
@@ -570,7 +597,7 @@ All settings via `NEXUS_` environment variables:
 | `NEXUS_LOG_LEVEL` | `INFO` | Logging level |
 | `NEXUS_LOG_FORMAT` | `text` | `text` or `json` |
 
-The Python package defaults to `bge-small-en`. The `Dockerfile`, `smithery.yaml` and `glama.json` use the same default. `jina-code` still loads, with a warning, so an existing index keeps working. It is deprecated and will be removed in a future major release.
+The Python package defaults to `bge-small-en`. The `Dockerfile`, `docker/Dockerfile.stdio` and `glama.json` use the same default. `jina-code` still loads, with a warning, so an existing index keeps working. It is deprecated and will be removed in a future major release.
 
 ### Embedding Models
 
@@ -616,7 +643,7 @@ ast-grep-mcp. Check each project's docs. Corrections to this table are welcome.
 | Change impact analysis | static callers only | partial | ❌ | ❌ | ❌ |
 | Token-budgeted responses | ✅ 3 levels | ❌ | ❌ | ❌ | ❌ |
 | Languages | 25+ | 30+ | many | many | many |
-| Cost | **Free noncommercial; paid commercial license** | $$$ | $40/mo | $10–39/mo | Free |
+| Cost | **Free (MIT)** | $$$ | $40/mo | $10–39/mo | Free |
 | API keys required | **No** | Yes | Yes | Yes | No |
 
 ### vs. AI Code Tools
@@ -630,8 +657,8 @@ ast-grep-mcp. Check each project's docs. Corrections to this table are welcome.
 | Code graph | partial (containment + imports) | unknown | unknown | ✅ SCIP | basic | ❌ |
 | Semantic memory | ✅ persistent | ❌ | ❌ | ❌ | ❌ | ❌ |
 | Token-budgeted output | ✅ | — | — | — | — | — |
-| Source available | ✅ PolyForm Noncommercial | ❌ | ❌ | partial | ✅ | ✅ |
-| Cost | **Free noncommercial; paid commercial license** | $20–40/mo | $10–39/mo | $0–49/mo | Free | Free |
+| Source available | ✅ MIT | ❌ | ❌ | partial | ✅ | ✅ |
+| Cost | **Free (MIT)** | $20–40/mo | $10–39/mo | $0–49/mo | Free | Free |
 
 ---
 
@@ -794,9 +821,13 @@ Source files retain "Ported from" attribution in their module docstrings. See [A
 
 ## License
 
-[PolyForm Noncommercial License 1.0.0](https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE). Free to use, copy, modify, and distribute for any noncommercial purpose. Commercial use requires a separate license — contact Shreyas Jagannath to inquire.
+[MIT](LICENSE). Free to use, copy, modify and distribute, for any purpose, including at work.
 
-Versions published before 2.0.1 (0.1.0, 0.1.1, 2.0.0) remain available under their original MIT terms for anyone who obtained them under that license.
+Versions 2.0.1 to 2.2.3 were released under the PolyForm Noncommercial License 1.0.0. Anyone who
+obtained one of those versions keeps the terms they got. Versions 0.1.0, 0.1.1 and 2.0.0 were MIT.
+Every new release is MIT.
+
+If Nexus-MCP saves you tokens at work, a star or a sponsorship is welcome. Neither is required.
 
 ---
 
@@ -1024,9 +1055,8 @@ uv cache clean nexus-mcp-ci
 
 ## Uninstall
 
-1. Remove the server from your client: `claude mcp remove nexus-mcp`, or
-   `/plugin uninstall nexus-mcp@nexus-mcp`.
-2. Remove the package: `pip uninstall nexus-mcp-ci`.
+1. Remove the server from your client: `nexus-mcp-ci setup --uninstall --yes`,
+   `claude mcp remove nexus-mcp`, or `/plugin uninstall nexus-mcp@nexus-mcp`.2. Remove the package: `pip uninstall nexus-mcp-ci`.
 3. Remove the data: `nexus-mcp-ci data clear --all --yes` before step 2, or the shell commands
    above after it.
 
@@ -1038,6 +1068,26 @@ uv cache clean nexus-mcp-ci
 
 [![jaggernaut007/Nexus-MCP MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/card.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
 [![jaggernaut007/Nexus-MCP MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/score.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
+
+## Quickest way: one command
+
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/). Then ask your agent
+"Install Nexus-MCP from https://github.com/jaggernaut007/Nexus-MCP", or run:
+
+```bash
+uvx nexus-mcp-ci setup
+```
+
+`setup` finds your MCP clients (Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Gemini CLI,
+Codex, Cline), shows each change, and asks before it writes. It adds the server and a short skill
+that tells the agent when to use each tool. Useful flags: `--dry-run` (show only), `--client codex`
+(one client), `--yes` (do not ask), `--no-skill`, `--uninstall`. Reload your client afterwards.
+
+Other ways in: the Claude Code plugin, a Claude Desktop extension, a Gemini CLI extension, install
+links for VS Code and Cursor, a Docker image and a GitHub Action. See
+[DISTRIBUTION.md](DISTRIBUTION.md). The rest of this page is the manual route.
+
+---
 
 ## Prerequisites
 
@@ -2031,7 +2081,7 @@ Nexus-MCP/
 ├── AGENTS.md               # Source of truth for agent harnesses
 ├── CLAUDE.md               # Claude Code context
 ├── PROGRESS.md             # Phase tracking
-└── LICENSE                 # PolyForm Noncommercial 1.0.0
+└── LICENSE                 # MIT
 ```
 
 ## Running Tests
