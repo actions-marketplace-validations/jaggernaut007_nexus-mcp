@@ -377,6 +377,10 @@ Run `benchmarks/` on your own project before you rely on it.
 
 ## The 8 Tools
 
+**New in v2.4.5:** `uvx nexus-mcp-ci setup --client cline` also writes the config of the Cline
+CLI (`~/.cline/data/settings`), which the Cline in Antigravity reads. Before, it wrote only the
+VS Code file, and an old entry kept running.
+
 **New in v2.4.4:** `uvx nexus-mcp-ci setup` says `replace` when it updates an older entry, and
 it updates the Claude Code entry too. `index` gives the size of the stored index and its
 `version`. The background index of `setup` writes `<project>/.nexus/setup-index.log`.

@@ -441,3 +441,101 @@ def test_setup_prints_the_index_log_path(env, monkeypatch, capsys):
     argv = ["--home", str(home), "--project", str(project), "--client", "cursor", "--yes"]
     assert sc.run_setup(argv) == 0
     assert f"The last line of {log} says DONE or FAILED" in capsys.readouterr().out
+
+
+# --- Cline CLI file (`~/.cline/data/settings`), found in the 2.4.4 install test ------------------
+
+
+def _cli_file(home):
+    path = sc._cline_cli_config(home)
+    path.parent.mkdir(parents=True)
+    return path
+
+
+def test_setup_cline_writes_the_cli_file_when_that_install_exists(env):
+    # Regression (Cline report, 2.4.3 and 2.4.4): `setup` wrote only the VS Code file, and the
+    # Cline that Antigravity runs read `~/.cline/data/settings`. Both tests failed silently.
+    home, project = env
+    cli = _cli_file(home)
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    entry = json.loads(cli.read_text())["mcpServers"]["nexus-mcp"]
+    assert entry["transport"] == {"type": "stdio", **sc.launch_spec()}
+    assert entry["disabled"] is False
+    assert entry["timeout"] == 300
+    assert "command" not in entry  # this file nests the launch under `transport`
+    assert not sc._cline_config(home).exists()  # no VS Code folder: nothing is made there
+
+
+def test_setup_cline_writes_both_files_when_both_installs_exist(env):
+    home, project = env
+    cli = _cli_file(home)
+    vscode = sc._cline_config(home)
+    vscode.parent.mkdir(parents=True)
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    assert "transport" in json.loads(cli.read_text())["mcpServers"]["nexus-mcp"]
+    flat = json.loads(vscode.read_text())["mcpServers"]["nexus-mcp"]
+    assert flat["type"] == "stdio" and flat["command"] == "uvx"
+
+
+def test_setup_cline_cli_file_replaces_an_old_entry_and_keeps_user_keys(env, capsys):
+    home, project = env
+    cli = _cli_file(home)
+    http = {"transport": {"type": "streamableHttp", "url": "https://example.test/mcp"}}
+    old = {
+        "transport": {
+            "type": "stdio",
+            "command": "/dev/nexus-mcp/.venv/bin/nexus-mcp-ci",
+            "args": [],
+        },
+        "disabled": True,
+        "timeout": 120,
+        "autoApprove": ["search"],
+    }
+    cli.write_text(json.dumps({"mcpServers": {"context7": http, sc.SERVER_NAME: old}}))
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    out = capsys.readouterr().out
+    assert "replace MCP server 'nexus-mcp'" in out
+    assert "(was `/dev/nexus-mcp/.venv/bin/nexus-mcp-ci`)" in out
+    servers = json.loads(cli.read_text())["mcpServers"]
+    assert servers["context7"] == http
+    entry = servers[sc.SERVER_NAME]
+    assert entry["transport"] == {"type": "stdio", **sc.launch_spec()}
+    assert entry["disabled"] is False  # an install turns it on
+    assert entry["timeout"] == 120 and entry["autoApprove"] == ["search"]
+
+
+def test_setup_cline_cli_file_says_keep_for_a_current_entry(env, capsys):
+    home, project = env
+    _cli_file(home)
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    capsys.readouterr()
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    assert "keep MCP server 'nexus-mcp'" in capsys.readouterr().out
+
+
+def test_setup_cline_uninstall_removes_the_cli_entry(env):
+    home, project = env
+    cli = _cli_file(home)
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    assert _run(home, project, "--client", "cline", "--uninstall", "--yes") == 0
+    assert "nexus-mcp" not in json.loads(cli.read_text())["mcpServers"]
+
+
+def test_detect_clients_finds_cline_by_the_cli_folder(tmp_path):
+    assert "cline" not in sc.detect_clients(tmp_path)
+    sc._cline_cli_config(tmp_path).parent.mkdir(parents=True)
+    assert "cline" in sc.detect_clients(tmp_path)
+
+
+def test_setup_cline_cli_file_says_update_for_the_same_launch_in_another_shape(env, capsys):
+    # The Cline agent wrote a flat entry by hand: the launch is current, the shape is not.
+    home, project = env
+    cli = _cli_file(home)
+    flat = {"type": "stdio", **sc.launch_spec(), "disabled": False, "timeout": 300}
+    cli.write_text(json.dumps({"mcpServers": {sc.SERVER_NAME: flat}}))
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    out = capsys.readouterr().out
+    assert "update MCP server 'nexus-mcp'" in out and "keep MCP server" not in out
+    entry = json.loads(cli.read_text())["mcpServers"][sc.SERVER_NAME]
+    assert entry["transport"] == {"type": "stdio", **sc.launch_spec()}
+    assert "command" not in entry
