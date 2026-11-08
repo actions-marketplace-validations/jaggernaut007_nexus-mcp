@@ -174,6 +174,26 @@ def test_run_corpus_a_key_error_in_a_tier_is_stored_as_an_error(stubbed, pinned,
     assert "error" in row["retrieval"]
 
 
+def test_tier_live_points_the_runner_at_the_corpus_clone_folder(tmp_path, monkeypatch, pinned):
+    # The task file names the repo "home-assistant-core"; the clone folder is "home-assistant".
+    seen = {}
+    corpus = _corpus(name="home-assistant")
+
+    class _Fail:
+        returncode = 1
+
+    def fake_run(cmd, **kw):
+        seen["cmd"] = cmd
+        return _Fail()
+
+    monkeypatch.setattr(rl.subprocess, "run", fake_run)
+    args = rl.argparse.Namespace(reps=1, model="sonnet", effort="medium")
+    with pytest.raises(RuntimeError):
+        rl.tier_live(corpus, pinned, tmp_path, args)
+    cmd = seen["cmd"]
+    assert cmd[cmd.index("--repo-path") + 1] == str(corpora.repo_dir(corpus))
+
+
 def test_main_rejects_an_unknown_tier(pinned, monkeypatch):
     monkeypatch.setattr(runner, "load_pinned", lambda venv: pinned)
     with pytest.raises(SystemExit):

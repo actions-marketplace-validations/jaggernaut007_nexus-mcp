@@ -63,7 +63,40 @@ All notable changes to this project will be documented in this file.
   instructions and the tool descriptions do not say. The `index`, `search` and
   `find_symbol` descriptions lose sentences that another text already says. Fixed text
   (skill, instructions and 5 tool schemas, estimated as characters / 4): about 1,420 →
-  1,240 tokens on each turn. Not yet measured in a live run.
+  1,240 tokens on each turn.
+- **`graph` references of a method rank by its class.** For a method of one class, the
+  files that name the class or a subclass come first. A `def` line of another method with
+  the same name only adds to a `definitions` count. On Django `SQLCompiler.as_sql` listed
+  `contrib/gis` first, and 91 of 283 lines were other `as_sql` definitions.
+
+  Live benchmark on Django, same settings as above (Grep and Read in brackets). Grep-side
+  numbers move a lot between runs, so compare each Nexus-MCP number with its own Grep run.
+  - Reference ranking (`f1e9d56`): sum of the 18 runs 1,283,949 (1,589,581) tokens, median
+    47,943 (46,699), fresh 145,769 (173,909), cost $0.972 ($1.215), correct 16 (17) of 18.
+    Nexus-MCP uses fewer tokens on 2 of 6 tasks.
+  - With `defined_in` and the shorter fixed text (`45aec40`): sum 855,938 (1,346,905)
+    tokens, median 32,938 (46,642), fresh 129,072 (176,969), cost $0.789 ($1.178),
+    correct 16 (17) of 18, median turns 2 (4.5). Nexus-MCP uses fewer tokens on 4 of 6
+    tasks: 36% fewer by sum, 29% fewer by median, 33% lower cost.
+  - The `SQLCompiler.as_sql` impact task: median 197,972 → 77,526 tokens (Grep 201,082).
+  - Answer score (facts and files, 0 to 1): Nexus-MCP 0.819, Grep 0.833. The two Nexus-MCP
+    answers marked wrong name the right classes and facts. One does not name
+    `fields/__init__.py`, and one does not name `core/validators.py` as a path. A Grep
+    answer on the second task has the same miss.
+
+  Live benchmark on Home Assistant (about 26,000 Python files), `45aec40`, same settings:
+  - Sum of the 18 runs 1,179,981 (1,821,765) tokens, median 50,500 (56,948), fresh 149,395
+    (174,706), cost $0.934 ($1.241), median turns 3 (5.5). Nexus-MCP uses fewer tokens on 4
+    of 6 tasks: 35% fewer by sum, 11% fewer by median, 25% lower cost.
+  - The startup architecture task: median 97,495 (394,235) tokens.
+  - Correct answers: 15 (18) of 18. Answer score 0.861 (0.931). The accuracy gate fails.
+  - The 3 misses are the 3 Nexus-MCP runs of the `async_setup_component` impact task. Each
+    answer names the right callers in `bootstrap.py`, but not `homeassistant/setup.py`,
+    where the function is. The task also costs more: median 123,553 (58,012) tokens.
+    `graph` gives 4,979 callers in 222,303 characters, about 55k tokens. Claude Code does
+    not give the agent an MCP result above 25k tokens (its default limit) in full, so the
+    agent greps again.
+  - Run logs are in `benchmarks/runs/languages-refs-fix` and `languages-defs-fix`.
 
 ### Fixed
 
@@ -95,6 +128,9 @@ All notable changes to this project will be documented in this file.
     JavaScript `init` is a definition of its own.
   - `publish_results.py` no longer stops on a language with no file count.
   - `install_nexus.sh` deletes the index folders of a label when it installs a new commit.
+- **`run_languages` live tier on Home Assistant.** The task file names the repo
+  `home-assistant-core`, and the clone folder is `home-assistant`, so the runner did not
+  find the repo. The live tier now passes the clone folder of the corpus to the runner.
 - **C# and Dart files stopped the whole index.** The ast-grep ids `c_sharp` and `dart` do not
   exist. ast-grep-py then raises a `BaseException` panic that `except Exception` does not
   catch. C# now uses `csharp`; Dart has no id and is skipped.

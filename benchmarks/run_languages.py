@@ -131,8 +131,10 @@ def tier_live(corpus, pinned, out_dir: Path, args) -> Dict[str, Any]:
         sys.executable, "-m", "benchmarks.runner", "--tasks", str(REPO_ROOT / corpus["tasks"]),
         "--conditions", "baseline,nexus", "--reps", str(args.reps), "--model", args.model,
         "--effort", args.effort, "--nexus-venv", str(pinned.venv), "--out", str(out),
-        "--warm-up",
+        "--warm-up", "--repo-path", str(corpora.repo_dir(corpus)),
     ]
+    # The task file can name the repo differently from the corpus (home-assistant-core vs
+    # home-assistant). The clone folder of the corpus is the one that exists and is indexed.
     if corpus.get("task_ids"):
         cmd += ["--task-ids", ",".join(corpus["task_ids"])]
     code = subprocess.run(cmd, cwd=str(REPO_ROOT)).returncode

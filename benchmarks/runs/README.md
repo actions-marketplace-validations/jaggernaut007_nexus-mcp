@@ -13,6 +13,8 @@ numbers only from `benchmarks/published/results.json`.
 | `languages-v2.3.0` | The 2.4.0 code before it was renumbered (`0de5088`): free tiers for Python, TypeScript and JavaScript; stopped before the live tier |
 | `languages-v2.4.0` | 2.4.0: every tier for Python, TypeScript and JavaScript (Flask free tiers, Django live, Vite, webpack). The laptop slept during some webpack runs, so their `duration_ms` is long; their tokens are not affected |
 | `languages-py-fix` | `Class.method` and overrides in `graph` (`53594ad`, issue #31): free tiers for Python, TypeScript and JavaScript, and the Django live A/B |
+| `languages-refs-fix` | References ranked by the class of a method (`f1e9d56`): the Django live A/B. The console log also holds a Home Assistant index that was stopped before the live tier |
+| `languages-defs-fix` | `defined_in` and the shorter fixed text (`45aec40`): the Django and Home Assistant live A/B. The first Home Assistant live tier stopped on a repo path bug; the console log holds the rerun on the same index |
 | `setup` | One file per pinned install: version, commit and install time |
 
 Each folder has:
