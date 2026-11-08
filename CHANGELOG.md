@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.4] - 2026-11-08
+
+Fixes from the second Cline install test (an upgrade from 2.4.2). The 2.4.3 storage fix
+passed: a clean 2.4.3 server started in `/` indexed the project into `<project>/.nexus/`. The
+test failed because the live tools came from another server, a local build of older source.
+
+### Fixed
+
+- **`setup` printed "add MCP server" when it replaced an older entry.** It now prints
+  `replace ... (was <old launch>)`, or `keep ...` when the entry is already current.
+- **`setup --client claude-code` with the `claude` CLI kept an older entry.** A second run did
+  nothing, so the pinned version did not change. It now removes the old entry and adds the new
+  one. A current entry is still left as it is.
+- **`index` answered `total_files: 0` and `total_symbols: 0` when no file had changed.** That
+  reads as an empty index. It now gives the size of the stored index and `unchanged: true`.
+
+### Added
+
+- **`version` in the `index` result.** `status` is hidden by default, so an agent had no way to
+  see which build answers.
+- **A log for the background index of `setup`:** `<project>/.nexus/setup-index.log`. Its last
+  line says `DONE` or `FAILED`, with the result. `setup` prints the path.
+- **`llms-install.md`:** an "Update an existing install" section; the tool prefix gives the
+  server name, and a server with another name comes from another config or a local build;
+  restart the server in the Cline MCP Servers panel; the `index` path selects the project;
+  a troubleshooting section for `[Errno 30] Read-only file system: '/.nexus'`; the
+  `.nexus-bak` copy is made only before the first change; Cline does not read
+  `.vscode/mcp.json`.
+
+### North star
+
+- Tokens: the `index` result has 5 more tokens (`version`), and 4 more (`unchanged`) only
+  when no file changed. `index` runs about once in each session. The server instructions and
+  the other tool results do not change.
+- Accuracy: no change to the parser, the index or the search. The live benchmark was not run
+  again.
+
 ## [2.4.3] - 2026-11-08
 
 ### Fixed

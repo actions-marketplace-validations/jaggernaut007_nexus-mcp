@@ -140,7 +140,10 @@ def test_changed_model_triggers_full_rebuild(codebase, tmp_path):
 def test_same_model_stays_incremental(codebase, tmp_path):
     _pipeline(tmp_path, "bge-small-en").index(codebase)
     result = _pipeline(tmp_path, "bge-small-en").incremental_index(codebase)
-    assert result.total_files == 0
+    # Requirement changed on 2026-11-08 (2.4.4): an unchanged index reports the size of the
+    # stored index, not zero files, so "no rebuild" is now the `unchanged` flag.
+    assert result.unchanged is True
+    assert result.files_added == result.files_modified == result.files_deleted == 0
 
 
 def test_index_without_model_keys_is_accepted(codebase, tmp_path):

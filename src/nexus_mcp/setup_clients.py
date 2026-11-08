@@ -168,8 +168,40 @@ def _read_json(path: Path) -> dict:
     return data
 
 
+def _launch_text(entry: object) -> str:
+    """The command line of a server entry, for a message (`uvx --python 3.12 nexus-mcp-ci`)."""
+    if not isinstance(entry, dict):
+        return "?"
+    args = entry.get("args") if isinstance(entry.get("args"), list) else []
+    return " ".join([str(entry.get("command", "?")), *map(str, args)])
+
+
+def _existing_entry(path: Path, key: str) -> Optional[dict]:
+    """The current `nexus-mcp` entry in a JSON config, or None (no file, no entry, bad JSON)."""
+    try:
+        servers = _read_json(path).get(key)
+    except (SetupError, OSError):
+        return None
+    if isinstance(servers, dict) and isinstance(servers.get(SERVER_NAME), dict):
+        return servers[SERVER_NAME]
+    return None
+
+
+def _entry_message(path: Path, existing: Optional[dict], entry: dict) -> str:
+    """Say what a write does: add a new entry, replace an old one, or keep a current one."""
+    if existing is None:
+        return f"add MCP server '{SERVER_NAME}' to {path}"
+    old = _launch_text(existing)
+    if old == _launch_text(entry):
+        return f"keep MCP server '{SERVER_NAME}' in {path} (already `{old}`)"
+    return f"replace MCP server '{SERVER_NAME}' in {path} (was `{old}`)"
+
+
 def _json_entry(path: Path, key: str, entry: dict) -> Change:
-    """Add `entry` under `key` ("mcpServers" or "servers") and keep every other server."""
+    """Add `entry` under `key` ("mcpServers" or "servers") and keep every other server.
+
+    An existing `nexus-mcp` entry is replaced, so `setup` also updates an older install.
+    """
 
     def apply() -> None:
         data = _read_json(path)
@@ -195,7 +227,8 @@ def _json_entry(path: Path, key: str, entry: dict) -> Change:
         except SetupError:
             return False
 
-    return Change("", path, f"add MCP server '{SERVER_NAME}' to {path}", apply, undo, present)
+    what = _entry_message(path, _existing_entry(path, key), entry)
+    return Change("", path, what, apply, undo, present)
 
 
 def _marked_block(
@@ -315,10 +348,15 @@ def _claude_code_change(spec: Dict[str, object], home: Path) -> Change:
     claude = shutil.which("claude")
     if not claude or home.resolve() != Path.home().resolve():
         return fallback
+    launch = _launch_text(spec)
+    existing = _existing_entry(cfg, "mcpServers")
 
     def apply() -> None:
-        if fallback.present():
-            return  # already added: `claude mcp add` fails on a second run
+        current = _existing_entry(cfg, "mcpServers")
+        if current is not None:
+            if _launch_text(current) == launch:
+                return  # already current: `claude mcp add` fails on a second run
+            undo()  # an older launch: remove it, then add the new one
         cmd = [
             claude,
             "mcp",
@@ -341,11 +379,15 @@ def _claude_code_change(spec: Dict[str, object], home: Path) -> Change:
             timeout=60,
         )
 
-    launch = " ".join([str(spec["command"]), *map(str, spec["args"])])  # type: ignore[union-attr]
+    what = f"run: claude mcp add --scope user {SERVER_NAME} -- {launch}"
+    if existing is not None and _launch_text(existing) == launch:
+        what = f"keep MCP server '{SERVER_NAME}' in {cfg} (already `{launch}`)"
+    elif existing is not None:
+        what += f" (replaces `{_launch_text(existing)}`)"
     return Change(
         "",
         cfg,
-        f"run: claude mcp add --scope user {SERVER_NAME} -- {launch}",
+        what,
         apply,
         undo,
         fallback.present,
@@ -520,16 +562,34 @@ def _looks_like_project(project: Path, home: Path) -> bool:
     return any((project / marker).exists() for marker in _PROJECT_MARKERS)
 
 
-def _start_index(project: Path) -> None:
-    code = "import asyncio; from nexus_mcp import core_api; asyncio.run(core_api.index('.'))"
-    subprocess.Popen(
-        [sys.executable, "-c", code],
-        cwd=project,
-        stdin=subprocess.DEVNULL,
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-        start_new_session=True,
-    )
+INDEX_LOG = "setup-index.log"
+# The last line of the log: the index result, or the error. `setup` returns before the index ends.
+_INDEX_CODE = (
+    "import asyncio, json\n"
+    "try:\n"
+    "    from nexus_mcp import core_api\n"
+    "    result = asyncio.run(core_api.index('.'))\n"
+    "except BaseException as exc:\n"
+    "    result = {'error': f'{type(exc).__name__}: {exc}'}\n"
+    "print('nexus-mcp setup index:', 'FAILED' if 'error' in result else 'DONE', "
+    "json.dumps(result, default=str), flush=True)\n"
+)
+
+
+def _start_index(project: Path) -> Path:
+    """Index `project` in a detached process. Return its log, `<project>/.nexus/setup-index.log`."""
+    log = project / ".nexus" / INDEX_LOG
+    log.parent.mkdir(parents=True, exist_ok=True)
+    with open(log, "w") as out:
+        subprocess.Popen(
+            [sys.executable, "-c", _INDEX_CODE],
+            cwd=project,
+            stdin=subprocess.DEVNULL,
+            stdout=out,
+            stderr=subprocess.STDOUT,
+            start_new_session=True,
+        )
+    return log
 
 
 def run_setup(argv: List[str]) -> int:
@@ -583,10 +643,11 @@ def run_setup(argv: List[str]) -> int:
     if changed and not args.uninstall:
         if not args.no_index and args.yes:
             if _looks_like_project(project, home):
-                _start_index(project)
+                log = _start_index(project)
                 print(
                     f"\nIndexing {project} in the background. The first index downloads the "
-                    "embedding model (about 130 MB) unless it is already cached."
+                    "embedding model (about 130 MB) unless it is already cached. The last line "
+                    f"of {log} says DONE or FAILED when it ends."
                 )
             else:
                 print(

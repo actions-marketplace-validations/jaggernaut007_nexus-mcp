@@ -310,8 +310,11 @@ def test_setup_refuses_a_block_with_only_one_marker(env):
 
 
 def test_setup_claude_code_second_run_does_not_call_the_cli_again(env, monkeypatch):
+    # Requirement changed on 2026-11-08 (2.4.4): an entry with another launch is now replaced,
+    # so `setup` can update an older install. Only a current entry skips the CLI.
     home, project = env
-    (home / ".claude.json").write_text(json.dumps({"mcpServers": {sc.SERVER_NAME: {}}}))
+    current = {"type": "stdio", **sc.launch_spec(), "env": {}}
+    (home / ".claude.json").write_text(json.dumps({"mcpServers": {sc.SERVER_NAME: current}}))
     calls = []
     monkeypatch.setattr(
         sc.shutil, "which", lambda name, *a, **k: "/bin/claude" if name == "claude" else None
@@ -363,3 +366,78 @@ def test_setup_cline_writes_a_stdio_entry(env, monkeypatch):
     ]
     assert entry["type"] == "stdio"
     assert entry["command"] == "uvx"
+
+
+def _cline(home, monkeypatch):
+    monkeypatch.setattr(sc, "_cline_config", lambda h: h / "cline" / "cline_mcp_settings.json")
+    (home / "cline").mkdir()
+    return home / "cline" / "cline_mcp_settings.json"
+
+
+def test_setup_replaces_an_older_entry_and_says_replace(env, monkeypatch, capsys):
+    # Regression (Cline report, 2.4.3): `setup` replaced 2.4.2 but printed "add MCP server".
+    home, project = env
+    cfg = _cline(home, monkeypatch)
+    old = {"command": "uvx", "args": ["--python", "3.12", "nexus-mcp-ci==2.4.2"]}
+    cfg.write_text(json.dumps({"mcpServers": {"nexus-mcp": old, "other": {"command": "x"}}}))
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    out = capsys.readouterr().out
+    assert "replace MCP server 'nexus-mcp'" in out
+    assert "(was `uvx --python 3.12 nexus-mcp-ci==2.4.2`)" in out
+    assert "add MCP server" not in out
+    servers = json.loads(cfg.read_text())["mcpServers"]
+    assert servers["nexus-mcp"]["args"] == sc.launch_spec()["args"]
+    assert servers["other"] == {"command": "x"}
+
+
+def test_setup_says_keep_for_a_current_entry(env, monkeypatch, capsys):
+    home, project = env
+    _cline(home, monkeypatch)
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    assert "add MCP server 'nexus-mcp'" in capsys.readouterr().out
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    assert "keep MCP server 'nexus-mcp'" in capsys.readouterr().out
+
+
+def test_setup_claude_code_cli_replaces_an_older_entry(env, monkeypatch, capsys):
+    # Regression: a second `setup` with the `claude` CLI kept the old pinned version.
+    home, project = env
+    old = {"type": "stdio", "command": "uvx", "args": ["nexus-mcp-ci==2.4.2"], "env": {}}
+    (home / ".claude.json").write_text(json.dumps({"mcpServers": {sc.SERVER_NAME: old}}))
+    calls = []
+    monkeypatch.setattr(
+        sc.shutil, "which", lambda name, *a, **k: "/bin/claude" if name == "claude" else None
+    )
+    monkeypatch.setattr(sc.subprocess, "run", lambda cmd, **kw: calls.append(cmd))
+    monkeypatch.setattr(sc.Path, "home", classmethod(lambda cls: home))
+    argv = ["--project", str(project), "--no-index", "--client", "claude-code", "--yes"]
+    assert sc.run_setup(argv) == 0
+    assert [c[2] for c in calls] == ["remove", "add"]
+    assert "(replaces `uvx nexus-mcp-ci==2.4.2`)" in capsys.readouterr().out
+
+
+def test_start_index_writes_a_log_file(tmp_path, monkeypatch):
+    started = {}
+
+    class FakePopen:
+        def __init__(self, cmd, **kwargs):
+            started.update(kwargs, cmd=cmd)
+
+    monkeypatch.setattr(sc.subprocess, "Popen", FakePopen)
+    log = sc._start_index(tmp_path)
+    assert log == tmp_path / ".nexus" / "setup-index.log"
+    assert log.exists()
+    assert started["cwd"] == tmp_path
+    assert started["stdout"].name == str(log)
+    assert started["stderr"] is sc.subprocess.STDOUT
+    assert "DONE" in started["cmd"][-1] and "FAILED" in started["cmd"][-1]
+
+
+def test_setup_prints_the_index_log_path(env, monkeypatch, capsys):
+    home, project = env
+    (project / ".git").mkdir()
+    log = project / ".nexus" / "setup-index.log"
+    monkeypatch.setattr(sc, "_start_index", lambda path: log)
+    argv = ["--home", str(home), "--project", str(project), "--client", "cursor", "--yes"]
+    assert sc.run_setup(argv) == 0
+    assert f"The last line of {log} says DONE or FAILED" in capsys.readouterr().out
