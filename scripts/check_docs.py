@@ -71,18 +71,25 @@ def check_versions() -> List[str]:
     ).group(1)
     gemini = json.loads((ROOT / "gemini-extension.json").read_text())
     found["gemini-extension.json"] = gemini["version"]
-    found["gemini-extension.json launch"] = gemini["mcpServers"]["nexus-mcp"]["args"][0].split(
-        "=="
-    )[-1]
     plugin_mcp = json.loads((ROOT / "plugin" / ".mcp.json").read_text())
-    found["plugin/.mcp.json launch"] = plugin_mcp["mcpServers"]["nexus-mcp"]["args"][0].split("==")[
-        -1
-    ]
-    return [
+    launches = {
+        "gemini-extension.json": gemini["mcpServers"]["nexus-mcp"]["args"],
+        "plugin/.mcp.json": plugin_mcp["mcpServers"]["nexus-mcp"]["args"],
+    }
+    for where, args in launches.items():
+        found[f"{where} launch"] = args[-1].split("==")[-1]
+    errors = [
         f"{where}: version {v}, pyproject.toml says {want}"
         for where, v in found.items()
         if v != want
     ]
+    # uvx ignores `requires-python` when it picks the interpreter, so each launch names one.
+    errors += [
+        f"{where}: the uvx launch must start with --python 3.12, found {args}"
+        for where, args in launches.items()
+        if args[:2] != ["--python", "3.12"]
+    ]
+    return errors
 
 
 def check_tool_count() -> List[str]:

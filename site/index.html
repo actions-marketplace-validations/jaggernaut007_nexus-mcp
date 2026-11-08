@@ -71,7 +71,7 @@
       "author": {
         "@id": "https://jaggernaut007.github.io/nexus-mcp/#author"
       },
-      "softwareVersion": "2.4.1",
+      "softwareVersion": "2.4.2",
       "keywords": "MCP server, Model Context Protocol, AI coding agent, Claude Code, code search, semantic memory, code intelligence, local-first",
       "sameAs": [
         "https://github.com/jaggernaut007/Nexus-MCP",
@@ -96,7 +96,7 @@
           "name": "How do I test Nexus-MCP on my own code before I install it?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Run uvx nexus-mcp-ci eval in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 950 against 17,998 on Chromium base/ (3,638 files), 1,301 against 24,774 on pallets/click (91 files) and 1,234 against 5,385 on the Nexus-MCP source. For real agent cost, nexus-mcp-ci eval --agent claude runs a paid A/B with your own Claude Code login after it shows the cost."
+            "text": "Run uvx --python 3.12 nexus-mcp-ci eval in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 950 against 17,998 on Chromium base/ (3,638 files), 1,301 against 24,774 on pallets/click (91 files) and 1,234 against 5,385 on the Nexus-MCP source. For real agent cost, nexus-mcp-ci eval --agent claude runs a paid A/B with your own Claude Code login after it shows the cost."
           }
         },
         {
@@ -212,7 +212,7 @@
     <section class="hero" id="top">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="dot"></span> Local MCP server · <a href="https://github.com/jaggernaut007/Nexus-MCP/releases/tag/v2.4.1" rel="noopener">v2.4.1</a> · Python 3.10–3.12</p>
+          <p class="eyebrow"><span class="dot"></span> Local MCP server · <a href="https://github.com/jaggernaut007/Nexus-MCP/releases/tag/v2.4.2" rel="noopener">v2.4.2</a> · Python 3.10–3.12</p>
           <h1>Your agent forgets.<br><em>Your codebase shouldn't.</em></h1>
           <p class="lede">
             Nexus-MCP gives AI coding agents the context they lose between sessions.
@@ -223,8 +223,8 @@
           <div class="cta-row">
             <div class="cmd" role="group" aria-label="Evaluate command">
               <span class="prompt" aria-hidden="true">$</span>
-              <code>uvx nexus-mcp-ci eval</code>
-              <button class="copy" data-copy="uvx nexus-mcp-ci eval" aria-label="Copy evaluate command">Copy</button>
+              <code>uvx --python 3.12 nexus-mcp-ci eval</code>
+              <button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci eval" aria-label="Copy evaluate command">Copy</button>
             </div>
             <a class="btn btn-primary" href="#try">Test it on your repo →</a>
           </div>
@@ -294,8 +294,8 @@
         <ol class="steps">
           <li>
             <h3>Run the check in your project folder</h3>
-            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx nexus-mcp-ci eval</code><button class="copy" data-copy="uvx nexus-mcp-ci eval" aria-label="Copy">Copy</button></div>
-            <p>No project at hand? <code>uvx nexus-mcp-ci eval --example</code> runs it on the Nexus-MCP source. A public repo URL works too.</p>
+            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx --python 3.12 nexus-mcp-ci eval</code><button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci eval" aria-label="Copy">Copy</button></div>
+            <p>No project at hand? <code>uvx --python 3.12 nexus-mcp-ci eval --example</code> runs it on the Nexus-MCP source. A public repo URL works too.</p>
           </li>
           <li>
             <h3>Read the verdict</h3>
@@ -556,9 +556,9 @@
         <ol class="steps">
           <li>
             <h3>Install and connect, with one command</h3>
-            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx nexus-mcp-ci setup</code><button class="copy" data-copy="uvx nexus-mcp-ci setup" aria-label="Copy">Copy</button></div>
+            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx --python 3.12 nexus-mcp-ci setup</code><button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci setup" aria-label="Copy">Copy</button></div>
             <p class="note">Needs <a href="https://docs.astral.sh/uv/" rel="noopener">uv</a>. It finds your MCP clients, shows each change, and asks before it writes. Or tell your agent: &ldquo;Install Nexus-MCP from github.com/jaggernaut007/Nexus-MCP&rdquo;.</p>
-            <p class="note">One click: <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=nexus-mcp&amp;config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyJuZXh1cy1tY3AtY2kiXX0%3D">Add to Cursor</a> &middot; <a href="https://vscode.dev/redirect/mcp/install?name=nexus-mcp&amp;config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22nexus-mcp-ci%22%5D%7D" rel="noopener">Add to VS Code</a></p>
+            <p class="note">One click: <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=nexus-mcp&amp;config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyItLXB5dGhvbiIsIjMuMTIiLCJuZXh1cy1tY3AtY2kiXX0=">Add to Cursor</a> &middot; <a href="https://vscode.dev/redirect/mcp/install?name=nexus-mcp&amp;config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--python%22%2C%223.12%22%2C%22nexus-mcp-ci%22%5D%7D" rel="noopener">Add to VS Code</a></p>
           </li>
           <li>
             <h3>Or connect by hand</h3>
@@ -617,7 +617,7 @@
           </details>
           <details>
             <summary>How do I test Nexus-MCP on my own code before I install it?</summary>
-            <p>Run <code>uvx nexus-mcp-ci eval</code> in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 950 against 17,998 on Chromium <code>base/</code> (3,638 files), 1,301 against 24,774 on <code>pallets/click</code> (91 files) and 1,234 against 5,385 on the Nexus-MCP source. For real agent cost, <code>nexus-mcp-ci eval --agent claude</code> runs a paid A/B with your own Claude Code login after it shows the cost. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md" rel="noopener">The full guide</a>.</p>
+            <p>Run <code>uvx --python 3.12 nexus-mcp-ci eval</code> in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 950 against 17,998 on Chromium <code>base/</code> (3,638 files), 1,301 against 24,774 on <code>pallets/click</code> (91 files) and 1,234 against 5,385 on the Nexus-MCP source. For real agent cost, <code>nexus-mcp-ci eval --agent claude</code> runs a paid A/B with your own Claude Code login after it shows the cost. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md" rel="noopener">The full guide</a>.</p>
           </details>
           <details>
             <summary>How does Nexus-MCP compare with Serena and claude-context?</summary>
@@ -663,7 +663,7 @@
     <section class="section final">
       <div class="wrap final-inner">
         <h2>Give your agent a memory.</h2>
-        <p>Start with your own numbers: <code>uvx nexus-mcp-ci eval</code>. Then star the repo, share your result, or send a pull request. Feedback from real projects shapes what ships next.</p>
+        <p>Start with your own numbers: <code>uvx --python 3.12 nexus-mcp-ci eval</code>. Then star the repo, share your result, or send a pull request. Feedback from real projects shapes what ships next.</p>
         <div class="cta-row center">
           <a class="btn btn-primary" href="#try">Evaluate on your repo</a>
           <a class="btn btn-ghost" href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">Star on GitHub</a>

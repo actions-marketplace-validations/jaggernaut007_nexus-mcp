@@ -2,7 +2,7 @@
   "name": "nexus-mcp",
   "displayName": "Nexus-MCP",
   "description": "Fewer tokens for Claude Code on large codebases. Local hybrid code search, a call graph for 10 languages and the code of any symbol, so the agent reads fewer files. In the 2.4.1 benchmark it used 27% to 49% fewer tokens than Grep and Read on Django and Home Assistant. Runs on your machine through uv: no API key, no telemetry.",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "author": {
     "name": "Shreyas Jagannath",
     "url": "https://github.com/jaggernaut007"

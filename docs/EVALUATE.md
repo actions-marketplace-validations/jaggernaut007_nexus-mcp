@@ -4,7 +4,7 @@ Measure Nexus-MCP on your own project before you adopt it. The first check is fr
 and calls no LLM. Your code does not leave your machine.
 
 ```bash
-uvx nexus-mcp-ci eval
+uvx --python 3.12 nexus-mcp-ci eval
 ```
 
 The command indexes the current folder in a temporary place, asks about 30 questions made from

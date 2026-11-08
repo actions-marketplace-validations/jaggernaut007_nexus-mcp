@@ -36,6 +36,7 @@ DESCRIPTIONS = {
     "NEXUS_AUTO_WATCH": "Watch indexed folders and reindex changed files in the background.",
     "NEXUS_STALENESS_CHECK_INTERVAL": "Seconds between stale-file checks in `status` and `search`.",
     "NEXUS_EXTRA_TOOLS": "Turn on tools that are off by default: `all`, or names from `status`, `analyze`, `memory`.",
+    "NEXUS_WORKSPACE": "Set by a container image: the folder where the project is mounted. The server tells the agent to index this folder.",
     "NEXUS_IDLE_TIMEOUT": "Stop the server after this many seconds with no tool call (default 3 hours). `0` turns it off.",
     "NEXUS_EXIT_ON_PARENT_EXIT": "Stop the server when the client process that started it is gone.",
     "NEXUS_SHUTDOWN_TIMEOUT": "Longest wait in seconds for a running index at shutdown. The process then exits.",

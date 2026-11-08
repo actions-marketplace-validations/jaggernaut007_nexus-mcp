@@ -52,12 +52,12 @@ def bump(new: str) -> None:
 
     def gemini(data: dict) -> None:
         data["version"] = new
-        data["mcpServers"]["nexus-mcp"]["args"] = [f"nexus-mcp-ci=={new}"]
+        data["mcpServers"]["nexus-mcp"]["args"][-1] = f"nexus-mcp-ci=={new}"
 
     _json_set(ROOT / "gemini-extension.json", gemini)
 
     def plugin_mcp(data: dict) -> None:
-        data["mcpServers"]["nexus-mcp"]["args"] = [f"nexus-mcp-ci=={new}"]
+        data["mcpServers"]["nexus-mcp"]["args"][-1] = f"nexus-mcp-ci=={new}"
 
     _json_set(ROOT / "plugin" / ".mcp.json", plugin_mcp)
 

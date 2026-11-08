@@ -37,7 +37,8 @@ ENV HOME=/home/nexus \
     HF_HOME=/data/huggingface \
     NEXUS_STORAGE_DIR=/data/.nexus \
     NEXUS_EMBEDDING_MODEL=bge-small-en \
-    NEXUS_LOG_LEVEL=INFO
+    NEXUS_LOG_LEVEL=INFO \
+    NEXUS_WORKSPACE=/workspace
 
 VOLUME /data
 WORKDIR /workspace

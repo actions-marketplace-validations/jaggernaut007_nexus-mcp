@@ -21,7 +21,7 @@ totals vary from run to run. Method and all numbers:
 ## What you need
 
 - [uv](https://docs.astral.sh/uv/). The plugin starts the server with
-  `uvx nexus-mcp-ci==<version>`, so there is no `pip install`.
+  `uvx --python 3.12 nexus-mcp-ci==<version>`, so there is no `pip install`.
 - The first index downloads the embedding model `BAAI/bge-small-en-v1.5` from Hugging Face
   (about 130 MB), once.
 

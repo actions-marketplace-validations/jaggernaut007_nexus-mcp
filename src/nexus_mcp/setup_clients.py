@@ -24,6 +24,10 @@ from typing import Callable, Dict, List, Optional
 
 SERVER_NAME = "nexus-mcp"
 PACKAGE = "nexus-mcp-ci"
+# uvx does not apply the package's `requires-python` when it picks the interpreter for a
+# tool. On a machine whose default Python is 3.13 or newer, the install then fails:
+# tree-sitter-languages has wheels only up to 3.12. uv downloads 3.12 if it is missing.
+PYTHON_PIN = "3.12"
 BEGIN = "<!-- nexus-mcp:begin -->"
 END = "<!-- nexus-mcp:end -->"
 TOML_BEGIN = "# nexus-mcp:begin"
@@ -87,9 +91,13 @@ def package_version() -> Optional[str]:
 
 
 def launch_spec(pin: bool = True) -> Dict[str, object]:
-    """The `uvx` launch for the server. Pinned to the installed version when it is known."""
+    """The `uvx` launch for the server: Python `PYTHON_PIN`, and the installed version when
+    it is known."""
     ver = package_version() if pin else None
-    return {"command": "uvx", "args": [f"{PACKAGE}=={ver}" if ver else PACKAGE]}
+    return {
+        "command": "uvx",
+        "args": ["--python", PYTHON_PIN, f"{PACKAGE}=={ver}" if ver else PACKAGE],
+    }
 
 
 def skill_text() -> str:

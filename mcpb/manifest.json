@@ -2,8 +2,8 @@
   "manifest_version": "0.4",
   "name": "nexus-mcp",
   "display_name": "Nexus-MCP",
-  "version": "2.4.1",
-  "description": "Local code search, call graph and project memory for AI coding agents, in fewer tokens. Runs on your machine. No API keys, no telemetry.",
+  "version": "2.4.2",
+  "description": "Local code search and call graph for AI coding agents, in fewer tokens. Runs on your machine. No API keys, no telemetry.",
   "long_description": "Nexus-MCP indexes your code on your machine and gives the agent hybrid search, a static call graph, the code of any symbol, and memory that lasts across sessions. It needs uv. The first start downloads the Python packages and the embedding model, so it takes a few minutes. Free and open source under the MIT licence.",
   "author": {
     "name": "Shreyas Jagannath",
@@ -46,10 +46,6 @@
       "description": "Build or refresh the code index of a project."
     },
     {
-      "name": "status",
-      "description": "Show whether a project is indexed, and the index health."
-    },
-    {
       "name": "search",
       "description": "Find code by meaning or by keyword."
     },
@@ -62,16 +58,8 @@
       "description": "Show who calls a symbol and what breaks if it changes."
     },
     {
-      "name": "analyze",
-      "description": "Find complex code, dead code and code smells."
-    },
-    {
       "name": "map",
       "description": "Give an overview of the project layout."
-    },
-    {
-      "name": "memory",
-      "description": "Store and recall project decisions and notes across sessions."
     }
   ],
   "compatibility": {

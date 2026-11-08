@@ -12,7 +12,7 @@ Follow these steps in order. Do not skip the consent steps.
    folder in a temporary place, makes no LLM call and sends nothing off the machine. The first
    run downloads the embedding model once (about 130 MB).
 
-2. **Find a runner.** Use the first that works: `nexus-mcp-ci`, then `uvx nexus-mcp-ci`, then
+2. **Find a runner.** Use the first that works: `nexus-mcp-ci`, then `uvx --python 3.12 nexus-mcp-ci`, then
    `pipx run nexus-mcp-ci`. `uvx` needs Python 3.10 to 3.12; add `--python 3.12` if the
    default Python is newer.
 

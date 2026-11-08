@@ -3,7 +3,9 @@
     "nexus-mcp": {
       "command": "uvx",
       "args": [
-        "nexus-mcp-ci==2.4.1"
+        "--python",
+        "3.12",
+        "nexus-mcp-ci==2.4.2"
       ]
     }
   }

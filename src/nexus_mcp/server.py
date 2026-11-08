@@ -59,9 +59,18 @@ _OPTIONAL_TOOL_LINES = {
 }
 
 
-def instructions_for(hidden_tools: set[str]) -> str:
-    """Return SERVER_INSTRUCTIONS without the lines for tools that the server hides."""
+def instructions_for(hidden_tools: set[str], workspace: str = "") -> str:
+    """Return SERVER_INSTRUCTIONS without the lines for tools that the server hides.
+
+    In a container (`workspace` set), add one line with the mounted project folder: the
+    agent knows only host paths, and those do not exist in the container.
+    """
     text = SERVER_INSTRUCTIONS
+    if workspace:
+        text += (
+            f"\n\nThis server runs in a container. The project is mounted at {workspace}: "
+            f"pass that path to `index`. Paths on the host do not exist here."
+        )
     for name in hidden_tools:
         text = text.replace(_OPTIONAL_TOOL_LINES.get(name, ""), "")
     if "memory" in hidden_tools:
@@ -110,7 +119,7 @@ def create_server():
 
     mcp = FastMCP(
         "Nexus-MCP",
-        instructions=instructions_for(_hidden_tools),
+        instructions=instructions_for(_hidden_tools, _settings.workspace),
         version=_nexus_version,
     )
 

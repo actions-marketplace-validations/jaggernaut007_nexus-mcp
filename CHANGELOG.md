@@ -4,8 +4,34 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.2] - 2026-11-08
+
+### Fixed
+
+- **The install failed when the default Python was 3.13 or 3.14.** uvx uses the default
+  Python for a tool and does not apply `requires-python`, and `tree-sitter-languages` has
+  wheels only up to 3.12. Found in a Cline install test on a machine with Python 3.14.
+  - `setup` writes `uvx --python 3.12 nexus-mcp-ci==X` for every client.
+  - `plugin/.mcp.json`, `gemini-extension.json` and the VS Code and Cursor install links use
+    the same launch. `server.json` gives registry clients `runtimeHint: uvx` with
+    `--python 3.12`.
+  - Every `uvx` command in the docs has the pin. `check_docs.py` fails when a launch has no
+    pin, and `bump_version.py` keeps it.
+- **The Claude Desktop manifest listed 8 tools.** It now lists the 5 that the server shows by
+  default. A test compares the manifest with the server.
+
 ### Added
 
+- **`NEXUS_WORKSPACE` for container images.** In a container the agent knows only host paths,
+  so its first `index` call failed with "Not a directory". When `NEXUS_WORKSPACE` is set, the
+  server instructions name the mounted folder, and the `index` path error says which path to
+  use. `docker/Dockerfile.stdio` sets it to `/workspace`. Tested with Colima: the image builds
+  from the repository, answers over stdio, indexes `/workspace` and reuses the index in a new
+  container.
+- **A draft Docker MCP Catalog entry** in `docker/mcp-registry/` (`server.yaml`, and a
+  `tools.json` generated from the server).
+- **`llms-install.md`** names the server (`nexus-mcp`), the file that `setup` changes for each
+  client, the `.nexus-bak` copy, and asks the agent to check for an existing entry first.
 - **A star prompt.** The README has a GitHub stars badge and one line that asks for a star. The
   site's GitHub button now says "Star", and the hero has a star link. `setup` prints one line
   with the repository link after a successful install only (not for `--dry-run` or
@@ -15,6 +41,11 @@ All notable changes to this project will be documented in this file.
 
 - Tokens: no change for the MCP tools. `status()` and every tool answer are the same. The star
   line is CLI output of `setup`, printed once per install: about 25 tokens when an agent runs it.
+- The server instructions are the same unless `NEXUS_WORKSPACE` is set: 1,398 characters with
+  the default tools, before and after. In the Docker image they grow by 136 characters (about
+  35 tokens), and the agent no longer spends a failed `index` call.
+- Accuracy: no change to the parser, the index or the search. The live benchmark was not run
+  again.
 
 ## [2.4.1] - 2026-11-08
 

@@ -1,12 +1,14 @@
 {
   "name": "nexus-mcp",
-  "version": "2.4.1",
+  "version": "2.4.2",
   "description": "Local code search, call graph and project memory for Gemini CLI, in fewer tokens. Needs uv.",
   "mcpServers": {
     "nexus-mcp": {
       "command": "uvx",
       "args": [
-        "nexus-mcp-ci==2.4.1"
+        "--python",
+        "3.12",
+        "nexus-mcp-ci==2.4.2"
       ]
     }
   },

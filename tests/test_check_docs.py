@@ -29,6 +29,34 @@ def test_check_versions_reports_a_mismatch(monkeypatch):
     assert errors and all("9.9.9" in e for e in errors)
 
 
+def test_check_versions_reports_a_uvx_launch_with_no_python_pin(tmp_path, monkeypatch):
+    import json
+    import shutil
+
+    for rel in (
+        "pyproject.toml",
+        "CITATION.cff",
+        "src/nexus_mcp/__init__.py",
+        "server.json",
+        "plugin/.claude-plugin/plugin.json",
+        "plugin/.cursor-plugin/plugin.json",
+        "plugin/.mcp.json",
+        "mcpb/manifest.json",
+        "mcpb/pyproject.toml",
+        "gemini-extension.json",
+    ):
+        (tmp_path / rel).parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(ROOT / rel, tmp_path / rel)
+    mcp = tmp_path / "plugin" / ".mcp.json"
+    data = json.loads(mcp.read_text())
+    data["mcpServers"]["nexus-mcp"]["args"] = data["mcpServers"]["nexus-mcp"]["args"][-1:]
+    mcp.write_text(json.dumps(data))
+    monkeypatch.setattr(check, "ROOT", tmp_path)
+    errors = check.check_versions()
+    assert len(errors) == 1
+    assert errors[0].startswith("plugin/.mcp.json: the uvx launch must start with --python 3.12")
+
+
 def test_tools_claim_matches_the_phrases_we_use():
     found = check.TOOLS_CLAIM.findall("with 8 tools; 8 focused tools; Core Tools (8 MCP tools)")
     assert found == ["8", "8", "8"]

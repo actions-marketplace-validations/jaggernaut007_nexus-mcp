@@ -53,6 +53,10 @@ class Settings:
     # turn. "all" or a comma-separated list of names from OPTIONAL_TOOLS turns them on.
     extra_tools: str = ""
 
+    # A container image sets this to the folder where the project is mounted. The agent
+    # sees paths on the host, so the server names this folder in its instructions.
+    workspace: str = ""
+
     # Lifecycle: when the server stops by itself (see lifecycle.py)
     idle_timeout_s: float = 10800.0  # 3 hours with no tool call; 0 turns it off
     exit_on_parent_exit: bool = True  # stop when the client process is gone
@@ -100,6 +104,7 @@ class Settings:
             "NEXUS_AUTO_WATCH": ("auto_watch_enabled", _bool),
             "NEXUS_STALENESS_CHECK_INTERVAL": ("staleness_check_interval_s", float),
             "NEXUS_EXTRA_TOOLS": ("extra_tools", str),
+            "NEXUS_WORKSPACE": ("workspace", str),
             "NEXUS_IDLE_TIMEOUT": ("idle_timeout_s", float),
             "NEXUS_EXIT_ON_PARENT_EXIT": ("exit_on_parent_exit", _bool),
             "NEXUS_SHUTDOWN_TIMEOUT": ("shutdown_timeout_s", float),

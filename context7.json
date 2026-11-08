@@ -6,7 +6,7 @@
   "excludeFolders": ["docs/research", "docs/adr", "tests", "benchmarks/repos", "evals/fixtures"],
   "excludeFiles": ["CHANGELOG.md", "todo.md", "PROGRESS.md"],
   "rules": [
-    "Before you install, measure it on the project: uvx nexus-mcp-ci eval (free, offline, no LLM calls).",
+    "Before you install, measure it on the project: uvx --python 3.12 nexus-mcp-ci eval (free, offline, no LLM calls).",
     "Register with Claude Code: claude mcp add nexus-mcp -- nexus-mcp-ci",
     "No setup call is needed: the stored index attaches when the server starts. Call index only if a tool answers 'No codebase indexed'.",
     "Call edges are static and name-based: treat graph results as a lower bound.",
