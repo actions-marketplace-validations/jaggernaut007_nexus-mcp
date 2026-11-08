@@ -384,6 +384,13 @@ Run `benchmarks/` on your own project before you rely on it.
 
 ## The 8 Tools
 
+**New in v2.4.1:** symbols, graph nodes and call edges for C, C++, C#, PHP and Rust;
+`Class.method` names and subclass overrides in `graph`; and a size cap on large `graph`
+results. By default the server shows only `index`, `search`, `find_symbol`, `graph` and
+`map`. Set `NEXUS_EXTRA_TOOLS=all` to show `status`, `analyze` and `memory`; `memory`
+stays on when you already have memories. An index of an earlier version is rebuilt once at
+the first start.
+
 **New in v2.3.0 (no breaking change):** `uvx nexus-mcp-ci setup` installs the server and the
 skill into your MCP clients, new install routes cover Claude Desktop, Gemini CLI, VS Code,
 Cursor, Docker and GitHub Actions, and the license is now MIT. The MCP tools do not change.
