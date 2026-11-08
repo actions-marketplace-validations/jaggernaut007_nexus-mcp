@@ -12,6 +12,17 @@ from nexus_mcp.evaluate import data_cmd, doctor, paths, report, source, specs, s
 from nexus_mcp.privacy import apply_privacy_defaults
 
 SUBCOMMANDS = ("eval", "data", "setup")
+VERSION_FLAGS = ("--version", "-V")
+
+
+def installed_version() -> str:
+    """The version of the installed package, or "unknown"."""
+    from importlib.metadata import PackageNotFoundError, version
+
+    try:
+        return version("nexus-mcp-ci")
+    except PackageNotFoundError:
+        return "unknown"
 
 
 def _eval_parser() -> argparse.ArgumentParser:
@@ -309,6 +320,9 @@ def run_data(argv: List[str]) -> int:
 
 def dispatch(argv: List[str]) -> Optional[int]:
     """Run a subcommand and return its exit code, or None when ``argv`` is not one."""
+    if argv and argv[0] in VERSION_FLAGS:
+        print(f"nexus-mcp-ci {installed_version()}")
+        return 0
     if not argv or argv[0] not in SUBCOMMANDS:
         return None
     if argv[0] == "setup":

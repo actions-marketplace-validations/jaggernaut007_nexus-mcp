@@ -20,6 +20,11 @@ class Settings:
 
     # Storage
     storage_dir: str = ".nexus"
+    # The folder that a relative `storage_dir` resolves against. Empty means the working
+    # folder of the process. `index` sets it (see `core_api.storage_base_for`): some
+    # clients, such as Cline, start the server in `/`, where `.nexus` cannot be written.
+    # It is not an environment variable.
+    storage_base: str = ""
 
     # Embedding model
     embedding_model: str = "bge-small-en"
@@ -160,7 +165,10 @@ class Settings:
 
     @property
     def storage_path(self) -> Path:
-        return Path(self.storage_dir)
+        path = Path(self.storage_dir).expanduser()
+        if path.is_absolute() or not self.storage_base:
+            return path
+        return Path(self.storage_base) / path
 
     @property
     def lancedb_path(self) -> Path:

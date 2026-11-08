@@ -351,3 +351,15 @@ def test_setup_asks_for_a_star_only_after_a_successful_install(env, capsys):
     assert sc.STAR_LINE in capsys.readouterr().out
     assert _run(home, project, "--client", "cursor", "--yes", "--uninstall") == 0
     assert sc.STAR_LINE not in capsys.readouterr().out
+
+
+def test_setup_cline_writes_a_stdio_entry(env, monkeypatch):
+    home, project = env
+    monkeypatch.setattr(sc, "_cline_config", lambda h: h / "cline" / "cline_mcp_settings.json")
+    (home / "cline").mkdir()
+    assert _run(home, project, "--client", "cline", "--yes") == 0
+    entry = json.loads((home / "cline" / "cline_mcp_settings.json").read_text())["mcpServers"][
+        "nexus-mcp"
+    ]
+    assert entry["type"] == "stdio"
+    assert entry["command"] == "uvx"

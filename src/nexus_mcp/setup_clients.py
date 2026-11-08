@@ -430,7 +430,8 @@ def build_plan(client: str, project: Path, home: Path, with_skill: bool = True) 
                 )
             )
     elif client == "cline":
-        changes.append(_json_entry(_cline_config(home), "mcpServers", dict(spec)))
+        # Cline writes `"type": "stdio"` in the entries that it adds itself.
+        changes.append(_json_entry(_cline_config(home), "mcpServers", dict(spec, type="stdio")))
     else:
         raise SetupError(f"Unknown client '{client}'. Choose from: {', '.join(CLIENTS)}.")
 

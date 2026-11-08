@@ -511,7 +511,7 @@ def create_server():
 def main():
     """Entry point for nexus-mcp CLI.
 
-    ``eval``, ``data`` and ``setup`` run a command and exit. With no arguments
+    ``eval``, ``data``, ``setup`` and ``--version`` run a command and exit. With no arguments
     the stdio server starts, as MCP clients expect.
     """
     import sys

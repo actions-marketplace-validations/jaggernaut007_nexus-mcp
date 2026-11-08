@@ -8,7 +8,7 @@ Set these as environment variables of the server, for example `claude mcp add ne
 
 | Variable | Default | Effect |
 |---|---|---|
-| `NEXUS_STORAGE_DIR` | `.nexus` | Folder for the index, memories and graph. Relative to the folder the server starts in. |
+| `NEXUS_STORAGE_DIR` | `.nexus` | Folder for the index, memories and graph. A relative path is in the folder the server starts in, or in the indexed project when that is outside it. |
 | `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model key. Only registered models load. Re-index after a change. |
 | `NEXUS_EMBEDDING_DEVICE` | `auto` | `auto`, `cpu`, `cuda` or `mps`. |
 | `NEXUS_EMBEDDING_BATCH_SIZE` | `32` | Chunks embedded in one batch. |
