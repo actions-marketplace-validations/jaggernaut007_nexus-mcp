@@ -108,6 +108,28 @@ def test_graph_bare_name_of_many_classes_keeps_path_order(repo, tmp_path):
     assert "2: def run(self):" in refs["files"]["pkg/aaa.py"]
 
 
+def test_graph_php_method_references_keep_override_definitions(tmp_path):
+    # PHP class nodes carry no base classes, so `graph` has no `overrides` list for a PHP
+    # method. The `function save` line of the subclass must then stay in the references.
+    from tests.conftest import _setup_indexed
+
+    root = tmp_path / "repo"
+    root.mkdir()
+    (root / "Model.php").write_text(
+        "<?php\nclass Model {\n    public function save() {\n        return 1;\n    }\n}\n"
+    )
+    (root / "User.php").write_text(
+        "<?php\nclass User extends Model {\n    public function save() {\n"
+        "        return parent::save();\n    }\n}\n"
+    )
+    asyncio.run(_setup_indexed(root, tmp_path / ".nexus"))
+    refs = core_api.graph("Model.save")["references"]
+    lines = [line for file_lines in refs["files"].values() for line in file_lines]
+    assert "definitions" not in refs
+    assert any("function save" in line for line in refs["files"].get("User.php", []))
+    assert len(lines) == 3
+
+
 def test_class_family_needs_one_owner(repo, tmp_path):
     from nexus_mcp.state import get_state
     from tests.conftest import _setup_indexed

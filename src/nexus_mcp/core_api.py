@@ -422,6 +422,10 @@ def _group_names(
     return grouped
 
 
+# Languages whose class nodes carry base classes (`AstGrepParser._class_bases`), so that
+# `graph` can list the overrides of a method. Keep the two in step.
+_LANGUAGES_WITH_BASES = frozenset({"python", "javascript", "typescript", "tsx"})
+
 MAX_GRAPH_SOURCE_FILES = 60  # source files of callers listed by `graph`; the rest are counts
 MAX_GRAPH_TEST_FILES = 10  # test files of callers listed by `graph`; the rest are counts
 MAX_OMITTED_DIRS = 10  # folders named in the count of the files that are not listed
@@ -435,14 +439,16 @@ def _cap_files(
     On Home Assistant `graph("async_setup_component")` named 4,979 callers in about 3,000
     files, mostly tests: 222,303 characters, about 55k tokens. Claude Code does not give
     the agent an MCP result above 25k tokens in full, so the agent grepped again and lost
-    `defined_in`. Returns the listed files (test symbols collapsed) and the count of the
-    rest, or None when every file is listed.
+    `defined_in`. The files are kept in the order given: a transitive walk gives the
+    nearest callers first, and a direct caller must not lose its place to a far one.
+    Returns the listed files (test symbols collapsed) and the count of the rest, or None
+    when every file is listed.
     """
     from collections import Counter
 
     from nexus_mcp.engines.fusion import is_test_path
 
-    ordered = sorted(grouped, key=lambda f: (is_test_path(f), f))
+    ordered = list(grouped)
     source = [f for f in ordered if not is_test_path(f)]
     tests = [f for f in ordered if is_test_path(f)]
     kept = source[:MAX_GRAPH_SOURCE_FILES] + tests[:MAX_GRAPH_TEST_FILES]
@@ -1543,7 +1549,7 @@ def _graph_immediate(
     if detail != "compact" and len(related_nodes) > MAX_FULL_NODES:
         result["truncated"] = (
             f"The first {MAX_FULL_NODES} of {len(related_nodes)} are shown. "
-            'detail="compact" names all of them.'
+            'detail="compact" lists them by file, with a count of the files past its cap.'
         )
     if direction == "callers":
         _add_overrides(result, state, matches)
@@ -1637,9 +1643,11 @@ def _add_references(
                 max_lines=max_lines if len(roots) > 1 else MAX_REFERENCE_LINES,
                 max_lines_per_file=MAX_REFERENCE_LINES_PER_FILE,
                 related_names=related,
-                # Only for a method of one class: its overrides are listed apart. For a
-                # bare name of several classes the `def` lines are the only list of them.
-                skip_definitions=bool(related),
+                # Only for a method of one class whose overrides are listed apart. For a
+                # bare name of several classes, or a language without recorded base
+                # classes, the `def` lines are the only list of them.
+                skip_definitions=bool(related)
+                and all(m.language in _LANGUAGES_WITH_BASES for m in matches),
             )
         except Exception as e:  # noqa: BLE001 - references are an addition, never a failure
             logger.warning("Reference search failed: %s", e)

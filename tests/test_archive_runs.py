@@ -89,7 +89,7 @@ def test_archive_stops_on_a_live_secret_of_any_shape(tmp_path):
                              secrets=["plainvalue-no-known-prefix-123"])
 
 
-@pytest.mark.parametrize("label", ["../x", "a/b", "..", ""])
+@pytest.mark.parametrize("label", ["../x", "a/b", "..", "", "run\n"])
 def test_archive_refuses_a_label_with_path_parts(tmp_path, label):
     log = tmp_path / "run.log"
     log.write_text("ok\n")

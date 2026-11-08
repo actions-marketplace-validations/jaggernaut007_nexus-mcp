@@ -21,8 +21,9 @@ All notable changes to this project will be documented in this file.
   an optional `languages` list, with a `before` run and an optional `after` run for each
   language. `publish_results.py` writes the table to the README, the site results rows,
   `llms.txt`, the benchmarks page and the CSV. A cell shows "before → after" when both runs
-  exist. On a phone the table scrolls in its own box. Schema v1 files still work. No
-  language numbers are published yet. The CSV has new columns for the language rows.
+  exist. On a phone the table scrolls in its own box. Schema v1 files still work. The
+  table holds TypeScript (Vite), JavaScript (webpack), Java (commons-lang) and C++
+  (Chromium `base/`). The CSV has new columns for the language rows.
   North star: no change (output only).
 
 - **`Class.method` names and subclass overrides in `graph` (issue #31).** On Django,
@@ -128,6 +129,21 @@ All notable changes to this project will be documented in this file.
       77,526 to 33,573 tokens (Grep 199,128).
 
 ### Fixed
+
+- **Code review of this branch (triple-agent audit, 2026-11-08).**
+  - `graph` references dropped the `function save` line of a subclass override for a
+    method in PHP, Go, Java, C#, C, C++ or Rust. Only Python, JavaScript and TypeScript
+    record base classes, so only those languages get an `overrides` list. The other
+    languages now keep those lines.
+  - The 60-file cap of `graph` kept the first files by name. For `transitive=True` a far
+    caller in `a/` could push out a direct caller in `z/`. The cap now keeps the files in
+    the order of the walk, nearest first.
+  - The `truncated` note of a full `graph` result said that `detail="compact"` names all
+    callers. The compact list has a cap, so the note now says so.
+  - `scripts/archive_runs.py` accepted a run label that ends in a newline.
+  - North star: not measured. The references fix does not touch Python, JavaScript or
+    TypeScript. The cap change affects only a result with more than 60 source files. No
+    paid rerun was made.
 
 - **Security review of this branch.**
   - Without ripgrep, `graph` references used plain `grep`, which also read git-ignored and

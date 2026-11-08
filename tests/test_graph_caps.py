@@ -39,6 +39,17 @@ def test_cap_files_counts_the_test_files_past_the_cap_by_folder():
     }
 
 
+def test_cap_files_keeps_the_files_given_first():
+    # A transitive walk gives the nearest callers first. A direct caller in `z/` must not
+    # lose its place to far callers whose paths sort before it.
+    far = {f"a/far_{i:03}.py": [f"f{i}"] for i in range(core_api.MAX_GRAPH_SOURCE_FILES)}
+    listed, omitted = core_api._cap_files({"z/direct.py": ["caller"]} | far)
+
+    assert "z/direct.py" in listed
+    assert "a/far_059.py" not in listed
+    assert omitted["files"] == 1
+
+
 def test_cap_files_counts_the_source_files_past_the_cap():
     source = core_api.MAX_GRAPH_SOURCE_FILES + 4
     listed, omitted = core_api._cap_files(_grouped(source, 0))

@@ -88,7 +88,7 @@ def check_clean(path: Path, secrets: list[str] | None = None) -> str:
 
 def check_label(label: str) -> str:
     """A run label becomes a folder name: refuse `/`, `..` and other path parts."""
-    if not LABEL.match(label) or label in {".", ".."}:
+    if not LABEL.fullmatch(label) or label in {".", ".."}:
         sys.exit(f"Not archived: bad run label {label!r}. Use letters, digits, '.', '_', '-'.")
     return label
 
