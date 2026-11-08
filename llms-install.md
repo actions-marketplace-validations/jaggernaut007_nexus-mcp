@@ -26,8 +26,17 @@ call graph. The server name in the client config is `nexus-mcp`. The PyPI packag
    - If it is missing, tell the user to install it: https://docs.astral.sh/uv/getting-started/installation/
    - Do not run a remote install script without the user's yes.
 3. Check whether the client config already has a server named `nexus-mcp`. If it has one, ask
-   the user before you continue: step 4 replaces it. `setup` prints `replace ... (was ...)`
-   with the old launch, or `keep ...` when the entry is already current.
+   the user before you continue: step 4 replaces it.
+   - `setup` changes every config file of that client that it finds. For `cline` this can be
+     two files (see the table), one of them in the folder of another editor. Tell the user the
+     files before you run it, or run it with `--dry-run` first.
+   - `setup` prints one line for each file, in this form:
+     `change: <action> MCP server 'nexus-mcp' in <file> (...)`. The action is `add` (no entry),
+     `replace` (another launch; the old one is shown as `was ...`), `update` (the same launch,
+     other fields) or `keep` (no change). For `claude-code` with the `claude` CLI, the line
+     shows the `claude mcp add` command instead, with `(replaces ...)` for an older entry.
+   - Another entry with another name (for example a disabled `nexus` entry in the same file) is
+     not changed. Tell the user about it: if someone turns it on, it starts that old launch.
 4. Run this command. Replace `<client>` with your own client:
    `claude-code`, `claude-desktop`, `cursor`, `vscode`, `windsurf`, `gemini`, `codex` or `cline`.
    ```
@@ -38,15 +47,26 @@ call graph. The server name in the client config is `nexus-mcp`. The PyPI packag
    - Most server entries are user-level: they apply to every project (see the table). Run the
      command in the project folder anyway. Some clients get a project file, and the command
      starts an index of that folder in the background.
-   - The entry runs `uvx --python 3.12 nexus-mcp-ci==<version>`, with the version that ran
-     `setup`. The pin keeps the server the same until you run `setup` again to update it.
-   - To see the changes first, add `--dry-run`. To see the version, run
-     `uvx --python 3.12 nexus-mcp-ci --version`. A build older than 2.4.3 does not know
-     `--version`: it starts a server that never ends. If the command prints nothing in 10 seconds,
-     stop it.
-   - The background index writes `<project>/.nexus/setup-index.log`. Its last line says `DONE`
-     or `FAILED` when the index ends.
-5. Tell the user to restart the server. New tools and a new version appear only after that.
+   - The command takes the newest release, and the entry pins that version:
+     `uvx --python 3.12 nexus-mcp-ci==<version>`. The pin keeps the server the same until you run
+     `setup` again. To install one exact version, run
+     `uvx --python 3.12 nexus-mcp-ci==<version> setup ...`.
+   - To see the changes first, add `--dry-run`. It writes nothing.
+   - To see the version, run `uvx --python 3.12 nexus-mcp-ci --version`. The output is one line,
+     for example `nexus-mcp-ci 2.4.5`. A build older than 2.4.3 does not know `--version`: it
+     starts a server that never ends. If the command prints nothing in 10 seconds, stop it
+     (Ctrl-C, or `kill <pid>`).
+   - With `--yes`, `setup` also starts an index of the folder in the background, if the folder
+     looks like a project (for example it has `.git`, `pyproject.toml` or `package.json`). It
+     writes `<project>/.nexus/setup-index.log`, and its last line says `DONE` or `FAILED` when
+     the index ends. `--no-index` turns this off: no index starts and no log is written. Then
+     call `index` yourself in step 6.
+   - To update a Cline entry in the flat form in `~/.cline/data/settings`, `setup` writes it
+     again in the `transport` form (see "What the command changes").
+5. Tell the user to restart the server.
+   - Some clients, such as Cline, start the new server by themselves when the config file
+     changes. The tool list of a chat that runs does not change: new tools and a new prefix
+     appear in a new chat.
    - Cline: open the MCP Servers panel and restart `nexus-mcp` (or turn it off and on). A new
      chat does not restart a server that runs.
    - Other clients: reload the window, or start a new session.
@@ -75,9 +95,9 @@ call graph. The server name in the client config is `nexus-mcp`. The PyPI packag
 
 ## Where the index is
 
-The index is in `<project>/.nexus/` (add `.nexus/` to `.gitignore`; check it with
-`git check-ignore .nexus`). When the server starts in
-the project folder, a new session attaches the index by itself. Some clients, such as Cline,
+The index is in `<project>/.nexus/`. `setup` does not change `.gitignore`: ask the user to add
+`.nexus/` to it, and check it with `git check-ignore .nexus`. When the server starts in the
+project folder, a new session attaches the index by itself. Some clients, such as Cline,
 start the server in another folder. Then call `index` once in each session, with the absolute
 project path: that path selects the project, and its index is in `<project>/.nexus/`. With an
 existing index this is a fast update. To keep the index in another place, set the environment
@@ -102,7 +122,13 @@ An index that a newer build wrote can crash an older build that reads the same f
 ## What the command changes
 
 Before its first change to a JSON file, `setup` keeps one copy of it as `<file>.nexus-bak`.
-`setup` does not replace that copy later, so it holds the file as it was before the first install.
+`setup` does not replace that copy later, so it holds the file as it was before the first
+install. It is not a copy of the last version. To go back to an older version, run `setup` again
+with that version (`uvx --python 3.12 nexus-mcp-ci==<version> setup ...`). To remove the entry,
+use `--uninstall` (below).
+
+`setup` changes only the files in this table, and the background index writes
+`<project>/.nexus/`. It does not change `.gitignore` or a project MCP file such as `.mcp.json`.
 
 | Client | Server entry | Skill text |
 |---|---|---|
@@ -116,7 +142,10 @@ Before its first change to a JSON file, `setup` keeps one copy of it as `<file>.
 | `cline` | user-level, in the files of the Cline installs that exist: `~/.cline/data/settings/cline_mcp_settings.json` (the Cline CLI, and the Cline that Antigravity runs) and `cline_mcp_settings.json` in the VS Code folder of the Cline extension. A client reads only one of them. | none |
 
 `setup` writes these entries. Most clients get the first form. The Cline file in
-`~/.cline/data/settings` nests the launch under `transport`:
+`~/.cline/data/settings` nests the launch under `transport`. If that file has a `nexus-mcp`
+entry in the first form (for example written by hand), `setup` writes it again in the second
+form and prints `update` or `replace`. It keeps `disabled`, `timeout` and `autoApprove`, and
+sets `disabled` to `false`:
 
 ```
 "nexus-mcp": {"type": "stdio", "command": "uvx", "args": ["--python", "3.12", "nexus-mcp-ci==<version>"]}
