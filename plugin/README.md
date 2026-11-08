@@ -1,22 +1,16 @@
 # Nexus-MCP plugin
 
-Fewer tokens for Claude Code on large codebases. Nexus-MCP is a local MCP server with hybrid code
-search, a static call graph for 10 languages and the code of any symbol, so the agent reads
-fewer files.
+Your coding agent reads less code to find the right file. Nexus-MCP is a local MCP server with
+hybrid code search, a static call graph for 10 languages and the code of any symbol, so Claude
+reads fewer files.
 
 ## Results
 
-Live benchmark of 2.4.1: Claude Code, Claude Sonnet at medium effort, 6 tasks × 3 runs per
-project, against the built-in Grep and Read tools.
-
-| Project | Tokens, sum of 18 runs | Cost | Correct answers |
-|---|---|---|---|
-| Home Assistant (about 26,000 Python files) | 49% fewer | 32% lower | 18 of 18 (Grep 17) |
-| Django | 27% fewer | 27% lower | 17 of 18 (Grep 16) |
-
-On Django it used fewer tokens on 2 of the 6 tasks; the large impact tasks give the win. Grep
-totals vary from run to run. Method and all numbers:
-[benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html).
+Measured against Grep and Read on 12 open-source repos in 10 languages: 95% fewer tokens to
+reach the right file (median of 10 repos), and a lower cost per task on 8 of 11 repos in live
+Claude Code runs. C and Rust used more tokens on an older build. Every number, per repo, with
+the method: [benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) and the
+[README](https://github.com/jaggernaut007/Nexus-MCP#results).
 
 ## What you need
 

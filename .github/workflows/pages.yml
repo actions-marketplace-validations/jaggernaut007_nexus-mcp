@@ -77,10 +77,14 @@ jobs:
                pypistats_total: $pypi,
                last_month: $r[0].data.last_month, last_week: $r[0].data.last_week, updated: (now | todate)}' \
             > _site/downloads.json || rm -f _site/downloads.json
-          # Shields.io endpoint for the alternative (pypistats) README badge.
-          # The primary README badge comes from static.pepy.tech directly.
-          if [ -f _site/downloads.json ] && jq -e '.pypistats_total != null' _site/downloads.json > /dev/null; then
-            jq '{schemaVersion: 1, label: "downloads", message: ((.pypistats_total | tostring) + " total"), color: "blue"}' \
+          # Shields.io endpoint for the README badge. It shows the same total as the
+          # site, rounded DOWN to one decimal ("5.5k" for 5,513). The static.pepy.tech
+          # badge rounds to the nearest thousand and showed 5,513 as "6k".
+          if [ -f _site/downloads.json ]; then
+            jq '{schemaVersion: 1, label: "downloads", color: "blue",
+                 message: (.total
+                   | if . >= 1000 then (((. / 100) | floor) / 10 | tostring) + "k"
+                     else tostring end)}' \
               _site/downloads.json > _site/downloads-badge.json
           fi
 

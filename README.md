@@ -1,7 +1,7 @@
 # Nexus-MCP
 
 [![PyPI version](https://img.shields.io/pypi/v/nexus-mcp-ci)](https://pypi.org/project/nexus-mcp-ci/)
-[![PyPI downloads](https://static.pepy.tech/badge/nexus-mcp-ci)](https://pepy.tech/projects/nexus-mcp-ci)
+[![PyPI downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fjaggernaut007.github.io%2Fnexus-mcp%2Fdownloads-badge.json)](https://pepy.tech/projects/nexus-mcp-ci)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![CI](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml/badge.svg)](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml)
 [![Glama MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/score.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
@@ -214,8 +214,4 @@ by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) ([ADR-001](docs/adr/ADR
 
 ## License
 
-[MIT](LICENSE). Free for any use, including at work. Versions 2.0.1 to 2.2.3 were released
-under the PolyForm Noncommercial License 1.0.0; anyone who got one of those versions keeps
-those terms. Every new release is MIT.
-
-If Nexus-MCP saves you tokens at work, a star or a sponsorship is welcome. Neither is required.
+[MIT](LICENSE).

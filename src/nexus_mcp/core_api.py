@@ -1379,7 +1379,7 @@ def _chunk_lookup_names(name: str) -> list[str]:
 def _chunk_symbol_entries(state, name: str) -> list[tuple[dict[str, Any], tuple]]:
     """`find_symbol` entries from the chunk table, for a name with no graph node.
 
-    The graph holds functions, classes and methods of six languages. A constant, a module
+    The graph holds functions, classes and methods of the ten graph languages. A constant, a module
     docstring or a symbol of another language is only in the chunk table.
 
     A C++ name with `::` is looked up as the index stores it, with `.`

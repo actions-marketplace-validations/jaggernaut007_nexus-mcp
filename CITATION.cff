@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use Nexus-MCP, please cite it as below."
-title: "Nexus-MCP: Unified Code Intelligence Server"
+title: "Nexus-MCP: Local Code Search That Cuts Coding-Agent Tokens"
 type: software
 version: 2.4.5
 date-released: 2026-11-08
@@ -31,9 +31,10 @@ keywords:
   - token-efficiency
   - benchmark
 abstract: >-
-  Nexus-MCP is a unified, local-first MCP server that combines hybrid search
-  (vector + BM25), a static code graph with call edges, and persistent
-  semantic memory into a single process. It provides 8 tools for AI coding
-  agents via the Model Context Protocol. The tools aim at fewer agent turns
-  for the same answers. It uses about 90 MB of RAM idle and 460 MB with the
+  Nexus-MCP is a local MCP server that lets an AI coding agent read less code
+  to find the right file. It combines hybrid search (vector + BM25), a static
+  code graph with call edges and an opt-in project memory in a single
+  process. It provides 8 tools for AI coding agents via the Model Context
+  Protocol. The tools aim at fewer agent turns and tokens for the same
+  answers. It uses about 90 MB of RAM idle and 460 MB with the
   embedding model loaded, needs no API keys and has no cloud dependencies.

@@ -1,6 +1,6 @@
 # Nexus-MCP
 
-Unified MCP server: hybrid search + code graph + semantic memory. Memory (measured, docs/MEMORY.md): ~90MB idle, ~460MB with the embedding model loaded, ~500MB while indexing a small project. The old <350MB target is not met once the model is loaded.
+Local MCP server that cuts coding-agent tokens: the agent reads less code to find the right file. Hybrid search + code graph, with an opt-in memory. Memory (measured, docs/MEMORY.md): ~90MB idle, ~460MB with the embedding model loaded, ~500MB while indexing a small project. The old <350MB target is not met once the model is loaded.
 
 ## North star
 

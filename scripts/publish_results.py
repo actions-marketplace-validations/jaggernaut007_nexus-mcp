@@ -34,6 +34,7 @@ EQUAL_BAND = 0.05
 
 
 def markers(name: str):
+    """The start and end comment markers of the generated block `name`."""
     return f"<!-- {name}:start -->", f"<!-- {name}:end -->"
 
 
@@ -44,6 +45,7 @@ START, END = markers("results")
 
 
 def pct_change(new: float, old: float) -> str:
+    """The change from old to new as a signed percent with a true minus sign, such as "−36%"."""
     change = (new - old) / old * 100 if old else 0.0
     if round(change) == 0:
         return "0%"
@@ -52,6 +54,7 @@ def pct_change(new: float, old: float) -> str:
 
 
 def ascii_pct(new: float, old: float) -> str:
+    """pct_change with an ASCII hyphen, for Markdown and plain text."""
     return pct_change(new, old).replace("−", "-")
 
 
@@ -59,41 +62,64 @@ def _turns(value) -> str:
     return "–" if value is None else f"{value:g}"
 
 
+def _fmt(value, spec: str, suffix: str = "") -> str:
+    """A formatted number, or a dash when the value is missing."""
+    return "–" if value is None else f"{format(value, spec)}{suffix}"
+
+
+def _median(values: List[float]) -> Optional[float]:
+    return statistics.median(values) if values else None
+
+
 def offline_repos(data: Dict) -> List[Dict]:
+    """The repos that have an offline-check result."""
     return [r for r in data["repos"] if r.get("quick")]
 
 
 def live_repos(data: Dict) -> List[Dict]:
+    """The repos that have a live A/B result."""
     return [r for r in data["repos"] if r.get("live")]
 
 
 def headline(data: Dict) -> Dict:
-    """The summary numbers of the hero and the README, computed from the repo rows."""
+    """The summary numbers of the hero and the README, computed from the repo rows.
+
+    A row with a missing value or a zero divisor does not count in a median. A median of no
+    rows is None, and the text that uses it leaves that part out.
+    """
     off, live = offline_repos(data), live_repos(data)
-    cut = [1 - r["quick"]["nexus"]["median_tokens"] / r["quick"]["grep"]["median_tokens"] for r in off]
-    speed = [r["quick"]["grep"]["median_ms"] / r["quick"]["nexus"]["median_ms"] for r in off]
-    cost = [r["live"]["nexus"]["cost_usd"] / r["live"]["baseline"]["cost_usd"] - 1 for r in live]
-    tokens = [r["live"]["nexus"]["median_tokens"] / r["live"]["baseline"]["median_tokens"] - 1 for r in live]
+    cut, speed, cost, tokens = [], [], [], []
+    for r in off:
+        g, n = r["quick"]["grep"], r["quick"]["nexus"]
+        if g.get("median_tokens"):
+            cut.append(1 - n["median_tokens"] / g["median_tokens"])
+        if g.get("median_ms") and n.get("median_ms"):
+            speed.append(g["median_ms"] / n["median_ms"])
+    for r in live:
+        b, n = r["live"]["baseline"], r["live"]["nexus"]
+        if b.get("cost_usd"):
+            cost.append(n["cost_usd"] / b["cost_usd"] - 1)
+        if b.get("median_tokens"):
+            tokens.append(n["median_tokens"] / b["median_tokens"] - 1)
     return {
         "languages": len({r["language"] for r in off}),
         "repos": len(data["repos"]),
         "offline_repos": len(off),
-        "token_cut": statistics.median(cut),
-        "token_cut_min": min(cut),
-        "token_cut_max": max(cut),
-        "speedup": statistics.median(speed),
-        "speedup_min": min(speed),
-        "speedup_max": max(speed),
-        "hit_grep": statistics.median(r["quick"]["grep"]["hit_at_1"] for r in off),
-        "hit_nexus": statistics.median(r["quick"]["nexus"]["hit_at_1"] for r in off),
+        "token_cut": _median(cut),
+        "token_cut_min": min(cut, default=None),
+        "token_cut_max": max(cut, default=None),
+        "speedup": _median(speed),
+        "speedup_min": min(speed, default=None),
+        "speedup_max": max(speed, default=None),
         "live_repos": len(live),
         # A change inside the band is "about equal" in the tables, so it is not a win here.
         "cost_lower": sum(1 for c in cost if c < -EQUAL_BAND),
-        "cost_median": statistics.median(cost),
+        "cost_median": _median(cost),
         "tokens_lower": sum(1 for t in tokens if t < -EQUAL_BAND),
         "correct_nexus": sum(r["live"]["nexus"]["correct"] for r in live),
         "correct_baseline": sum(r["live"]["baseline"]["correct"] for r in live),
         "tasks": sum(r["live"]["nexus"]["of"] for r in live),
+        "tasks_baseline": sum(r["live"]["baseline"]["of"] for r in live),
     }
 
 
@@ -107,6 +133,7 @@ def not_yet(data: Dict) -> List[Dict]:
 
 
 def not_yet_sentence(data: Dict) -> str:
+    """One sentence that names each language of not_yet, or "" when there is none."""
     rows = not_yet(data)
     if not rows:
         return ""
@@ -118,46 +145,76 @@ def not_yet_sentence(data: Dict) -> str:
 
 
 def summary_sentence(data: Dict) -> str:
+    """The headline as prose. A part with no data (no offline or no live repo) is left out."""
     h = headline(data)
-    return (
-        f"On {h['offline_repos']} open-source repos in {h['languages']} languages, Nexus-MCP "
-        f"reached the right file with {h['token_cut']:.0%} fewer tokens (median) and searched "
-        f"{h['speedup']:.0f}× faster than Grep and Read. In live Claude Code runs on "
-        f"{h['live_repos']} repos, cost per task was lower on {h['cost_lower']} of "
-        f"{h['live_repos']}, with {h['correct_nexus']} of {h['tasks']} tasks correct against "
-        f"{h['correct_baseline']} of {h['tasks']}."
-    )
+    parts = []
+    if h["token_cut"] is not None:
+        speed = (
+            f" and searched {h['speedup']:.0f}× faster than Grep and Read"
+            if h["speedup"] is not None else ""
+        )
+        parts.append(
+            f"On {h['offline_repos']} open-source repos in {h['languages']} languages, Nexus-MCP "
+            f"reached the right file with {h['token_cut']:.0%} fewer tokens (median){speed}."
+        )
+    if h["live_repos"]:
+        parts.append(
+            f"In live Claude Code runs on {h['live_repos']} repos, cost per task was lower on "
+            f"{h['cost_lower']} of {h['live_repos']}, with {h['correct_nexus']} of {h['tasks']} "
+            f"tasks correct against {h['correct_baseline']} of {h['tasks_baseline']}."
+        )
+    return " ".join(parts)
 
 
 def _link_md(r: Dict) -> str:
     return f"[{r['project']}]({r['url']})" if r.get("url") else r["project"]
 
 
-def _better(new: float, old: float, text: str) -> str:
-    """Bold a Nexus-MCP value in Markdown when it is lower than the baseline."""
-    return f"**{text}**" if new < old else text
+def _wins(new, old, higher: bool = False, equal: float = 0.0) -> Optional[bool]:
+    """True when Nexus-MCP is clearly better, False when clearly worse, None when about equal.
+
+    Lower is better unless `higher` is set (hit@1). A missing value gives None.
+    """
+    if new is None or old is None:
+        return None
+    if higher:
+        new, old = -new, -old
+    if new < old - abs(old) * equal:
+        return True
+    if new > old + abs(old) * equal:
+        return False
+    return None
+
+
+def _better(new, old, text: str, higher: bool = False, equal: float = 0.0) -> str:
+    """Bold a Nexus-MCP value in Markdown when it is clearly better than the baseline."""
+    return f"**{text}**" if _wins(new, old, higher, equal) else text
 
 
 # ---------------------------------------------------------------- README
 
 
 def offline_md(data: Dict) -> List[str]:
+    """The offline-check table as Markdown lines. A Nexus-MCP value is bold only when it wins."""
     lines = [
         "| Language | Repo | Right file first | Tokens to the right file | Search time |",
         "|---|---|---:|---:|---:|",
     ]
     for r in offline_repos(data):
         g, n = r["quick"]["grep"], r["quick"]["nexus"]
+        hit = _better(n["hit_at_1"], g["hit_at_1"], _fmt(n["hit_at_1"], ".0%"), higher=True)
+        tok = _better(n["median_tokens"], g["median_tokens"], _fmt(n["median_tokens"], ","))
+        ms = _better(n.get("median_ms"), g.get("median_ms"), _fmt(n.get("median_ms"), ",.0f", " ms"))
         lines.append(
-            f"| {r['language']} | {_link_md(r)} ({r['files']:,} files) | "
-            f"{g['hit_at_1']:.0%} → **{n['hit_at_1']:.0%}** | "
-            f"{g['median_tokens']:,} → **{n['median_tokens']:,}** | "
-            f"{g['median_ms']:,.0f} → **{n['median_ms']:,.0f} ms** |"
+            f"| {r['language']} | {_link_md(r)} ({_fmt(r['files'], ',')} files) | "
+            f"{_fmt(g['hit_at_1'], '.0%')} → {hit} | {_fmt(g['median_tokens'], ',')} → {tok} | "
+            f"{_fmt(g.get('median_ms'), ',.0f')} → {ms} |"
         )
     return lines
 
 
 def live_md(data: Dict) -> List[str]:
+    """The live A/B table as Markdown lines. A change inside EQUAL_BAND is not bold."""
     lines = [
         "| Language | Repo | Tokens per task | Cost per task | Turns | Correct |",
         "|---|---|---:|---:|---:|---:|",
@@ -168,14 +225,15 @@ def live_md(data: Dict) -> List[str]:
         cost = f"${n['cost_usd']:.3f} ({ascii_pct(n['cost_usd'], b['cost_usd'])})"
         lines.append(
             f"| {r['language']} | {_link_md(r)} | {b['median_tokens']:,} → "
-            f"{_better(n['median_tokens'], b['median_tokens'] * (1 - EQUAL_BAND), tok)} | "
-            f"${b['cost_usd']:.3f} → {_better(n['cost_usd'], b['cost_usd'] * (1 - EQUAL_BAND), cost)} | "
+            f"{_better(n['median_tokens'], b['median_tokens'], tok, equal=EQUAL_BAND)} | "
+            f"${b['cost_usd']:.3f} → {_better(n['cost_usd'], b['cost_usd'], cost, equal=EQUAL_BAND)} | "
             f"{_turns(b['turns'])} → {_turns(n['turns'])} | {b['correct']} → {n['correct']} of {n['of']} |"
         )
     return lines
 
 
 def readme_block(data: Dict) -> str:
+    """The generated results block of README.md."""
     m = data["method"]
     lines = [
         f"**{summary_sentence(data)}**",
@@ -213,27 +271,28 @@ def _repo_link(r: Dict) -> str:
     return f'<a href="{html.escape(r["url"])}" rel="noopener">{name}</a>' if r.get("url") else name
 
 
-def _cell(new: float, old: float, text: str, equal: float = 0.0) -> str:
-    """A Nexus-MCP cell: class "win" when lower, "loss" when clearly higher."""
-    if new < old * (1 - equal):
-        cls = "win"
-    elif new > old * (1 + equal):
-        cls = "loss"
-    else:
-        cls = "even"
+def _cell(new, old, text: str, equal: float = 0.0, higher: bool = False) -> str:
+    """A Nexus-MCP cell: class "win" when clearly better, "loss" when clearly worse, else "even"."""
+    cls = {True: "win", False: "loss", None: "even"}[_wins(new, old, higher, equal)]
     return f'<td class="{cls}">{text}</td>'
 
 
 def offline_html(data: Dict) -> str:
+    """The offline-check table of the site."""
     rows = []
     for r in offline_repos(data):
         g, n = r["quick"]["grep"], r["quick"]["nexus"]
+        g_ms, n_ms = g.get("median_ms"), n.get("median_ms")
         rows.append(
             f'<tr><th scope="row">{html.escape(r["language"])}</th>'
-            f'<td class="repo">{_repo_link(r)}<span>{r["files"]:,} files</span></td>'
-            f'<td class="base">{g["hit_at_1"]:.0%}</td><td class="win">{n["hit_at_1"]:.0%}</td>'
-            f'<td class="base">{g["median_tokens"]:,}</td><td class="win">{n["median_tokens"]:,}</td>'
-            f'<td class="base">{g["median_ms"]:,.0f} ms</td><td class="win">{n["median_ms"]:,.0f} ms</td></tr>'
+            f'<td class="repo">{_repo_link(r)}<span>{_fmt(r["files"], ",")} files</span></td>'
+            f'<td class="base">{_fmt(g["hit_at_1"], ".0%")}</td>'
+            + _cell(n["hit_at_1"], g["hit_at_1"], _fmt(n["hit_at_1"], ".0%"), higher=True)
+            + f'<td class="base">{_fmt(g["median_tokens"], ",")}</td>'
+            + _cell(n["median_tokens"], g["median_tokens"], _fmt(n["median_tokens"], ","))
+            + f'<td class="base">{_fmt(g_ms, ",.0f", " ms")}</td>'
+            + _cell(n_ms, g_ms, _fmt(n_ms, ",.0f", " ms"))
+            + "</tr>"
         )
     return (
         '<div class="table-scroll" tabindex="0" role="region" aria-labelledby="offline-title">'
@@ -250,6 +309,7 @@ def offline_html(data: Dict) -> str:
 
 
 def live_html(data: Dict) -> str:
+    """The live A/B table of the site."""
     rows = []
     for r in live_repos(data):
         b, n = r["live"]["baseline"], r["live"]["nexus"]
@@ -285,10 +345,26 @@ def site_block(data: Dict) -> str:
     h = headline(data)
     m = data["method"]
     note = not_yet_sentence(data)
+    cards = []
+    if h["token_cut"] is not None:
+        cards.append(
+            f"<p><strong>{h['token_cut']:.0%}</strong> fewer tokens to reach the right file, median "
+            f"of {h['offline_repos']} repos ({h['token_cut_min']:.0%} to {h['token_cut_max']:.0%}).</p>"
+        )
+    if h["speedup"] is not None:
+        cards.append(
+            f"<p><strong>{h['speedup']:.0f}×</strong> faster search than Grep and Read, median "
+            f"({h['speedup_min']:.0f}× to {h['speedup_max']:.0f}×).</p>"
+        )
+    if h["live_repos"]:
+        cards.append(
+            f"<p><strong>{h['cost_lower']} of {h['live_repos']}</strong> repos cost less per task in "
+            f"live Claude Code runs, with {h['correct_nexus']} of {h['tasks']} tasks correct against "
+            f"{h['correct_baseline']}.</p>"
+        )
+    summary = "\n".join(f"  {c}" for c in cards)
     return f"""<div class="results-summary">
-  <p><strong>{h['token_cut']:.0%}</strong> fewer tokens to reach the right file, median of {h['offline_repos']} repos ({h['token_cut_min']:.0%} to {h['token_cut_max']:.0%}).</p>
-  <p><strong>{h['speedup']:.0f}×</strong> faster search than Grep and Read, median ({h['speedup_min']:.0f}× to {h['speedup_max']:.0f}×).</p>
-  <p><strong>{h['cost_lower']} of {h['live_repos']}</strong> repos cost less per task in live Claude Code runs, with {h['correct_nexus']} of {h['tasks']} tasks correct against {h['correct_baseline']}.</p>
+{summary}
 </div>
 <h3 id="offline-title">Find the right file <span>offline check, no LLM</span></h3>
 {offline_html(data)}
@@ -303,7 +379,9 @@ def hero_block(data: Dict) -> str:
     tabs, panels = [], []
     for i, r in enumerate(repos):
         g, n = r["quick"]["grep"], r["quick"]["nexus"]
-        key = re.sub(r"[^a-z0-9]+", "-", r["language"].lower()).strip("-") or f"l{i}"
+        # The repo name, not the language: "C", "C#" and "C++" would all slug to "c".
+        key = re.sub(r"[^a-z0-9]+", "-", str(r.get("name") or r["project"]).lower()).strip("-")
+        key = key or f"repo-{i}"
         first = i == 0
         selected = "true" if first else "false"
         focus = "" if first else ' tabindex="-1"'
@@ -312,13 +390,15 @@ def hero_block(data: Dict) -> str:
             f'<button role="tab" id="trace-tab-{key}" aria-controls="trace-{key}" '
             f'aria-selected="{selected}"{focus}>{html.escape(r["language"])}</button>'
         )
-        width = max(n["median_tokens"] / g["median_tokens"] * 100, 0.8)
+        ratio = n["median_tokens"] / g["median_tokens"] if g.get("median_tokens") else 1
+        # A floor of 0.8% keeps a very small Nexus-MCP bar visible; the cap keeps it in the lane.
+        width = min(max(ratio * 100, 0.8), 100)
 
         def stats(s: Dict) -> str:
             return (
-                f'<p class="lane-stats"><span><strong>{s["median_tokens"]:,}</strong> tokens</span>'
-                f'<span>{s["median_ms"]:,.0f} ms</span>'
-                f'<span>right file first {s["hit_at_1"]:.0%}</span></p>'
+                f'<p class="lane-stats"><span><strong>{_fmt(s["median_tokens"], ",")}</strong> '
+                f'tokens</span><span>{_fmt(s.get("median_ms"), ",.0f", " ms")}</span>'
+                f'<span>right file first {_fmt(s["hit_at_1"], ".0%")}</span></p>'
             )
 
         panels.append(
@@ -330,11 +410,17 @@ def hero_block(data: Dict) -> str:
             f'<p class="trace-source">{html.escape(r["project"])}, {r["files"]:,} files, {r["quick"]["questions"]} questions, median per question.</p>'
             "</div>"
         )
+    if not repos:
+        return ""
     h = headline(data)
+    speed = (
+        f' and <strong>{h["speedup"]:.0f}× faster search</strong>' if h["speedup"] is not None else ""
+    )
     claim = (
-        f'<p class="trace-claim"><strong>{h["token_cut"]:.0%} fewer tokens</strong> and '
-        f'<strong>{h["speedup"]:.0f}× faster search</strong>, median of {h["offline_repos"]} '
-        f"repos in {h['languages']} languages. Pick a language:</p>"
+        f'<p class="trace-claim"><strong>{h["token_cut"]:.0%} fewer tokens</strong>{speed}, '
+        f"median of {h['offline_repos']} repos in {h['languages']} languages. Pick a language:</p>"
+        if h["token_cut"] is not None
+        else '<p class="trace-claim">Pick a language:</p>'
     )
     return (
         claim
@@ -347,6 +433,7 @@ def hero_block(data: Dict) -> str:
 
 
 def llms_block(data: Dict) -> str:
+    """The generated Benchmarks section of llms.txt: plain text, no arrows."""
     m = data["method"]
     lines = [
         "## Benchmarks",
@@ -363,7 +450,7 @@ def llms_block(data: Dict) -> str:
             f"{r['quick']['build']}): right file first {g['hit_at_1']:.0%} (Grep and Read) and "
             f"{n['hit_at_1']:.0%} (Nexus-MCP); median tokens to the right file "
             f"{g['median_tokens']} and {n['median_tokens']}; median search time "
-            f"{g['median_ms']:.0f} ms and {n['median_ms']:.0f} ms."
+            f"{_fmt(g.get('median_ms'), '.0f', ' ms')} and {_fmt(n.get('median_ms'), '.0f', ' ms')}."
         )
     for r in live_repos(data):
         b, n = r["live"]["baseline"], r["live"]["nexus"]
@@ -409,6 +496,7 @@ CSV_HEAD = [
 
 
 def csv_text(data: Dict) -> str:
+    """site/benchmarks.csv: two rows (Grep and Read, Nexus-MCP) per repo and tier, one width."""
     out = io.StringIO()
     writer = csv.writer(out, lineterminator="\n")
     writer.writerow(CSV_HEAD)
@@ -425,7 +513,7 @@ def csv_text(data: Dict) -> str:
                 writer.writerow(row(**base, tier="offline", condition=name,
                                     build=q["build"] if side == "nexus" else "built-in tools",
                                     run=q["run"], median_tokens=s["median_tokens"],
-                                    hit_at_1=s["hit_at_1"], median_ms=s["median_ms"]))
+                                    hit_at_1=s["hit_at_1"], median_ms=s.get("median_ms")))
         live = r.get("live")
         if live:
             for side, name in (("baseline", "grep_and_read"), ("nexus", "nexus_mcp")):
@@ -552,7 +640,7 @@ def detail_html(data: Dict) -> str:
         pin = f'<code>{html.escape(str(r["pin"])[:7])}</code>'
         off = (
             f"<td>{html.escape(q['build'])}</td><td>{q['date']}</td><td>{q['index_seconds']:,.0f} s</td>"
-            f"<td>{q['grep']['hit_at_3']:.0%} / {q['nexus']['hit_at_3']:.0%}</td>"
+            f"<td>{_fmt(q['grep'].get('hit_at_3'), '.0%')} / {_fmt(q['nexus'].get('hit_at_3'), '.0%')}</td>"
             f"<td>{html.escape(q['verdict'])}</td>"
             if q else "<td>–</td>" * 5
         )
@@ -624,14 +712,17 @@ def other_html(data: Dict) -> str:
 
 
 def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
+    """The whole site/benchmarks.html page, from the data and the accepted community results."""
     community = load_community() if community is None else community
     m = data["method"]
+    h = headline(data)
+    scope = f"{h['repos']} open-source repos in {h['languages']} languages"
     dataset = {
         "@context": "https://schema.org",
         "@type": "Dataset",
         "name": "Nexus-MCP token-efficiency benchmark",
         "description": "Tokens, search time, cost and correct answers of coding agents with "
-        "Nexus-MCP against Grep and Read, on open-source repos in 10 languages.",
+        f"Nexus-MCP against Grep and Read, on {scope}.",
         "url": f"{SITE_URL}/benchmarks.html",
         "dateModified": data["updated"],
         "license": f"{REPO_URL}/blob/main/LICENSE",
@@ -659,7 +750,7 @@ def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Nexus-MCP Benchmarks</title>
-<meta name="description" content="Tokens, search time, cost and accuracy of coding agents with Nexus-MCP against Grep and Read, on 12 open-source repos in 10 languages. Method and raw data.">
+<meta name="description" content="Tokens, search time, cost and accuracy of coding agents with Nexus-MCP against Grep and Read, on {scope}. Method and raw data.">
 <link rel="canonical" href="{SITE_URL}/benchmarks.html">
 <link rel="icon" href="favicon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -696,6 +787,7 @@ def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
 
 
 def replace_block(text: str, block: str, path: Path, name: str = "results") -> str:
+    """Put `block` between the `name` markers of `text`. Exit when `path` has no markers."""
     start, end = markers(name)
     pattern = re.compile(re.escape(start) + r".*?" + re.escape(end), re.S)
     match = pattern.search(text)
@@ -709,6 +801,7 @@ def replace_block(text: str, block: str, path: Path, name: str = "results") -> s
 
 
 def outputs(data: Dict) -> Dict[Path, str]:
+    """The new text of every generated file, keyed by path. Writes nothing."""
     files = {
         ROOT / "site" / "benchmarks.json": json.dumps(data, indent=2) + "\n",
         ROOT / "site" / "benchmarks.csv": csv_text(data),
@@ -733,6 +826,7 @@ def _show(path: Path) -> str:
 
 
 def main(argv=None) -> int:
+    """Write the generated files. With --check, write nothing and return 1 when one is stale."""
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--check", action="store_true", help="Fail when output is out of date")
     args = parser.parse_args(argv)

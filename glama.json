@@ -1,7 +1,7 @@
 {
   "$schema": "https://glama.ai/mcp/schemas/server.json",
   "name": "nexus-mcp-ci",
-  "description": "Local code-intelligence MCP server for AI coding agents: hybrid code search, static call graph and project memory in fewer tokens. No API keys, no telemetry. Measure it on your own repo first: uvx --python 3.12 nexus-mcp-ci eval (free, offline).",
+  "description": "Your coding agent reads less code to find the right file. Local MCP server with hybrid code search and a call graph for 10 languages: 95% fewer tokens to reach the right file (median of 10 open-source repos). No API keys, no telemetry. Measure it on your own repo first: uvx --python 3.12 nexus-mcp-ci eval (free, offline).",
   "pythonVersion": "3.12",
   "homepage": "https://github.com/jaggernaut007/Nexus-MCP",
   "repository": "https://github.com/jaggernaut007/Nexus-MCP",

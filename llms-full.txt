@@ -1,6 +1,6 @@
 # Nexus-MCP
 
-> Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
+> Your coding agent reads less code to find the right file. Local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and an opt-in project memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
 
 This file contains the complete project documentation for Nexus-MCP, concatenated for LLM consumption.
 
@@ -11,7 +11,7 @@ This file contains the complete project documentation for Nexus-MCP, concatenate
 # Nexus-MCP
 
 [![PyPI version](https://img.shields.io/pypi/v/nexus-mcp-ci)](https://pypi.org/project/nexus-mcp-ci/)
-[![PyPI downloads](https://static.pepy.tech/badge/nexus-mcp-ci)](https://pepy.tech/projects/nexus-mcp-ci)
+[![PyPI downloads](https://img.shields.io/endpoint?url=https%3A%2F%2Fjaggernaut007.github.io%2Fnexus-mcp%2Fdownloads-badge.json)](https://pepy.tech/projects/nexus-mcp-ci)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![CI](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml/badge.svg)](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml)
 [![Glama MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/score.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
@@ -224,11 +224,7 @@ by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) ([ADR-001](docs/adr/ADR
 
 ## License
 
-[MIT](LICENSE). Free for any use, including at work. Versions 2.0.1 to 2.2.3 were released
-under the PolyForm Noncommercial License 1.0.0; anyone who got one of those versions keeps
-those terms. Every new release is MIT.
-
-If Nexus-MCP saves you tokens at work, a star or a sponsorship is welcome. Neither is required.
+[MIT](LICENSE).
 
 ---
 
@@ -283,7 +279,9 @@ Grep and Read used fewer tokens.
 The numbers are a token proxy (characters divided by 4), not a bill. The agent tier below
 measures the real cost.
 
-Measured results (2026-11-03, 30 to 40 questions each):
+Example results (2026-11-03, 30 to 40 questions each, an older build). The README and the
+[benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) have the latest
+run of 10 repos in 10 languages, Chromium `base/` included:
 
 | Project | Files | Verdict | Median tokens: Grep and Read → Nexus-MCP | Right file first |
 |---|---:|---|---:|---:|
@@ -291,8 +289,9 @@ Measured results (2026-11-03, 30 to 40 questions each):
 | [pallets/click](https://github.com/pallets/click) | 91 | Strong fit | 24,774 → 1,301 | 27% → 97% |
 | Nexus-MCP source (`--example`) | 59 | Likely fit | 5,385 → 1,234 | 70% → 93% |
 
-Indexing took about 25 minutes for Chromium `base/`, 1 to 2 minutes for click and about 1 minute for the Nexus-MCP source, on a laptop. The source of these numbers is
-`benchmarks/published/results.json`.
+Indexing took about 25 minutes for Chromium `base/`, 1 to 2 minutes for click and about 1 minute for the Nexus-MCP source, on a laptop. The click and Nexus-MCP rows are in
+`benchmarks/published/results.json` (`quick_tier`); the Chromium row was replaced there by a
+newer run.
 
 Question kinds:
 
@@ -1255,7 +1254,7 @@ GPU/MPS auto-detection (`NEXUS_EMBEDDING_DEVICE=auto`) tries CUDA first, then Ap
 
 # Architecture
 
-Nexus-MCP is a unified Model Context Protocol (MCP) server that combines vector search, full-text search, code graph analysis, and semantic memory into a single process. It is designed to run locally with a small memory footprint (see docs/MEMORY.md for measured numbers).
+Nexus-MCP is a local Model Context Protocol (MCP) server that lets a coding agent read less code to find the right file. It combines vector search, full-text search, code graph analysis and an opt-in semantic memory in a single process. It is designed to run locally with a small memory footprint (see docs/MEMORY.md for measured numbers).
 
 Nexus-MCP consolidates two predecessor projects into a single server ([ADR-001](adr/ADR-001-single-mcp-consolidation.md)):
 - **CodeGrok MCP** (by rdondeti / Ravitez Dondeti, MIT license) — Contributed the symbol extraction pipeline, embedding service, parallel indexing, core data models, and memory retrieval system.
