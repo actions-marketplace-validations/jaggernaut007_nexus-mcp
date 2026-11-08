@@ -1,5 +1,6 @@
-// Copy buttons, install tabs, GitHub star count, scroll reveal.
+// Copy buttons, tab groups, the hero trace, the GitHub star count and the download count.
 (() => {
+  document.documentElement.classList.add("js");
   document.querySelectorAll("[data-copy]").forEach((btn) => {
     btn.addEventListener("click", async () => {
       try {
@@ -7,27 +8,42 @@
         btn.textContent = "Copied";
         btn.classList.add("done");
         setTimeout(() => { btn.textContent = "Copy"; btn.classList.remove("done"); }, 1600);
-      } catch { btn.textContent = "Select + copy"; }
+      } catch { btn.textContent = "Select and copy"; }
     });
   });
 
-  const tabs = [...document.querySelectorAll('[role="tab"]')];
-  const select = (tab) => {
-    tabs.forEach((t) => {
-      const on = t === tab;
-      t.setAttribute("aria-selected", String(on));
-      t.tabIndex = on ? 0 : -1;
-      document.getElementById(t.getAttribute("aria-controls")).hidden = !on;
-    });
-    tab.focus();
+  // Grow the bars of a trace panel from zero, so a language switch shows what changed.
+  const grow = (panel) => {
+    if (!panel || !panel.classList.contains("trace-panel")) return;
+    panel.classList.remove("grown");
+    requestAnimationFrame(() => requestAnimationFrame(() => panel.classList.add("grown")));
   };
-  tabs.forEach((t, i) => {
-    t.addEventListener("click", () => select(t));
-    t.addEventListener("keydown", (e) => {
-      if (e.key === "ArrowRight") select(tabs[(i + 1) % tabs.length]);
-      if (e.key === "ArrowLeft") select(tabs[(i - 1 + tabs.length) % tabs.length]);
+
+  // Each tablist is its own group: the hero languages and the install routes.
+  document.querySelectorAll('[role="tablist"]').forEach((list) => {
+    const tabs = [...list.querySelectorAll('[role="tab"]')];
+    const select = (tab, focus = true) => {
+      tabs.forEach((t) => {
+        const on = t === tab;
+        t.setAttribute("aria-selected", String(on));
+        t.tabIndex = on ? 0 : -1;
+        const panel = document.getElementById(t.getAttribute("aria-controls"));
+        if (panel) panel.hidden = !on;
+        if (on) grow(panel);
+      });
+      if (focus) tab.focus();
+    };
+    tabs.forEach((t, i) => {
+      t.addEventListener("click", () => select(t));
+      t.addEventListener("keydown", (e) => {
+        const next = { ArrowRight: i + 1, ArrowLeft: i - 1, Home: 0, End: tabs.length - 1 }[e.key];
+        if (next === undefined) return;
+        e.preventDefault();
+        select(tabs[(next + tabs.length) % tabs.length]);
+      });
     });
   });
+  grow(document.querySelector(".trace-panel:not([hidden])"));
 
   const stars = document.querySelector("[data-stars]");
   if (stars) {
@@ -36,17 +52,15 @@
       .then((d) => {
         // A low count reads as social anti-proof, so show it only from 10 stars.
         if (d && typeof d.stargazers_count === "number" && d.stargazers_count >= 10) {
-          stars.textContent = "★ " + d.stargazers_count.toLocaleString();
+          stars.textContent = d.stargazers_count.toLocaleString();
           stars.hidden = false;
         }
       })
       .catch(() => {});
   }
 
-  // downloads.json is written by the Pages workflow from pepy.tech, with
-  // pypistats.org as the fallback. The browser cannot call either API directly
-  // (an API key, no CORS). A low count reads as
-  // anti-proof, so show the lifetime total only from MIN_DOWNLOADS.
+  // downloads.json is written by the Pages workflow from pepy.tech, with pypistats.org as
+  // the fallback. A low count reads as anti-proof, so show it only from MIN_DOWNLOADS.
   const MIN_DOWNLOADS = 100;
   const downloads = document.querySelector("[data-downloads]");
   if (downloads) {
@@ -63,12 +77,4 @@
 
   const year = document.querySelector("[data-year]");
   if (year) year.textContent = new Date().getFullYear();
-
-  if ("IntersectionObserver" in window) {
-    const els = document.querySelectorAll(".pain, .feature, .tool, .fact, .steps > li, .split");
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((e) => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
-    }, { rootMargin: "0px 0px -8% 0px" });
-    els.forEach((el) => { el.classList.add("reveal"); io.observe(el); });
-  }
 })();

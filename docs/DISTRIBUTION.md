@@ -1,7 +1,7 @@
 # Distribution channels
 
 How a user gets Nexus-MCP, and what the owner must do for each channel. The default path for a
-new user is in the [README](../README.md#quickstart-60-seconds): ask the agent to install it, or
+new user is in the [README](../README.md#install): ask the agent to install it, or
 run `uvx --python 3.12 nexus-mcp-ci setup`.
 
 | Channel | Who it serves | Files in this repo | Published by |

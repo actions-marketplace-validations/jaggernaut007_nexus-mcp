@@ -2,12 +2,12 @@
 
 > Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
 
-Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexes codebases into three engines (vector embeddings, BM25 keyword index, rustworkx code graph) and fuses the vector and BM25 results via Reciprocal Rank Fusion. In live benchmarks (v2.1.0, Claude Sonnet, 12 questions per project, 3 runs each) agents with Nexus-MCP used 55 to 35 turns on a private 460-file project (cost -22%) and 93 to 71 turns on django (cost -3%, inside the run-to-run noise), with the same accuracy. See docs/EVALS.md. Supports 25+ programming languages via dual parsing (tree-sitter + ast-grep).
+Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexes codebases into three engines (vector embeddings, BM25 keyword index, rustworkx code graph) and fuses the vector and BM25 results via Reciprocal Rank Fusion. Measured on 12 open-source repos in 10 languages against an agent with only Grep and Read: the agent reaches the right file with far fewer tokens and faster search, and in live Claude Code runs the cost per task is lower on most repos at the same accuracy. C and Rust used more tokens on the older 2.2.2 build. The Benchmarks section below has every number; the benchmarks page has the method. Search, symbols and the call graph cover Python, TypeScript, JavaScript, Go, Java, Rust, C, C++, C# and PHP; search covers 25+ languages.
 
 ## Evaluate on your repo
 
 - First step for anyone who has not decided: `uvx --python 3.12 nexus-mcp-ci eval` in the project folder. Free, offline, no LLM calls; compares Nexus-MCP with Grep and Read on about 30 questions made from the code and prints Strong fit, Likely fit or Weak fit.
-- `uvx --python 3.12 nexus-mcp-ci eval --example` runs it on the Nexus-MCP source (59 files: 1,234 against 5,385 median tokens to reach the right file). A public `https://` repo URL also works: pallets/click (91 files) gave Strong fit, 1,301 against 24,774 (95% fewer); Chromium base/ (3,638 files) gave Strong fit, 950 against 17,998 (95% fewer).
+- `uvx --python 3.12 nexus-mcp-ci eval --example` runs it on the Nexus-MCP source (59 files: 1,234 against 5,385 median tokens to reach the right file). A public `https://` repo URL also works: pallets/click (91 files) gave Strong fit, 1,301 against 24,774 (95% fewer).
 - `nexus-mcp-ci eval --agent claude[:model]` (or `codex[:model]`, experimental): paid A/B with the user's own CLI login; shows the cost first. `--preset efficient` names the cheapest model and setup at the same accuracy.
 - `nexus-mcp-ci eval share <id>`: posts numbers only (no code, no paths) after a yes. No telemetry.
 - [Evaluate guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md) and [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html)
@@ -64,19 +64,34 @@ Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexe
 <!-- results:start -->
 ## Benchmarks
 
-Source of truth: https://jaggernaut007.github.io/nexus-mcp/benchmarks.json (updated 2026-10-28, version 2.1.0). Method: Claude Code, Claude Sonnet, headless (claude -p), 3 runs per question.
+Source of truth: https://jaggernaut007.github.io/nexus-mcp/benchmarks.json (updated 2026-11-08, version 2.4.5). One row per repo: the latest run.
 
-- Private Python project (460 files): cost $0.571 with Grep and Read, $0.446 with Nexus-MCP (-22%); turns 55 to 35; correct 36 and 35 of 36.
-- Django (3000 files): cost $0.894 with Grep and Read, $0.863 with Nexus-MCP (-3%); turns 93 to 71; correct 34 and 36 of 36.
-- Quick tier (`nexus-mcp-ci eval`, no LLM), Chromium base/ (3638 files): Strong fit; median tokens to the right file 17998 (Grep and Read) and 950 (Nexus-MCP); right file first 40% and 70%.
-- Quick tier (`nexus-mcp-ci eval`, no LLM), pallets/click (91 files): Strong fit; median tokens to the right file 24774 (Grep and Read) and 1301 (Nexus-MCP); right file first 27% and 97%.
-- Quick tier (`nexus-mcp-ci eval`, no LLM), Nexus-MCP source (59 files): Likely fit; median tokens to the right file 5385 (Grep and Read) and 1234 (Nexus-MCP); right file first 70% and 93%.
+- Summary: On 10 open-source repos in 10 languages, Nexus-MCP reached the right file with 95% fewer tokens (median) and searched 9× faster than Grep and Read. In live Claude Code runs on 11 repos, cost per task was lower on 8 of 11, with 64 of 66 tasks correct against 61 of 66.
+- Offline check, Python, pallets/flask (83 files, build 2.4.0+53594ad): right file first 20% (Grep and Read) and 93% (Nexus-MCP); median tokens to the right file 26720 and 1388; median search time 108 ms and 23 ms.
+- Offline check, TypeScript, vitejs/vite (429 files, build 2.4.0+53594ad): right file first 43% (Grep and Read) and 83% (Nexus-MCP); median tokens to the right file 16520 and 1286; median search time 159 ms and 25 ms.
+- Offline check, JavaScript, webpack/webpack (822 files, build 2.4.0+53594ad): right file first 37% (Grep and Read) and 67% (Nexus-MCP); median tokens to the right file 25634 and 1251; median search time 564 ms and 34 ms.
+- Offline check, Java, apache/commons-lang (264 files, build 2.2.2+11cfccc): right file first 23% (Grep and Read) and 87% (Nexus-MCP); median tokens to the right file 48176 and 1241; median search time 201 ms and 31 ms.
+- Offline check, C#, JamesNK/Newtonsoft.Json (242 files, build 2.2.2+11cfccc): right file first 23% (Grep and Read) and 73% (Nexus-MCP); median tokens to the right file 14004 and 1547; median search time 154 ms and 25 ms.
+- Offline check, PHP, laravel/framework (1751 files, build 2.2.2+11cfccc): right file first 50% (Grep and Read) and 83% (Nexus-MCP); median tokens to the right file 13479 and 1086; median search time 712 ms and 39 ms.
+- Offline check, C++, chromium/chromium (3641 files, build 2.2.2+11cfccc): right file first 43% (Grep and Read) and 80% (Nexus-MCP); median tokens to the right file 19768 and 1243; median search time 1851 ms and 88 ms.
+- Offline check, Go, prometheus/prometheus (201 files, build 2.2.2+11cfccc): right file first 40% (Grep and Read) and 83% (Nexus-MCP); median tokens to the right file 41034 and 1195; median search time 600 ms and 24 ms.
+- Offline check, C, redis/redis (229 files, build 2.2.2+11cfccc): right file first 40% (Grep and Read) and 87% (Nexus-MCP); median tokens to the right file 37139 and 988; median search time 331 ms and 34 ms.
+- Offline check, Rust, tokio-rs/tokio (381 files, build 2.2.2+11cfccc): right file first 33% (Grep and Read) and 93% (Nexus-MCP); median tokens to the right file 21138 and 830; median search time 215 ms and 27 ms.
+- Live run, Python, home-assistant/core (build 2.4.1): median tokens per task 65990 (Grep and Read) and 42458 (Nexus-MCP, -36%); cost per task $0.050 and $0.037; correct 6 and 6 of 6.
+- Live run, Python, django/django (build 2.4.1): median tokens per task 45102 (Grep and Read) and 41916 (Nexus-MCP, -7%); cost per task $0.048 and $0.035; correct 5 and 6 of 6.
+- Live run, TypeScript, vitejs/vite (build 2.4.0): median tokens per task 69790 (Grep and Read) and 52411 (Nexus-MCP, -25%); cost per task $0.059 and $0.046; correct 6 and 6 of 6.
+- Live run, JavaScript, webpack/webpack (build 2.4.0): median tokens per task 100320 (Grep and Read) and 74638 (Nexus-MCP, -26%); cost per task $0.077 and $0.068; correct 6 and 6 of 6.
+- Live run, Java, apache/commons-lang (build 2.2.2+11cfccc): median tokens per task 50448 (Grep and Read) and 32862 (Nexus-MCP, -35%); cost per task $0.044 and $0.022; correct 6 and 6 of 6.
+- Live run, C#, JamesNK/Newtonsoft.Json (build 2.2.2+11cfccc): median tokens per task 41929 (Grep and Read) and 42139 (Nexus-MCP, +1%); cost per task $0.030 and $0.030; correct 6 and 6 of 6.
+- Live run, PHP, laravel/framework (build 2.2.2+11cfccc): median tokens per task 52919 (Grep and Read) and 51994 (Nexus-MCP, -2%); cost per task $0.051 and $0.039; correct 5 and 5 of 6.
+- Live run, C++, chromium/chromium (build 2.2.2+0430f01): median tokens per task 70495 (Grep and Read) and 60622 (Nexus-MCP, -14%); cost per task $0.065 and $0.055; correct 6 and 6 of 6.
+- Live run, Go, prometheus/prometheus (build 2.2.2+e5a9d9a): median tokens per task 52014 (Grep and Read) and 45214 (Nexus-MCP, -13%); cost per task $0.047 and $0.037; correct 5 and 6 of 6.
+- Live run, C, redis/redis (build 2.2.2+e5a9d9a): median tokens per task 41752 (Grep and Read) and 50578 (Nexus-MCP, +21%); cost per task $0.031 and $0.030; correct 6 and 6 of 6.
+- Live run, Rust, tokio-rs/tokio (build 2.2.2+0430f01): median tokens per task 41188 (Grep and Read) and 61816 (Nexus-MCP, +50%); cost per task $0.029 and $0.041; correct 4 and 5 of 6.
+- Private Python project (460 files, 12 questions, version 2.1.0): cost $0.571 with Grep and Read, $0.446 with Nexus-MCP (-22%); correct 36 and 35 of 36.
 - Nexus-MCP and GitNexus, Chromium base/ (C++, 8 tasks, 3 runs each, medians per task): Grep and Read built-in tools: 62450 tokens, $0.057, 24 of 24 correct; Nexus-MCP 2.2.0 with the C++ parser fixes of 2.2.1: 82900 tokens, $0.062, 24 of 24 correct; GitNexus 1.6.12: 164192 tokens, $0.085, 24 of 24 correct.
-- Language TypeScript, vitejs/vite (429 files, Nexus-MCP 2.2.2 to 2.4.0): right file first 43% (Grep and Read) and 83% (Nexus-MCP); median tokens to the right file 16,520 and 1,322 to 1,286; search hit@1 0.47; calls per function 1.40; live median tokens 69,790 and 57,268 to 52,411; correct 6 of 6 and 6 of 6.
-- Language JavaScript, webpack/webpack (822 files, Nexus-MCP 2.4.0): right file first 37% (Grep and Read) and 67% (Nexus-MCP); median tokens to the right file 25,634 and 1,251; search hit@1 0.20; calls per function 1.38; live median tokens 100,320 and 74,638; correct 6 of 6 and 6 of 6.
-- Language Java, apache/commons-lang (264 files, Nexus-MCP 2.2.2 to 2.4.0 pre-release (11cfccc)): right file first 23% (Grep and Read) and 87% (Nexus-MCP); median tokens to the right file 48,176 and 1,277 to 1,241; search hit@1 0.73; calls per function 0.75; live median tokens 50,448 and 34,601 to 32,862; correct 6 of 6 and 6 of 6.
-- Language C++, chromium/chromium (3641 files, Nexus-MCP 2.2.2): right file first 37% (Grep and Read) and 83% (Nexus-MCP); median tokens to the right file 16,096 and 953; search hit@1 0.40; calls per function 0.00; live median tokens 70,495 and 60,622; correct 6 of 6 and 6 of 6.
-- The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28).
+- Not there yet: C (redis/redis, +21% tokens, build 2.2.2+e5a9d9a) and Rust (tokio-rs/tokio, +50% tokens, build 2.2.2+0430f01). These runs are older; a rerun on the current build is pending.
+- The same code can vary by about 20% in cost with 3 runs per task (measured 2026-10-28).
 <!-- results:end -->
 
 ## Optional

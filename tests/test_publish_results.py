@@ -1,5 +1,6 @@
 """scripts/publish_results.py: one data file drives every published benchmark number."""
 
+import copy
 import csv
 import html
 import importlib.util
@@ -16,40 +17,124 @@ SPEC = importlib.util.spec_from_file_location(
 publish = importlib.util.module_from_spec(SPEC)
 SPEC.loader.exec_module(publish)
 DATA = json.loads((ROOT / "benchmarks" / "published" / "results.json").read_text())
-# The same data without the per-language list, for the tests of the project runs alone.
-DATA_NO_LANGS = {k: v for k, v in DATA.items() if k != "languages"}
+
+
+def _repo(language, grep_tokens, nexus_tokens, base_live=None, nexus_live=None):
+    """A sample repo entry. The numbers are not measured."""
+    entry = {
+        "name": language.lower(), "language": language, "project": f"<sample> {language}",
+        "url": f"https://example.com/{language}", "pin": "0123456789", "files": 100,
+        "quick": {
+            "run": "languages-final", "build": "2.2.2+11cfccc", "date": "2026-11-06",
+            "questions": 30, "index_seconds": 10.0, "verdict": "Strong fit",
+            "grep": {"hit_at_1": 0.2, "hit_at_3": 0.5, "median_tokens": grep_tokens,
+                     "median_ms": 200.0},
+            "nexus": {"hit_at_1": 0.9, "hit_at_3": 1.0, "median_tokens": nexus_tokens,
+                      "median_ms": 20.0},
+        },
+    }  # fmt: skip
+    if base_live is not None:
+
+        def side(tokens, build, run):
+            return {"run": run, "build": build, "median_tokens": tokens, "cost_usd": tokens / 1e6,
+                    "turns": 3.0, "wall_seconds": 20.0, "correct": 6, "of": 6}  # fmt: skip
+
+        entry["live"] = {
+            "model": "sonnet", "effort": "medium", "reps": 3,
+            "baseline": side(base_live, "built-in tools", "languages-before"),
+            "nexus": side(nexus_live, "2.4.1", "languages-v2.4.1"),
+        }  # fmt: skip
+    return entry
+
+
+SAMPLE = dict(
+    copy.deepcopy(DATA),
+    repos=[
+        _repo("Java", 10000, 1000, base_live=50000, nexus_live=30000),
+        _repo("Rust", 20000, 1000, base_live=40000, nexus_live=60000),
+        _repo("Go", 30000, 3000),
+    ],
+)
 
 
 def test_publish_results_check_passes_on_the_committed_files():
     assert publish.main(["--check"]) == 0
 
 
-def test_pct_change_uses_a_true_minus_sign():
+def test_pct_change_uses_a_true_minus_sign_and_rounds_zero():
     assert publish.pct_change(0.446, 0.571) == "−22%"
     assert publish.pct_change(1.1, 1.0) == "+10%"
+    assert publish.pct_change(1.001, 1.0) == "0%"
 
 
-def test_readme_block_lists_every_run_with_its_change():
-    block = publish.readme_block(DATA)
-    for run in DATA["runs"]:
-        assert run["project"] in block
-    assert "-22%" in block and "benchmarks.json" in block
+def test_headline_counts_wins_and_correct_answers():
+    h = publish.headline(SAMPLE)
+    assert h["offline_repos"] == 3 and h["languages"] == 3
+    assert h["token_cut"] == pytest.approx(0.9)
+    assert h["speedup"] == pytest.approx(10.0)
+    assert h["live_repos"] == 2 and h["cost_lower"] == 1
+    assert h["correct_nexus"] == 12 and h["tasks"] == 12
 
 
-def test_site_block_totals_the_correct_answers():
-    block = publish.site_block(DATA)
-    nexus = sum(r["nexus"]["correct"] for r in DATA["runs"])
-    assert f"{nexus} · " in block
+def test_not_yet_names_the_languages_that_use_more_tokens():
+    rows = publish.not_yet(SAMPLE)
+    assert [r["language"] for r in rows] == ["Rust"]
+    assert "Rust (<sample> Rust, +50% tokens, build 2.4.1)" in publish.not_yet_sentence(SAMPLE)
+    no_loss = dict(SAMPLE, repos=SAMPLE["repos"][:1])
+    assert publish.not_yet_sentence(no_loss) == ""
 
 
-def test_csv_has_two_rows_per_run():
-    lines = publish.csv_text(DATA_NO_LANGS).strip().splitlines()
-    assert len(lines) == 1 + 2 * len(DATA["runs"])
+def test_readme_block_has_one_row_per_repo_and_bolds_only_wins():
+    block = publish.readme_block(SAMPLE)
+    assert block.count("| Java |") == 2 and block.count("| Go |") == 1
+    assert "**30,000 (-40%)**" in block
+    assert "60,000 (+50%)" in block and "**60,000" not in block
+    assert "benchmarks.json" in block and "Not there yet: Rust" in block
 
 
-def test_page_html_has_dataset_json_ld_and_a_title():
-    page = publish.page_html(DATA)
+def test_readme_block_tables_have_one_width():
+    for lines in (publish.offline_md(SAMPLE), publish.live_md(SAMPLE)):
+        assert len({line.count("|") for line in lines}) == 1
+
+
+def test_site_block_marks_wins_and_losses_and_escapes_text():
+    block = publish.site_block(SAMPLE)
+    assert '<td class="win">30,000<small>−40%</small></td>' in block
+    assert '<td class="loss">60,000<small>+50%</small></td>' in block
+    assert "&lt;sample&gt; Java" in block and "<sample>" not in block
+    assert 'role="region"' in block and 'class="table-scroll"' in block
+
+
+def test_hero_block_has_one_tab_and_panel_per_offline_repo():
+    block = publish.hero_block(SAMPLE)
+    assert block.count('role="tab"') == 3 and block.count('role="tabpanel"') == 3
+    assert block.count(" hidden") == 2 and 'aria-selected="true"' in block
+    assert 'style="--w:10.0%"' in block  # Java: 1,000 of 10,000 tokens
+
+
+def test_llms_block_has_no_arrows_and_lists_each_tier():
+    block = publish.llms_block(SAMPLE)
+    assert "→" not in block
+    assert "Offline check, Go" in block and "Live run, Java" in block
+
+
+def test_csv_has_one_width_and_rows_per_tier():
+    rows = list(csv.DictReader(io.StringIO(publish.csv_text(SAMPLE))))
+    raw = list(csv.reader(io.StringIO(publish.csv_text(SAMPLE))))
+    assert raw[0] == publish.CSV_HEAD and {len(r) for r in raw} == {len(publish.CSV_HEAD)}
+    java = [r for r in rows if r["language"] == "Java"]
+    assert [(r["tier"], r["condition"]) for r in java] == [
+        ("offline", "grep_and_read"), ("offline", "nexus_mcp"),
+        ("live", "grep_and_read"), ("live", "nexus_mcp"),
+    ]  # fmt: skip
+    assert len([r for r in rows if r["tier"] == "live-12q"]) == 2 * len(DATA["runs"])
+
+
+def test_page_html_has_dataset_json_ld_the_site_styles_and_every_repo():
+    page = publish.page_html(SAMPLE, community=[])
     assert '"@type": "Dataset"' in page and "<title>Nexus-MCP Benchmarks</title>" in page
+    assert 'href="styles.css"' in page and "Every column" in page
+    assert page.count("&lt;sample&gt; Go") >= 2
 
 
 def test_replace_block_fails_without_markers(tmp_path):
@@ -57,10 +142,21 @@ def test_replace_block_fails_without_markers(tmp_path):
         publish.replace_block("no markers", "x", tmp_path / "f")
 
 
+def test_replace_block_replaces_only_the_named_block():
+    text = (
+        "<!-- hero:start -->\nold\n<!-- hero:end -->\n"
+        "<!-- results:start -->\nkeep\n<!-- results:end -->"
+    )
+    out = publish.replace_block(text, "new", Path("f"), "hero")
+    assert "new" in out and "old" not in out and "keep" in out
+
+
 def test_check_fails_when_a_generated_number_is_edited(tmp_path, monkeypatch):
     readme = tmp_path / "README.md"
     original = (ROOT / "README.md").read_text()
-    readme.write_text(original.replace("$0.446", "$0.111", 1))
+    edited = original.replace("42,458", "11,111", 1)
+    assert edited != original
+    readme.write_text(edited)
     real_outputs = publish.outputs
 
     def outputs(data):
@@ -101,140 +197,13 @@ def test_page_html_and_llms_block_without_comparisons():
     assert "GitNexus" not in publish.llms_block(data)
 
 
-# Per-language results (schema v2). The fixture holds sample numbers, not measured ones.
-LANGS = json.loads((ROOT / "tests" / "fixtures" / "publish" / "languages.json").read_text())[
-    "languages"
-]
-BEFORE_ONLY, BEFORE_AFTER = LANGS
+def test_community_html_without_entries_invites_a_first_result():
+    assert "Yours can be the first" in publish.community_html([])
 
 
-def test_languages_md_without_languages_is_empty():
-    assert publish.languages_md([]) == []
-    assert "Results per language" not in publish.readme_block(DATA_NO_LANGS)
-
-
-def test_languages_md_before_only_shows_one_value_per_cell():
-    lines = publish.languages_md([BEFORE_ONLY])
-    row = next(line for line in lines if line.startswith("| C# |"))
-    assert "| 2.2.2 |" in row and "| 72% |" in row and "| 2,350 |" in row
-    assert "| 11 of 12 |" in row and "→" not in row
-    assert "[JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json)" in row
-
-
-def test_languages_md_before_and_after_side_by_side():
-    lines = publish.languages_md([BEFORE_AFTER])
-    row = next(line for line in lines if line.startswith("| C++ |"))
-    assert "| 2.2.2 → 2.3.0 |" in row
-    assert "| 48% → 66% |" in row and "| 6,100 → 4,200 |" in row
-    assert "| 0.61 → 1.05 |" in row
-    # An unchanged value shows once; a value missing before shows a dash.
-    assert "| 30.5 |" in row and "| – → 10 of 12 |" in row
-    # The Grep and Read baseline shows the latest run only, with no arrow.
-    assert "| 35% |" in row and "| 260,000 |" in row
-
-
-def test_languages_md_has_one_cell_per_header():
-    lines = publish.languages_md(LANGS)
-    widths = {line.count("|") for line in lines if line.startswith("|")}
-    assert len(widths) == 1
-
-
-def test_languages_without_a_file_count_do_not_crash():
-    # to_published writes "files": None when the quick tier crashed (C# on 2.2.2).
-    entry = dict(BEFORE_ONLY, files=None)
-    row = next(line for line in publish.languages_md([entry]) if line.startswith("| C# |"))
-    assert "(files not counted)" in row
-    assert "files not counted" in publish.languages_html([entry])
-
-
-def test_language_cell_missing_after_value():
-    getter = publish._num(".0%", "quick_tier", "nexus", "hit_at_1")
-    entry = dict(BEFORE_ONLY, after={"nexus_version": "2.3.0"})
-    assert publish.language_cell(entry, getter, True) == "72% → –"
-    assert publish.language_cell(entry, getter, True, arrow=" to ", missing="n/a") == "72% to n/a"
-
-
-def test_languages_html_without_languages_is_empty():
-    assert publish.languages_html([]) == ""
-    assert "Results per language" not in publish.page_html(DATA_NO_LANGS, community=[])
-
-
-def test_languages_html_scrolls_in_its_own_box_and_escapes_text():
-    section = publish.languages_html(LANGS)
-    assert '<div class="scroll"><table class="lang">' in section
-    assert "&lt;sample&gt; fmtlib/fmt" in section and "<sample>" not in section
-    assert "<td>48% → 66%</td>" in section and "<td>72%</td>" in section
-    assert "<code>0123456</code>" in section
-
-
-def test_page_html_has_the_language_section_and_phone_css():
-    page = publish.page_html(dict(DATA, schema_version=2, languages=LANGS), community=[])
-    assert "<h2>Results per language</h2>" in page
-    assert "overflow-x:auto" in page and "position:sticky" in page
-
-
-def test_site_block_and_llms_block_list_each_language():
-    data = dict(DATA, languages=LANGS)
-    site = publish.site_block(data)
-    assert "C#, JamesNK/<wbr>Newtonsoft.Json: right file first with Nexus-MCP" in site
-    assert "Nexus-MCP 2.2.2 → 2.3.0" in site and '<span class="pill">48% → 66%</span>' in site
-    llms = publish.llms_block(data)
-    assert "- Language C#, JamesNK/Newtonsoft.Json (250 files, Nexus-MCP 2.2.2)" in llms
-    assert "48% to 66% (Nexus-MCP)" in llms and "n/a to 10 of 12" in llms
-    assert "→" not in llms.split("Language C++")[1]
-
-
-def test_readme_block_with_languages():
-    block = publish.readme_block(dict(DATA, languages=LANGS))
-    assert "Results per language:" in block and "| C++ |" in block
-
-
-def test_csv_without_languages_keeps_two_rows_per_run_and_one_width():
-    rows = list(csv.reader(io.StringIO(publish.csv_text(DATA))))
-    assert rows[0] == publish.CSV_HEAD
-    assert {len(r) for r in rows} == {len(publish.CSV_HEAD)}
-
-
-def test_csv_language_rows_before_only_and_before_after():
-    rows = list(csv.DictReader(io.StringIO(publish.csv_text(dict(DATA, languages=LANGS)))))
-    lang = [r for r in rows if r["language"]]
-    cs = [r for r in lang if r["language"] == "C#"]
-    assert {r["phase"] for r in cs} == {"before"}
-    assert [r["condition"] for r in cs] == [
-        "eval_grep_and_read",
-        "eval_nexus_mcp",
-        "nexus_mcp_index",
-        "grep_and_read",
-        "nexus_mcp",
-    ]
-    cpp = [r for r in lang if r["language"] == "C++"]
-    # No live run before: three rows before (two eval, one index), five after.
-    assert [r["phase"] for r in cpp].count("before") == 3
-    assert [r["phase"] for r in cpp].count("after") == 5
-    index_after = next(
-        r for r in cpp if r["phase"] == "after" and r["condition"] == "nexus_mcp_index"
-    )
-    assert index_after["calls_per_fn"] == "1.05" and index_after["nexus_version"] == "2.3.0"
-    assert index_after["commit"].startswith("fedcba98")
-
-
-def test_main_rejects_an_unknown_schema_version(tmp_path, monkeypatch):
+def test_main_rejects_an_old_schema_version(tmp_path, monkeypatch):
     bad = tmp_path / "results.json"
-    bad.write_text(json.dumps(dict(DATA, schema_version=99)))
+    bad.write_text(json.dumps(dict(DATA, schema_version=2)))
     monkeypatch.setattr(publish, "DATA", bad)
     with pytest.raises(SystemExit):
         publish.main(["--check"])
-
-
-def test_main_accepts_schema_version_1(tmp_path, monkeypatch):
-    v1 = tmp_path / "results.json"
-    v1.write_text(json.dumps(dict(DATA, schema_version=1)))
-    monkeypatch.setattr(publish, "DATA", v1)
-    monkeypatch.setattr(publish, "outputs", lambda data: {})
-    assert publish.main(["--check"]) == 0
-
-
-def test_language_setup_with_and_without_fields():
-    assert publish.language_setup(BEFORE_ONLY) == "sonnet, medium effort, bare"
-    assert publish.language_setup({"model": "opus"}) == "opus"
-    assert publish.language_setup({}) == "–"

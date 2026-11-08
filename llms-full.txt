@@ -12,845 +12,221 @@ This file contains the complete project documentation for Nexus-MCP, concatenate
 
 [![PyPI version](https://img.shields.io/pypi/v/nexus-mcp-ci)](https://pypi.org/project/nexus-mcp-ci/)
 [![PyPI downloads](https://static.pepy.tech/badge/nexus-mcp-ci)](https://pepy.tech/projects/nexus-mcp-ci)
-[![PyPI downloads (pypistats)](https://img.shields.io/endpoint?url=https%3A%2F%2Fjaggernaut007.github.io%2Fnexus-mcp%2Fdownloads-badge.json)](https://pypistats.org/packages/nexus-mcp-ci)
-[![Python 3.10–3.12](https://img.shields.io/badge/python-3.10--3.12-blue)](https://pypi.org/project/nexus-mcp-ci/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](#license)
 [![CI](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml/badge.svg)](https://github.com/jaggernaut007/Nexus-MCP/actions/workflows/publish.yml)
-[![Glama MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/card.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
-[![GitHub stars](https://img.shields.io/github/stars/jaggernaut007/Nexus-MCP?style=social)](https://github.com/jaggernaut007/Nexus-MCP/stargazers)
+[![Glama MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/score.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
 
-> ⭐ **If Nexus-MCP saves you tokens, [star the repo](https://github.com/jaggernaut007/Nexus-MCP).** It helps other developers find it.
-
-**Hybrid search + code graph + semantic memory in a single local MCP server. About 90 MB idle and 460 MB with the embedding model loaded ([measurements](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/MEMORY.md)).**
+**Your coding agent finds the right file with 95% fewer tokens.** Nexus-MCP is a local MCP
+server that gives Claude Code, Codex, Cursor and any MCP client hybrid code search and a code
+graph. The agent asks one question and gets the code back, instead of a tour of grep and file
+reads. No API keys, no cloud, MIT.
 
 <!-- mcp-name: io.github.jaggernaut007/nexus-mcp -->
-
-Nexus-MCP is a local code-intelligence MCP server for Claude Code, Codex, Cursor and any [Model Context Protocol](https://modelcontextprotocol.io) client. It gives AI agents precise, token-efficient answers about your codebase without cloud dependencies: no API keys, no data egress, no subscriptions.
-
-**Not sure yet? Measure it on your own code first.** It is free, runs offline, calls no LLM and takes a few minutes:
-
-```bash
-uvx --python 3.12 nexus-mcp-ci eval            # the current folder
-uvx --python 3.12 nexus-mcp-ci eval --example  # or the Nexus-MCP source, if you have no project at hand
-```
-
-You get a verdict ("Strong fit", "Likely fit" or "Weak fit") and the tokens an agent needs to reach the right file, with and without Nexus-MCP. Nothing leaves your machine. See [Evaluate on your project](#evaluate-on-your-project).
-
-**Ready?**
-
-```bash
-pip install nexus-mcp-ci
-claude mcp add nexus-mcp -- nexus-mcp-ci
-```
-
-### Results at a glance
-
-<!-- Generated from benchmarks/published/results.json by scripts/publish_results.py. Do not edit. -->
-<!-- results:start -->
-| Project | Cost: Grep and Read → Nexus-MCP | Turns | Correct answers |
-|---|---:|---:|---:|
-| Private Python project (460 files) | $0.571 → $0.446 (**-22%**) | 55 → 35 | 36 → 35 of 36 |
-| [Django](https://github.com/django/django) (3,000 files) | $0.894 → $0.863 (**-3%**) | 93 → 71 | 34 → 36 of 36 |
-
-Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per project, 3 runs each, version 2.1.0 (2026-10-28). The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28). Search hit@1 on the four retrieval suites: `jobscout` 0.81, `nexus_mcp` 0.80, `shop_repo` 0.50, `flask` 0.64.
-
-`nexus-mcp-ci eval` (the free offline check, no LLM) on 3 projects:
-
-| Project | Verdict | Median tokens to the right file | Right file first |
-|---|---|---:|---:|
-| [Chromium base/](https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base) (3,638 files) | Strong fit | 17,998 → **950** | 40% → 70% |
-| [pallets/click](https://github.com/pallets/click) (91 files) | Strong fit | 24,774 → **1,301** | 27% → 97% |
-| Nexus-MCP source (59 files) | Likely fit | 5,385 → **1,234** | 70% → 93% |
-
-Results per language:
-
-| Language | Project | Nexus-MCP version | Index time (s) | Right file first: Grep and Read | Right file first: Nexus-MCP | Tokens to the right file: Grep and Read | Tokens to the right file: Nexus-MCP | Search hit@1 | Calls per function | Live tokens: Grep and Read | Live tokens: Nexus-MCP | Correct: Grep and Read | Correct: Nexus-MCP | Agent |
-|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
-| TypeScript | [vitejs/vite](https://github.com/vitejs/vite) (429 files) | 2.2.2 → 2.4.0 | 362.6 → 137.2 | 43% | 83% | 16,520 | 1,322 → 1,286 | 0.47 | 1.40 | 69,790 | 57,268 → 52,411 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
-| JavaScript | [webpack/webpack](https://github.com/webpack/webpack) (822 files) | 2.4.0 | 530.3 | 37% | 67% | 25,634 | 1,251 | 0.20 | 1.38 | 100,320 | 74,638 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
-| Java | [apache/commons-lang](https://github.com/apache/commons-lang) (264 files) | 2.2.2 → 2.4.0 pre-release (11cfccc) | 633.3 → 265.5 | 23% | 87% | 48,176 | 1,277 → 1,241 | 0.73 | 0.75 | 50,448 | 34,601 → 32,862 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
-| C++ | [chromium/chromium](https://chromium.googlesource.com/chromium/src) (3,641 files) | 2.2.2 | 4,373.5 | 37% | 83% | 16,096 | 953 | 0.40 | 0.00 | 70,495 | 60,622 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
-
-One row for each language, on one pinned public project. A Nexus-MCP cell with an arrow shows the value before and after a fix: before → after. A Grep and Read cell shows the latest run. Right file first and tokens come from `nexus-mcp-ci eval` (no LLM); search hit@1 from the retrieval suite; live tokens and correct answers from the live benchmark.
-
-Nexus-MCP and GitNexus on [Chromium base/](https://chromium.googlesource.com/chromium/src/+/d8ebdd25980e38badccc265758aa508e6592000e/base/) (C++, 4,243 files): 8 tasks, 3 runs each, 2026-11-04.
-
-| Condition | Version | Tokens (median) | Cost per task (median) | Correct |
-|---|---|---:|---:|---:|
-| Grep and Read | built-in tools | 62,450 | $0.057 | 24 of 24 |
-| Nexus-MCP | 2.2.0 with the C++ parser fixes of 2.2.1 | 82,900 | $0.062 | 24 of 24 |
-| GitNexus | 1.6.12 | 164,192 | $0.085 | 24 of 24 |
-
-Nexus-MCP used fewer tokens than GitNexus on 8 of 8 tasks and cost less on 6; GitNexus cost $0.002 less on one task, and one task was a tie. Grep and Read cost less than both on this C++ code. Nexus-MCP cost less than Grep and Read on 3 of 8 tasks (the two needle tasks and WeakPtr). Each condition had the same agent, model, prompt and built-in tools, and each tool had its MCP server and its always-loaded instructions ([method](https://github.com/jaggernaut007/Nexus-MCP/blob/main/benchmarks/README.md#methodology)).
-
-All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) · [JSON](https://jaggernaut007.github.io/nexus-mcp/benchmarks.json) · [CSV](https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv).
-<!-- results:end -->
-
----
-
-## The Problem It Solves
-
-An agent that explores a codebase with Grep and Read pays for every call: each call is one more
-turn, and each turn reads the whole conversation again. Nexus-MCP answers a question about code
-in fewer calls. `search` returns the whole code of its top results, `find_symbol` returns the
-code of several names in one call, and `graph` returns the text references beside the call
-edges.
-
-The north star of the project is lower token use with the same accuracy. It is measured, not
-estimated: see [Token efficiency](#token-efficiency) and `benchmarks/`.
-
----
-
-## Evaluate on your project
-
-Decide with your own numbers. The quick check is free, offline and calls no LLM:
-
-```bash
-uvx --python 3.12 nexus-mcp-ci eval                                   # the current folder
-uvx --python 3.12 nexus-mcp-ci eval path/to/project                   # another folder
-uvx --python 3.12 nexus-mcp-ci eval https://github.com/pallets/flask  # a public repo (shallow clone)
-uvx --python 3.12 nexus-mcp-ci eval --example                         # the Nexus-MCP source, offline
-```
-
-It asks about 30 questions made from your own code and compares Grep and Read with one
-Nexus-MCP search. The right answer is the file that defines the symbol, from the parser, never
-from the Nexus-MCP ranking. On this repo's source (59 files) it gave "Likely fit": 1,234 median tokens to reach the right file against 5,385, and the right file first in 93% of
-questions against 70%. On Chromium's `base/` (3,638 files of C++, Java and Python) it gave
-"Strong fit": 950 median tokens against 17,998 (95% fewer), and the right file first in 70% of questions against 40%. On [pallets/click](https://github.com/pallets/click) (91 files, from its
-URL) it gave "Strong fit": 1,301 median tokens against 24,774 (95% fewer), and the right file first in 97% of questions against 27%. On a tiny project Grep and Read win, and the report says
-so.
-
-Want the real agent cost? The agent tier runs your own Claude Code or Codex login on tasks from
-your code, with and without Nexus-MCP. It shows the cost first and asks:
-
-```bash
-nexus-mcp-ci eval --agent claude                       # Claude Sonnet
-nexus-mcp-ci eval --preset efficient --agent claude:haiku,claude:sonnet
-```
-
-Results are saved in `~/.nexus-mcp/evals/` (`eval list`, `eval show <id>`). `eval share <id>`
-posts the numbers (no code, no paths) to the community table, only after you say yes. Full
-guide: [docs/EVALUATE.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md). In Claude Code, the plugin adds
-`/nexus-mcp:evaluate`.
-
----
-
-## Privacy and Data
-
-Your code stays on your machine. The server makes no network calls and has no telemetry.
-
-- **In:** the package from PyPI, and the embedding model from Hugging Face once (set
-  `NEXUS_OFFLINE=1` after that). `eval <url>` also runs a `git clone`.
-- **Out:** nothing, unless you run `eval --agent` (prompts and code go to Anthropic or OpenAI
-  through your own CLI) or `eval share` (numbers only). Both ask first.
-- **Stored:** the index, memories and graph in `<project>/.nexus/` (it holds code: add it to
-  `.gitignore`), the model in `~/.cache/huggingface/`, eval results in `~/.nexus-mcp/evals/`.
-
-```bash
-nexus-mcp-ci data where              # every location and its size
-nexus-mcp-ci data clear --all        # dry run; add --yes to delete
-```
-
-Every location, the shell commands that do the same, and the uninstall steps:
-[docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md).
-
----
-
-## Quickstart (60 seconds)
-
-You need [uv](https://docs.astral.sh/uv/getting-started/installation/). Nothing else.
-
-**Ask your agent.** Open your agent (Claude Code, Codex, Cursor, Gemini CLI) in your project
-and say:
-
-> Install Nexus-MCP from https://github.com/jaggernaut007/Nexus-MCP
-
-The agent reads [`llms-install.md`](llms-install.md) and runs one command. You can run the
-same command yourself:
 
 ```bash
 uvx --python 3.12 nexus-mcp-ci setup
 ```
 
-`setup` finds the MCP clients on your machine, shows each change, and asks before it writes
-anything. It adds the server and a short skill that tells the agent when to use each tool.
-Add `--dry-run` to see the changes only, `--client codex` to pick one client, and
-`--uninstall` to remove what it wrote. Then reload your client (or start a new session) and
-ask something like "where do we retry failed payments?". The agent calls `search`, and
-`index` once, the first time in a project.
+`setup` finds the MCP clients on your machine, shows each change and asks before it writes.
+You need [uv](https://docs.astral.sh/uv/getting-started/installation/). Or tell your agent:
+*"Install Nexus-MCP from https://github.com/jaggernaut007/Nexus-MCP"*.
 
-The server sends its own usage instructions when it connects, so the agent knows which tool
-answers which question even without the skill.
-
-Other ways in, each with the same server:
-
-- **VS Code:** [Install in VS Code](https://vscode.dev/redirect/mcp/install?name=nexus-mcp&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--python%22%2C%223.12%22%2C%22nexus-mcp-ci%22%5D%7D)
-- **Cursor:** the "Add to Cursor" button on the [website](https://jaggernaut007.github.io/nexus-mcp/#install)
-- **Claude Desktop:** download `nexus-mcp.mcpb` from the [latest release](https://github.com/jaggernaut007/Nexus-MCP/releases/latest) and open it
-- **Gemini CLI:** `gemini extensions install https://github.com/jaggernaut007/Nexus-MCP`
-- **Docker:** `docker run -i --rm -v "$PWD:/workspace" -v nexus-data:/data ghcr.io/jaggernaut007/nexus-mcp`
-- **GitHub Actions:** [`uses: jaggernaut007/Nexus-MCP@v2`](docs/GITHUB-ACTION.md)
-
-All channels, and what each needs: [docs/DISTRIBUTION.md](docs/DISTRIBUTION.md).
-
-### Claude Code plugin
-
-The plugin registers the server and the same routing skill. It runs the server through
-`uvx`, so it needs only uv, no `pip install`:
-
-```
-/plugin marketplace add jaggernaut007/Nexus-MCP
-/plugin install nexus-mcp@nexus-mcp
-```
-
-Use `setup` or the plugin for Claude Code, not both, or the server is registered twice.
-Tool names differ by route: `mcp__nexus-mcp__search` after `setup`,
-`mcp__plugin_nexus-mcp_nexus-mcp__search` through the plugin. The rest of this README
-writes bare names (`search`) and you do not need the prefix in prompts.
-
-### Optional: project instructions
-
-If you want the rules in your own project file, a short block is enough:
-
-```markdown
-## Code Navigation
-
-The nexus-mcp server is connected. For questions about how this codebase works:
-- No setup call is needed; run `index` only if a tool says the project is not indexed.
-- Use `search` to find code, `find_symbol` for symbols, `map` for structure.
-- Use `graph` with `transitive=true` before you change a shared function. The call graph
-  is static, so also use `search` for dynamic call sites.
-- Use plain grep or read when you already know the file or the exact string.
-```
-
-The full routing guide is in [docs/AGENT_ROUTING.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/AGENT_ROUTING.md).
+> ⭐ **If Nexus-MCP saves you tokens, [star the repo](https://github.com/jaggernaut007/Nexus-MCP).** It helps other developers find it.
 
 ---
 
-## How It Works
+## Results
 
-### Indexing Pipeline (8 steps)
+Measured on 12 open-source repos in 10 languages, against an agent that has only its built-in
+Grep and Read. Nothing here is an estimate: each number links to a pinned repo and a raw run.
 
-```
-Source files
-    │
-    ├─ Step 1: Discover ──────── walk tree, filter by ext/size/.gitignore
-    │
-    ├─ Step 2: Parse symbols ─── tree-sitter (parallel ThreadPool)
-    │           extracts: functions, classes, methods
-    │           captures: name, signature, docstring, line_start/end, language
-    │
-    ├─ Step 3: Parse graph ────── ast-grep (sequential for consistency)
-    │           extracts: containment edges, import edges, callee names of each function
-    │                     (indexing/call_resolver.py makes CALLS edges after the last batch;
-    │                      no inheritance edges yet)
-    │           output: UniversalGraph — nodes: modules, functions, classes;
-    │                                    edges: CONTAINS, IMPORTS, CALLS
-    │
-    ├─ Step 4: Transfer graph ── populate rustworkx PyDiGraph
-    │           O(1) node lookup by name, Rust-backed traversal
-    │
-    ├─ Step 5: Chunk ──────────── Symbol → CodeChunk
-    │           deterministic IDs: SHA256(file_path + symbol_name + line)
-    │           avoids duplicate inserts on incremental reindex
-    │
-    ├─ Step 6: Embed ──────────── bge-small-en: 384-dim
-    │           lazy-loaded, unloaded after indexing (try/finally)
-    │           GPU/MPS auto-detected; falls back to CPU
-    │
-    ├─ Step 7: Store ──────────── write to LanceDB `chunks` table (12-col PyArrow schema)
-    │           rebuild native FTS (Tantivy) index after write
-    │
-    └─ Step 8: Cleanup ────────── unload model, persist metadata (mtimes for incremental)
-                                  save rustworkx graph to SQLite (warm-start recovery)
-```
+<!-- Generated from benchmarks/published/results.json by scripts/publish_results.py. Do not edit. -->
+<!-- results:start -->
+**On 10 open-source repos in 10 languages, Nexus-MCP reached the right file with 95% fewer tokens (median) and searched 9× faster than Grep and Read. In live Claude Code runs on 11 repos, cost per task was lower on 8 of 11, with 64 of 66 tasks correct against 61 of 66.**
 
-**Incremental reindex:** mtime-based — only changed files are re-processed. Corrupt index detection triggers automatic full rebuild.
+**Find the right file** (`nexus-mcp-ci eval`: offline, no LLM). Grep and Read → Nexus-MCP:
 
-### Search Pipeline
+| Language | Repo | Right file first | Tokens to the right file | Search time |
+|---|---|---:|---:|---:|
+| Python | [pallets/flask](https://github.com/pallets/flask) (83 files) | 20% → **93%** | 26,720 → **1,388** | 108 → **23 ms** |
+| TypeScript | [vitejs/vite](https://github.com/vitejs/vite) (429 files) | 43% → **83%** | 16,520 → **1,286** | 159 → **25 ms** |
+| JavaScript | [webpack/webpack](https://github.com/webpack/webpack) (822 files) | 37% → **67%** | 25,634 → **1,251** | 564 → **34 ms** |
+| Java | [apache/commons-lang](https://github.com/apache/commons-lang) (264 files) | 23% → **87%** | 48,176 → **1,241** | 201 → **31 ms** |
+| C# | [JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) (242 files) | 23% → **73%** | 14,004 → **1,547** | 154 → **25 ms** |
+| PHP | [laravel/framework](https://github.com/laravel/framework) (1,751 files) | 50% → **83%** | 13,479 → **1,086** | 712 → **39 ms** |
+| C++ | [chromium/chromium](https://chromium.googlesource.com/chromium/src) (3,641 files) | 43% → **80%** | 19,768 → **1,243** | 1,851 → **88 ms** |
+| Go | [prometheus/prometheus](https://github.com/prometheus/prometheus) (201 files) | 40% → **83%** | 41,034 → **1,195** | 600 → **24 ms** |
+| C | [redis/redis](https://github.com/redis/redis) (229 files) | 40% → **87%** | 37,139 → **988** | 331 → **34 ms** |
+| Rust | [tokio-rs/tokio](https://github.com/tokio-rs/tokio) (381 files) | 33% → **93%** | 21,138 → **830** | 215 → **27 ms** |
 
-```
-search("how does auth work")
-         │
-         ├─► vector_engine.search(query, n=30)  ← cosine similarity on 384-dim (bge-small-en) embeddings
-         │                                         "auth" finds "verify_credentials", "token_check"
-         │
-         ├─► bm25_engine.search(query, n=30)    ← Tantivy FTS on same LanceDB table
-         │                                         fast exact-keyword matching
-         │
-         ├─► graph_engine.boost(query, n=30)    ← structural relevance score
-         │                                         hub symbols (high in/out degree) boosted
-         │
-         └─► fusion.merge(v_results, b_results)
-                  │
-                  │  Reciprocal Rank Fusion: score = Σ weight_i / (k + rank_i)
-                  │  default weights: vector=0.5, bm25=0.3
-                  │
-                  └─► token_budget.truncate()   ← summary / detailed / full
-                           │
-                           └─► Top-N chunks, scored, formatted
-```
+**Live agent runs** (Claude Code with Claude Sonnet, medium effort, headless, 6 tasks per repo, 3 runs each, median per task). Grep and Read → Nexus-MCP:
 
-### Technology Stack
+| Language | Repo | Tokens per task | Cost per task | Turns | Correct |
+|---|---|---:|---:|---:|---:|
+| Python | [home-assistant/core](https://github.com/home-assistant/core) | 65,990 → **42,458 (-36%)** | $0.050 → **$0.037 (-27%)** | 7 → 3 | 6 → 6 of 6 |
+| Python | [django/django](https://github.com/django/django) | 45,102 → **41,916 (-7%)** | $0.048 → **$0.035 (-26%)** | 5.5 → 2.5 | 5 → 6 of 6 |
+| TypeScript | [vitejs/vite](https://github.com/vitejs/vite) | 69,790 → **52,411 (-25%)** | $0.059 → **$0.046 (-22%)** | 5.5 → 4 | 6 → 6 of 6 |
+| JavaScript | [webpack/webpack](https://github.com/webpack/webpack) | 100,320 → **74,638 (-26%)** | $0.077 → **$0.068 (-11%)** | 6 → 4.5 | 6 → 6 of 6 |
+| Java | [apache/commons-lang](https://github.com/apache/commons-lang) | 50,448 → **32,862 (-35%)** | $0.044 → **$0.022 (-49%)** | 4.5 → 2 | 6 → 6 of 6 |
+| C# | [JamesNK/Newtonsoft.Json](https://github.com/JamesNK/Newtonsoft.Json) | 41,929 → 42,139 (+1%) | $0.030 → $0.030 (+1%) | 3 → 2.5 | 6 → 6 of 6 |
+| PHP | [laravel/framework](https://github.com/laravel/framework) | 52,919 → 51,994 (-2%) | $0.051 → **$0.039 (-24%)** | 5 → 3 | 5 → 5 of 6 |
+| C++ | [chromium/chromium](https://chromium.googlesource.com/chromium/src) | 70,495 → **60,622 (-14%)** | $0.065 → **$0.055 (-16%)** | 6.5 → 4.5 | 6 → 6 of 6 |
+| Go | [prometheus/prometheus](https://github.com/prometheus/prometheus) | 52,014 → **45,214 (-13%)** | $0.047 → **$0.037 (-22%)** | 4.5 → 2.5 | 5 → 6 of 6 |
+| C | [redis/redis](https://github.com/redis/redis) | 41,752 → 50,578 (+21%) | $0.031 → $0.030 (-3%) | 3.5 → 3 | 6 → 6 of 6 |
+| Rust | [tokio-rs/tokio](https://github.com/tokio-rs/tokio) | 41,188 → 61,816 (+50%) | $0.029 → $0.041 (+42%) | 3.5 → 4.5 | 4 → 5 of 6 |
 
-| Layer | Technology | Decision Rationale |
-|-------|-----------|-------------------|
-| **Vector store** | LanceDB | mmap disk-backed → ~20–50 MB overhead vs ChromaDB's in-memory model. Native Tantivy FTS means one store for both vector and BM25. ([ADR-002](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-002-lancedb-over-chromadb.md)) |
-| **Embeddings** | bge-small-en | Lightweight (384-dim, no trust_remote_code). Lazy-load/unload keeps RAM flat after indexing. ([ADR-003](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-003-onnx-runtime-over-pytorch.md)) |
-| **Graph engine** | rustworkx PyDiGraph | Rust-backed, O(1) node lookup, PageRank + centrality algorithms. Thread-safe with RLock. ([ADR-006](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-006-rustworkx-graph-engine.md)) |
-| **Symbol parser** | tree-sitter 0.21.3 | 25+ languages, incremental parsing, AST-level symbol extraction with metadata. Parallel via ThreadPool. ([ADR-005](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-005-dual-parser-strategy.md)) |
-| **Graph parser** | ast-grep | Structural matching for containment and import edges (call edges are resolved after indexing; inheritance edges are not extracted yet). Sequential run for graph consistency. ([ADR-005](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-005-dual-parser-strategy.md)) |
-| **Chunking** | Symbol-based | One chunk per function/class. Deterministic SHA256 IDs prevent duplicate inserts. ([ADR-008](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-008-code-chunk-strategy.md)) |
-| **Persistence** | SQLite + LanceDB | Graph in SQLite (warm-start recovery), vectors+FTS in LanceDB, mtimes in JSON. Zero-config. |
-| **MCP framework** | FastMCP 2.0 | Stdio transport, automatic tool registration, schema generation. |
+Not there yet: C (redis/redis, +21% tokens, build 2.2.2+e5a9d9a) and Rust (tokio-rs/tokio, +50% tokens, build 2.2.2+0430f01). These runs are older; a rerun on the current build is pending. Each row is the latest run of that repo; the build of each row is on the benchmarks page. The same code can vary by about 20% in cost with 3 runs per task (measured 2026-10-28).
+
+All numbers, the method and the raw runs: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) · [JSON](https://jaggernaut007.github.io/nexus-mcp/benchmarks.json) · [CSV](https://jaggernaut007.github.io/nexus-mcp/benchmarks.csv) · [runs](https://github.com/jaggernaut007/Nexus-MCP/tree/main/benchmarks/runs).
+<!-- results:end -->
+
+What the numbers mean:
+
+- **Right file first:** the share of questions where the first result is the file that defines
+  the answer. The right file comes from the parser, never from the Nexus-MCP ranking.
+- **Tokens to the right file:** what the agent reads before it reaches that file.
+- **Search time:** the time of one lookup on a laptop, after the index is built.
+- **Tokens and cost per task:** a real Claude Code session on a real question, both conditions
+  with the same model, prompt and tools. Fewer turns is where most of the saving comes from:
+  each turn reads the whole conversation again.
 
 ---
 
-## Token Efficiency
+## Measure it on your own code first
 
-Two live runs, 12 questions each, with Claude Sonnet, 3 runs for each question and condition
-(72 runs each) and the prompt cache warm for both conditions. **The result depends on the
-project.**
+The check is free, runs offline, calls no LLM and takes a few minutes:
 
-**Latest (commit `a67e5b4`, `find_symbol` shows an outline of a long class):** the numbers are
-in [Results at a glance](#results-at-a-glance), generated from
-`benchmarks/published/results.json`.
+```bash
+uvx --python 3.12 nexus-mcp-ci eval                                   # the current folder
+uvx --python 3.12 nexus-mcp-ci eval https://github.com/pallets/flask  # a public repo
+uvx --python 3.12 nexus-mcp-ci eval --example                         # the Nexus-MCP source
+```
 
-Only the nexus condition ran again for this commit; the Grep and Read numbers are the stored
-runs below. On django nexus is cheaper in total but still dearer on 8 of 12 questions (the short
-lookups). The one wrong answer on the private project came from a run that did not call
-`find_symbol`. With 3 runs for each question the same code can vary by about 20% in cost
-(measured 2026-10-28), so the change against the runs before the outline is inside the noise;
-all three recent nexus runs on the private project cost less than Grep and Read ($0.446 to
-$0.531 against $0.571), and on django nexus is about equal ($0.863 to $0.973 against $0.894). Details:
-`docs/EVALS.md`. The sections below are the runs before the outline.
-
-**Private 460-file Python project** (2026-10-08, commit `91a338e`):
-
-| | Grep and Read | Nexus-MCP |
-|---|---:|---:|
-| Turns (sum of the median of each question) | 55 | 34 (-38%) |
-| Output tokens | 11,917 | 8,881 (-25%) |
-| Cost | $0.571 | $0.459 (**-20%**) |
-| Correct answers | 36 of 36 | 36 of 36 |
-| Prompt on the first turn | 12,700 tokens | 16,300 tokens |
-
-Nexus is cheaper on 7 questions, equal on 3 and dearer on 2 (the two impact questions, by
-$0.005 and $0.004). The saving comes from fewer turns and from smaller tool results than the
-whole-file reads of Grep and Read (see the cost split below). Per question numbers are in
-`docs/EVALS.md`. The same questions on 2026-10-07 (before exact names, code in `find_symbol`,
-the smaller tool list and the warm-up call) gave nexus 6% more cost than Grep and Read.
-
-**Django, a public repository** (3,000 files; 2026-10-27, commit `3fa8810`):
-
-| | Grep and Read | Nexus-MCP |
-|---|---:|---:|
-| Turns (sum of the median of each question) | 93 | 78 (-16%) |
-| Output tokens | 32,291 | 27,513 (-15%) |
-| Cost | $0.894 | $0.973 (**+8.9%**) |
-| Correct answers | 34 of 36 | 35 of 36 |
-
-On django nexus uses fewer turns but costs more. It is cheaper on the questions where Grep and
-Read need 18 to 24 turns (`SQLCompiler.as_sql` -21%, `URLResolver.resolve` -10%) and dearer on
-short lookups that take 2 or 3 turns. Django is a repository that the model knows from
-training, so part of this measures the model. One ground truth was corrected after the run (a
-question asked for a value, and the scorer also required a file name); details in
-`docs/EVALS.md`.
-
-**Why: the cost split of the traces.** The parts below add up to the reported cost of each run.
-
-| Change, nexus against Grep and Read | django | jobscout |
-|---|---:|---:|
-| Cache read (the prompt, on each turn) | +$0.011 | -$0.002 |
-| Cache write (tool results and the first message) | **+$0.111** | -$0.078 |
-| Output | -$0.042 | -$0.033 |
-| **Total** | **+$0.079** | **-$0.112** |
-
-- The 3,600 extra prompt tokens on each turn cost little: a cache read is $0.20 per million.
-- Tool results are written to the cache at $4 per million, 20 times the read price. So the size
-  of a result matters more than the size of the prompt.
-- On jobscout the agent does not know the code and reads whole files (10,000 characters for each
-  Read). A `find_symbol` result of 9,700 characters replaces a Read and saves a turn.
-- On django the agent knows the code and reads short line ranges (3,400 characters for each
-  Read). A `find_symbol` result of 9,200 characters is larger than the read that it replaces. A
-  class lookup sends up to 6,000 characters of the class body: `CharField` cost $0.023 with nexus
-  and $0.013 with Grep.
-
-This led to the outline for a class in `find_symbol` (methods and lines, not the body). With it,
-nexus on django went from $0.973 to $0.863 (see "Latest" above). Details and the other
-candidates are in `docs/EVALS.md`.
-
-The saving is large on a project that the model does not know and small on one that it knows.
-Run `benchmarks/` on your own project before you rely on it.
-
----
-
-## The 8 Tools
-
-**New in v2.4.5:** `uvx nexus-mcp-ci setup --client cline` also writes the config of the Cline
-CLI (`~/.cline/data/settings`), which the Cline in Antigravity reads. Before, it wrote only the
-VS Code file, and an old entry kept running.
-
-**New in v2.4.4:** `uvx nexus-mcp-ci setup` says `replace` when it updates an older entry, and
-it updates the Claude Code entry too. `index` gives the size of the stored index and its
-`version`. The background index of `setup` writes `<project>/.nexus/setup-index.log`.
-
-**New in v2.4.3:** the index goes to `<project>/.nexus/` when the server starts outside the
-project, as in Cline (before, `index` failed with `Read-only file system: '/.nexus'`), and
-`nexus-mcp-ci --version` prints the version.
-
-**New in v2.4.2:** every `uvx` launch pins Python 3.12, so the install works when the default
-Python is 3.13 or 3.14.
-
-**New in v2.4.1:** symbols, graph nodes and call edges for C, C++, C#, PHP and Rust;
-`Class.method` names and subclass overrides in `graph`; and a size cap on large `graph`
-results. By default the server shows only `index`, `search`, `find_symbol`, `graph` and
-`map`. Set `NEXUS_EXTRA_TOOLS=all` to show `status`, `analyze` and `memory`; `memory`
-stays on when you already have memories. An index of an earlier version is rebuilt once at
-the first start.
-
-**New in v2.3.0 (no breaking change):** `uvx nexus-mcp-ci setup` installs the server and the
-skill into your MCP clients, new install routes cover Claude Desktop, Gemini CLI, VS Code,
-Cursor, Docker and GitHub Actions, and the license is now MIT. The MCP tools do not change.
-
-**New in v2.2.0 (no breaking change):** `nexus-mcp-ci eval` measures Nexus-MCP on your own
-code ([Evaluate](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md)), and
-`nexus-mcp-ci data` shows and clears every stored file ([Privacy](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md)).
-The MCP tools do not change.
-
-**v2.1.0 breaking change:** `explain` and `health` are removed from the MCP tool list, and
-several rarely used parameters are removed from the schemas (see [CHANGELOG](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md)).
-`find_symbol` now returns the code with callers and callees.
-
-**v2.0.0 breaking change:** `find_callers`/`find_callees`/`impact` merged into
-`graph`, `overview`/`architecture` merged into `map`, and `remember`/`recall`/`forget`
-merged into `memory` — see [CHANGELOG](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md) for the old→new mapping and
-[ADR-017](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-017-tool-consolidation.md) for why. Fewer, richer tools route
-better under MCP Tool Search than many thin ones.
-
-### Discovery & Indexing
-
-| Tool | Use When |
-|------|----------|
-| `index(path)` | First action in any session. Supports comma-separated multi-folder paths. Incremental by default, reports progress as it runs, and starts a debounced auto-reindex watcher (`NEXUS_AUTO_WATCH`) when it finishes. |
-| `status()` | Check index health: symbol count, chunk count, memory usage, engine availability, and a `stale`/`staleness_warning` pair if files changed since the last index. |
-| `map(detail)` | **Replaces `ls` + manual browsing.** `detail="summary"` (files/languages/quality/top-modules, was `overview()`), `"architecture"` (layers/dependencies/classes/entry points/hub symbols, was `architecture()`), or `"full"` for both. |
-
-### Search
-
-| Tool | Use When |
-|------|----------|
-| `search(query, limit)` | Primary code discovery. A query can hold exact names (`parse_config RetryPolicy`): their definitions come first. The top 3 results carry the whole symbol; the others show the signature. Falls back to live grep if results are sparse. Returns a `warning` if the index looked stale (a background reindex starts). |
-
-### Graph Analysis
-
-| Tool | Use When |
-|------|----------|
-| `find_symbol(symbol_name, exact)` | Look up one or more symbols by name (several names in one call): the code of each, with its callers and callees by name. `exact=False` for fuzzy matching. |
-| `graph(symbol_name, direction, transitive)` | `direction="callers"` (who calls this, was `find_callers`) or `"callees"` (what this calls, was `find_callees`). **`transitive=True`** (was `impact()`) gives the transitive change blast radius before a refactor (a lower bound: static edges only). It requires `direction="callers"`; `direction="callees"` with `transitive=True` returns an error. Call edges are static and name-based, so use `search` for call sites the graph cannot see (see [Known Limitations](#known-limitations)). |
-| `analyze(path)` | Code quality: cyclomatic complexity, cognitive complexity, code smells, dependency metrics. |
-
-### Memory
-
-| Tool | Use When |
-|------|----------|
-| `memory(action, content, query, tags, memory_id)` | `action="store"` to persist a decision or note across sessions; `"search"` for semantic retrieval; `"delete"` to remove by ID or tag. With `NEXUS_PERMISSION_LEVEL=read` only `search` is allowed. |
+It asks about 30 questions made from your code and gives a verdict: "Strong fit", "Likely fit"
+or "Weak fit". On a tiny project Grep and Read win, and the report says so. For the real agent
+cost, `nexus-mcp-ci eval --agent claude` runs a paid A/B with your own Claude Code login. It
+shows the cost and asks first. Guide: [docs/EVALUATE.md](docs/EVALUATE.md).
 
 ---
 
 ## Install
 
-### From PyPI (recommended)
+| Client | How |
+|---|---|
+| Any client on your machine | `uvx --python 3.12 nexus-mcp-ci setup` (add `--dry-run` to see the changes, `--uninstall` to remove them) |
+| Claude Code plugin | `/plugin marketplace add jaggernaut007/Nexus-MCP`, then `/plugin install nexus-mcp@nexus-mcp` |
+| VS Code | [Install in VS Code](https://vscode.dev/redirect/mcp/install?name=nexus-mcp&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--python%22%2C%223.12%22%2C%22nexus-mcp-ci%22%5D%7D) |
+| Cursor | the "Add to Cursor" link on the [website](https://jaggernaut007.github.io/nexus-mcp/#install) |
+| Claude Desktop | open `nexus-mcp.mcpb` from the [latest release](https://github.com/jaggernaut007/Nexus-MCP/releases/latest) |
+| Gemini CLI | `gemini extensions install https://github.com/jaggernaut007/Nexus-MCP` |
+| Docker | `docker run -i --rm -v "$PWD:/workspace" -v nexus-data:/data ghcr.io/jaggernaut007/nexus-mcp` |
+| By hand | `pip install nexus-mcp-ci`, then `claude mcp add nexus-mcp -- nexus-mcp-ci` |
 
-```bash
-pip install nexus-mcp-ci
-
-# GPU (CUDA) support — adds ONNX CUDA execution provider
-pip install nexus-mcp-ci[gpu]
-
-```
-
-### From Source
-
-```bash
-git clone https://github.com/jaggernaut007/Nexus-MCP.git
-cd Nexus-MCP
-./setup.sh           # creates venv, installs, verifies
-# or
-pip install -e ".[dev]"
-```
-
-**Python 3.10–3.12 supported.** Python 3.13+ is not yet supported by the current dependency stack, and the packaged Glama/Docker build uses Python 3.12 for compatibility. Optional: `rg` (ripgrep) for 100% search coverage fallback on unindexed files.
-
-> The deprecated `jina-code` model requires ONNX Runtime. If you see ONNX/Optimum errors:
-> ```bash
-> pip install "sentence-transformers[onnx]" "optimum[onnxruntime]>=1.19.0"
-> ```
-> The default `bge-small-en` model needs neither ONNX nor `trust_remote_code`.
+Use `setup` or the plugin for Claude Code, not both. Then start a new session and ask a
+question about your code, such as *"where do we retry failed payments?"*. The agent indexes the
+project once, in the background, and a file watcher keeps the index current. Every channel:
+[docs/DISTRIBUTION.md](docs/DISTRIBUTION.md). Python 3.10 to 3.12; the `uvx` launch pins 3.12.
 
 ---
 
-## MCP Client Setup
+## What your agent gets
 
-### Claude Code
+The server shows five tools by default. Each one replaces several grep and read calls.
 
-```bash
-# Minimal
-claude mcp add nexus-mcp -- nexus-mcp-ci
+| Tool | Use it for |
+|---|---|
+| `search(query)` | "Where is…", "how does… work". Hybrid search: meaning (local embeddings) plus keywords (BM25). The top results carry their whole code. |
+| `find_symbol(symbol_name)` | Names you know. The code of several functions or classes in one call, with their callers and callees. A long class comes back as an outline. |
+| `graph(symbol_name)` | "Who calls X", "what breaks if I change X". Callers, callees and the transitive blast radius before a refactor. |
+| `map(detail)` | "Where do I start". Layers, entry points, hub symbols and languages of the repo. |
+| `index(path)` | The first call in a project. Incremental after that, and multi-folder for monorepos. |
+| `memory(action)` | Opt-in. Decisions and notes that last across sessions. On by default when memories exist. |
+| `analyze(path)` | Opt-in. Complexity, code smells and dependency metrics for a path. |
+| `status()` | Opt-in. Index health and a staleness flag. |
 
-# GPU embeddings
-claude mcp add nexus-mcp -e NEXUS_EMBEDDING_DEVICE=cuda -- nexus-mcp-ci
+Set `NEXUS_EXTRA_TOOLS=all` to show the three opt-in tools. The server sends its own routing
+instructions when it connects, so the agent knows which tool answers which question. Full
+reference: [docs/USAGE_GUIDE.md](docs/USAGE_GUIDE.md).
 
-# Virtualenv install — pass the full binary path
-claude mcp add nexus-mcp -- /path/to/.venv/bin/nexus-mcp-ci
-```
-
-### Claude Desktop
-
-`~/Library/Application Support/Claude/claude_desktop_config.json` (macOS):
-
-```json
-{
-  "mcpServers": {
-    "nexus-mcp": {
-      "command": "nexus-mcp-ci",
-      "args": [],
-      "env": {
-        "NEXUS_EMBEDDING_DEVICE": "cpu"
-      }
-    }
-  }
-}
-```
-
-### Cursor / Windsurf / Cline / Any MCP Client
-
-```json
-{
-  "nexus-mcp": {
-    "command": "nexus-mcp-ci",
-    "transport": "stdio"
-  }
-}
-```
+Keep your agent's own grep. Use it for an exact name or string you can type; use Nexus-MCP
+when the answer needs meaning or structure.
 
 ---
 
-## Agent Integration Patterns
+## Languages
 
-### CLAUDE.md boilerplate (drop into project root)
+| Support | Languages |
+|---|---|
+| Search, symbols, call graph | Python, TypeScript, JavaScript, Go, Java, Rust, C, C++, C#, PHP |
+| Search and symbols | Bash, Kotlin |
+| Search (text and embeddings) | 25+ languages through tree-sitter |
 
-```markdown
-## Code Intelligence — nexus-mcp
-
-1. **Session start**: no setup call. Run `index` only if a tool says "No codebase indexed"
-2. **To find code you cannot name**: `search`, before reading files one by one
-3. **To see symbols you can name**: `find_symbol`, with all the names in one call
-4. **Before refactoring**: `graph` with `transitive=true` to assess blast radius. The call graph is static (no dynamic dispatch), so also use `search` to find call sites.
-5. **For project orientation**: `map` with `detail="summary"` or `detail="architecture"`
-6. **When you know the exact file or string**: plain grep or read is fine
-```
-
-### Typical agent tool-call sequence
-
-```
-# Session start
-status()               → "indexed: True, 8,412 chunks, 1,203 symbols, 87 MB"
-
-# Code discovery
-search("JWT token validation", limit=10)
-  → auth/jwt.py:42  validate_token()         score=0.94
-  → auth/middleware.py:18  require_auth()    score=0.87
-  → tests/test_auth.py:91  test_valid_jwt()  score=0.81
-
-# Symbols you can name
-find_symbol("validate_token, require_auth")
-  → the code of each, file and lines
-  → callers: [post_order, ...], callees: [...]
-
-# Pre-refactor safety check
-graph("validate_token", direction="callers", transitive=True)
-  → total_impacted: N          # a lower bound: dynamic calls are not visible
-
-# Locate call sites with search instead
-search("validate_token(", mode="bm25")
-  → auth/middleware.py:18  require_auth()  ...
-  → auth/login.py:57  login_required()     ...
-```
-
-### Multi-folder monorepo indexing
-
-```python
-# Index multiple roots in one call — processed sequentially, shared engines
-index(path="packages/api/src,packages/shared/src,packages/cli/src")
-
-# Or use the paths parameter for additional roots
-index(path="packages/api/src", paths="packages/shared/src,packages/cli/src")
-```
+The results above cover the ten graph languages. Python has the best call-graph coverage.
 
 ---
 
-## Configuration
+## Privacy
 
-All settings via `NEXUS_` environment variables:
+Your code stays on your machine. The server makes no network calls and has no telemetry.
 
-| Variable | Default | Description |
-|----------|---------|-------------|
-| `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | `bge-small-en` (384-dim). `jina-code` is deprecated |
-| `NEXUS_EMBEDDING_DEVICE` | `auto` | `auto` (CUDA → MPS → CPU), `cuda`, `mps`, `cpu` |
-| `NEXUS_STORAGE_DIR` | `.nexus` | Index storage directory |
-| `NEXUS_AUTO_WATCH` | `true` | Auto-reindex on file change via a debounced watcher, started after `index()` |
-| `NEXUS_AUTO_RESTORE` | `true` | A new server process reattaches to the stored index, so `status` is already `indexed: true` |
-| `NEXUS_WARM_START` | `true` | Attach the index and load the embedding model in the background while the server starts, so the first `search` does not wait about 7 s. The model then uses its memory (about 370 MB) from the start of each session |
-| `NEXUS_STALENESS_CHECK_INTERVAL` | `15` | Seconds between `status()`/`search()` staleness checks (throttled, not per-call) |
-| `NEXUS_IDLE_TIMEOUT` | `10800` | Stop the server after this many seconds with no tool call (3 hours). `0` turns it off |
-| `NEXUS_EXIT_ON_PARENT_EXIT` | `true` | Stop the server when the client process that started it is gone |
-| `NEXUS_SHUTDOWN_TIMEOUT` | `10` | Longest wait for a running index at shutdown; the process then exits |
-| `NEXUS_MAX_FILE_SIZE_MB` | `10` | Skip files larger than this |
-| `NEXUS_CHUNK_MAX_CHARS` | `4000` | Max chars per code chunk |
-| `NEXUS_EMBEDDING_BATCH_SIZE` | `32` | Chunks per embedding batch. Lower it to cut peak RAM while indexing |
-| `NEXUS_INDEX_FILE_BATCH_SIZE` | `50` | Files per streaming indexing batch |
-| `NEXUS_GRAPH_MAX_DEPTH` | `10` | Max depth for transitive graph queries |
-| `NEXUS_MAX_MEMORY_MB` | `350` | Memory budget target |
-| `NEXUS_SEARCH_MODE` | `hybrid` | `hybrid`, `vector`, or `bm25` |
-| `NEXUS_FUSION_WEIGHT_VECTOR` | `0.5` | Vector score weight in RRF |
-| `NEXUS_FUSION_WEIGHT_BM25` | `0.3` | BM25 score weight in RRF |
-| `NEXUS_PERMISSION_LEVEL` | `full` | `full`, `read`, or `restricted` |
-| `NEXUS_RATE_LIMIT_ENABLED` | `false` | Enable per-tool token-bucket rate limiting |
-| `NEXUS_AUDIT_ENABLED` | `true` | Structured audit logging with correlation IDs |
-| `NEXUS_TRUST_REMOTE_CODE` | `true` | Needed only by the deprecated jina-code; set `false` with bge-small-en |
-| `NEXUS_LOG_LEVEL` | `INFO` | Logging level |
-| `NEXUS_LOG_FORMAT` | `text` | `text` or `json` |
+- **In, once:** the package from PyPI and the embedding model from Hugging Face. Set
+  `NEXUS_OFFLINE=1` after that.
+- **Out:** nothing, unless you run `eval --agent` (through your own Claude or Codex CLI) or
+  `eval share` (numbers only). Both ask first.
+- **Stored:** the index in `<project>/.nexus/` (add it to `.gitignore`).
+  `nexus-mcp-ci data where` lists every file; `nexus-mcp-ci data clear` removes them.
 
-The Python package defaults to `bge-small-en`. The `Dockerfile`, `docker/Dockerfile.stdio` and `glama.json` use the same default. `jina-code` still loads, with a warning, so an existing index keeps working. It is deprecated and will be removed in a future major release.
-
-### Embedding Models
-
-| Model | Key | Dims | Max Seq | Backend | `trust_remote_code` |
-|-------|-----|:----:|:-------:|---------|:-------------------:|
-| BGE Small EN v1.5 (default) | `bge-small-en` | 384 | 512 | PyTorch | No |
-| Jina Embeddings v2 Code (deprecated) | `jina-code` | 768 | 8,192 | ONNX | Yes |
-
-**After changing model, re-index.** Embeddings from different models are incompatible.
+Details: [docs/PRIVACY.md](docs/PRIVACY.md).
 
 ---
 
-## Comparison
+## Known limits
 
-### vs. other code-intelligence MCP servers
-
-Features only, from each project's own documentation. We make no performance claims about
-other tools: run `nexus-mcp-ci eval` on your code instead.
-
-| Feature | Nexus-MCP | Serena | claude-context |
-|---|:---:|:---:|:---:|
-| How it finds code | hybrid: vectors + BM25 | language servers (LSP) | hybrid: vectors + BM25 |
-| Where the index lives | local LanceDB | none (live LSP) | a vector database (Milvus or Zilliz Cloud) |
-| Embeddings | local model, no API key | none | an embedding provider (OpenAI by default; Ollama possible) |
-| Call graph | static, 6 languages | LSP references | no |
-| Project memory | yes | yes | no |
-| Edits code | no (read only) | yes | no |
-| Measure it on your repo | `nexus-mcp-ci eval` | — | — |
-
-Other servers in this space include codebase-memory-mcp, code-graph-rag, code-index-mcp and
-ast-grep-mcp. Check each project's docs. Corrections to this table are welcome.
-
-### vs. Other MCP Servers
-
-| Feature | Nexus-MCP | Sourcegraph MCP | Greptile MCP | GitHub MCP | tree-sitter MCP |
-|---------|:---:|:---:|:---:|:---:|:---:|
-| Fully local / private | ✅ | ❌ infra required | ❌ cloud | ❌ cloud | ✅ |
-| Semantic (vector) search | ✅ | ❌ keyword only | ✅ LLM-based | ❌ | ❌ |
-| Keyword (BM25) search | ✅ | ✅ | — | ✅ | ❌ |
-| Hybrid fusion (RRF) | ✅ | ❌ | ❌ | ❌ | ❌ |
-| Code graph (call/import) | static: containment, imports, calls | ✅ SCIP | ❌ | ❌ | ❌ |
-| Semantic memory (persistent) | ✅ 6 types | ❌ | ❌ | ❌ | ❌ |
-| Change impact analysis | static callers only | partial | ❌ | ❌ | ❌ |
-| Token-budgeted responses | ✅ 3 levels | ❌ | ❌ | ❌ | ❌ |
-| Languages | 25+ | 30+ | many | many | many |
-| Cost | **Free (MIT)** | $$$ | $40/mo | $10–39/mo | Free |
-| API keys required | **No** | Yes | Yes | Yes | No |
-
-### vs. AI Code Tools
-
-| Capability | Nexus-MCP | Cursor | Copilot @workspace | Cody | Continue.dev | Aider |
-|---|:---:|:---:|:---:|:---:|:---:|:---:|
-| IDE-agnostic | ✅ | ❌ | ❌ | ❌ | ❌ | ✅ |
-| MCP-native | ✅ | partial | ❌ | ❌ | ✅ client | ❌ |
-| Fully local | ✅ | partial | ❌ | partial | ✅ | ✅ |
-| Hybrid search | ✅ | unknown | unknown | keyword | yes | ❌ |
-| Code graph | partial (containment + imports) | unknown | unknown | ✅ SCIP | basic | ❌ |
-| Semantic memory | ✅ persistent | ❌ | ❌ | ❌ | ❌ | ❌ |
-| Token-budgeted output | ✅ | — | — | — | — | — |
-| Source available | ✅ MIT | ❌ | ❌ | partial | ✅ | ✅ |
-| Cost | **Free (MIT)** | $20–40/mo | $10–39/mo | $0–49/mo | Free | Free |
-
----
-
-## Development
-
-```bash
-git clone https://github.com/jaggernaut007/Nexus-MCP.git
-cd Nexus-MCP
-pip install -e ".[dev]"
-
-pytest -v                    # all tests (-m "not slow" skips the performance ones)
-pytest -m "not slow"         # skip performance benchmarks
-pytest tests/test_hybrid_search.py  # single module
-ruff check .                 # lint
-```
-
-### Project Structure
-
-```
-src/nexus_mcp/
-├── server.py              # FastMCP entrypoint — 10 thin tool wrappers (permission guard, rate limit, audit), graceful shutdown
-├── core_api.py            # Transport-agnostic tool logic + input validation; importable without MCP
-├── config.py              # Settings (NEXUS_ env prefix)
-├── state.py               # Global singleton SessionState
-├── core/
-│   ├── models.py          # Symbol, ParsedFile, CodebaseIndex, Memory
-│   ├── graph_models.py    # UniversalNode, Relationship
-│   ├── interfaces.py      # IParser, IEngine protocols
-│   └── exceptions.py      # NexusException hierarchy
-├── parsing/
-│   ├── treesitter_parser.py   # Symbol extraction (parallel)
-│   ├── astgrep_parser.py      # Structural graph extraction (sequential)
-│   ├── language_registry.py   # 25+ language definitions
-│   └── file_watcher.py        # Debounced watchdog for live reindex
-├── engines/
-│   ├── vector_engine.py   # LanceDB cosine similarity search
-│   ├── bm25_engine.py     # LanceDB native FTS (Tantivy)
-│   ├── graph_engine.py    # rustworkx PyDiGraph with RLock
-│   ├── live_grep.py       # rg/grep fallback for unindexed or sparse results
-│   ├── fusion.py          # Reciprocal Rank Fusion
-├── indexing/
-│   ├── pipeline.py        # 8-step indexing pipeline
-│   ├── embedding_service.py   # ONNX Runtime, GPU/MPS auto-detect
-│   ├── parallel_indexer.py    # ThreadPool over files
-│   └── chunker.py         # Symbol → CodeChunk with deterministic IDs
-├── memory/
-│   └── memory_store.py    # LanceDB-backed memory, TTL, 6 types
-├── analysis/
-│   └── code_analyzer.py   # Cyclomatic/cognitive complexity, smells
-├── formatting/
-│   ├── token_budget.py    # Token counting and truncation
-│   └── response_builder.py  # Structured responses
-├── persistence/
-│   └── store.py           # SQLite graph persistence
-├── security/
-│   ├── permissions.py     # READ/MUTATE/WRITE tool categories
-│   └── rate_limiter.py    # Token-bucket, per-tool, thread-safe
-└── middleware/
-    └── audit.py           # Structured audit logs, correlation IDs, field redaction
-benchmarks/                # Token-efficiency benchmark harness (ADR-018)
-self_test/                 # End-to-end demo of the 8 tools and the Python API
-plugin/                    # Claude Code plugin: registers the server + routing skill
-```
-
-### Adding a New Tool
-
-1. Add the logic as a plain function in `core_api.py`
-2. Validate input there with the `validate_*` helpers (`validate_path`, `validate_symbol_name`, `validate_query`)
-3. Add a thin wrapper in `server.py` decorated with `@mcp.tool()` and `@_audited`, and call `_guard("<tool>")` first
-4. Add the permission category to `security/permissions.py`
-5. Write tests in `tests/`
-6. Update `self_test/demo_mcp.py` to exercise the tool
-
-### Adding a New Language
-
-1. Add entry to `parsing/language_registry.py` with the tree-sitter grammar
-2. Add structural patterns to `parsing/astgrep_parser.py` for call/import extraction
-3. Add test fixtures in `tests/fixtures/`
-
----
-
-## Self-Test
-
-Verify your installation exercises the 8 tools and the Python API end-to-end:
-
-```bash
-python self_test/demo_mcp.py                   # built-in sample project
-python self_test/demo_mcp.py /path/to/project  # your own codebase
-```
-
-Expected output: the 8 tools and the Python API exercised with pass/fail per tool and a summary.
-
----
-
-## Known Limitations
-
-- **Sequential graph parsing**: ast-grep runs sequentially (not parallel) to keep the call graph consistent. This is the main indexing bottleneck on large codebases.
-- **bge-small-en uses PyTorch**: The default model runs on PyTorch, not ONNX.
-- **No incremental graph updates**: Graph is rebuilt in full on incremental reindex (only vector/BM25 are incremental at the chunk level).
-- **No SSE transport**: Only stdio transport is currently supported.
-- **Language coverage**: 12 languages get tree-sitter symbol extraction (Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP, Bash and Kotlin). ast-grep structure (functions, classes, imports) covers Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP; Bash and Kotlin have no graph structure.
-- **Call edges are static and name-based.** `graph()` and the `callers`/`callees` fields of `find_symbol()` come from parsing, not runtime tracing. Edges exist for Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP. A call resolves only when the callee is in the same file, in an imported file, or has a unique name in the index. A name shared by several definitions gets no edge, so results are a lower bound. Dynamic dispatch, monkey-patching, callbacks and reflection do not show up, so treat `graph(transitive=True)` as a lower bound on blast radius.
-- **Complexity is approximate**: cyclomatic complexity counts branch points per function. Only Python counts `and`/`or`, and only Python functions get docstrings on graph nodes.
-- **Auto-reindex has a detection lag**: with the file watcher enabled (default), edits are picked up after a short debounce, and `status()`/`search()` run a throttled staleness check as a backstop — not an instant, per-call guarantee of freshness.
-
----
-
-## Architecture Decision Records
-
-Key decisions are documented in [docs/adr/](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/):
-
-| ADR | Decision |
-|-----|----------|
-| [ADR-001](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-001-single-mcp-consolidation.md) | Merge two MCP servers into one |
-| [ADR-002](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-002-lancedb-over-chromadb.md) | LanceDB over ChromaDB |
-| [ADR-003](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-003-onnx-runtime-over-pytorch.md) | ONNX Runtime over PyTorch for embeddings |
-| [ADR-004](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-004-bge-small-default-model.md) | bge-small-en as default embedding model |
-| [ADR-005](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-005-dual-parser-strategy.md) | Dual parser: tree-sitter + ast-grep |
-| [ADR-006](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-006-rustworkx-graph-engine.md) | rustworkx for graph algorithms |
-| [ADR-007](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-007-lancedb-schema-design.md) | 12-column PyArrow schema for LanceDB |
-| [ADR-008](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-008-code-chunk-strategy.md) | Symbol-based chunking with deterministic IDs |
-| [ADR-009](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-009-indexing-pipeline-architecture.md) | 8-step indexing pipeline |
-| [ADR-010](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-010-graph-tools-api-design.md) | Graph tools API: serialization, ambiguity handling |
-| [ADR-011](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-011-hardening-decisions.md) | Graceful shutdown, corruption recovery, JSON logging |
-| [ADR-012](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-012-tool-permission-model.md) | READ/MUTATE/WRITE permission categories |
-| ~~[ADR-013](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-013-pydantic-schemas.md)~~ | Pydantic v2 I/O schemas — superseded by ADR-016 (never wired in, deleted) |
-| [ADR-014](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-014-rate-limiting.md) | Token-bucket rate limiting (off by default) |
-| [ADR-015](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-015-auto-watch-and-staleness-detection.md) | Auto-watch + throttled staleness detection |
-| [ADR-016](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-016-remove-unused-pydantic-schemas.md) | Removal of unused Pydantic schemas (supersedes ADR-013) |
-| [ADR-017](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-017-tool-consolidation.md) | Tool consolidation 15→10, action-aware permission categories |
-| [ADR-018](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-018-token-efficiency-benchmark.md) | Token-efficiency benchmark harness (`benchmarks/`) |
+- **The call graph is static.** Edges come from parsing, not from running the code. Dynamic
+  dispatch, callbacks and reflection do not show, so treat `graph` results as a lower bound.
+- **C and Rust live runs used more tokens** than Grep and Read on the older 2.2.2 build (see
+  Results). A rerun on the current build is pending.
+- **Memory:** about 90 MB idle and about 460 MB with the embedding model loaded
+  ([measurements](docs/MEMORY.md)).
+- **Freshness:** edits are picked up after a debounce of a few seconds, not instantly.
+- **Transport:** stdio only.
 
 ---
 
 ## Documentation
 
-Start at the [docs index](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/README.md).
-
-- [Evaluate on your project](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md) — The free offline check, the agent tier, saving and sharing results
-- [Privacy and data](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md) — What goes in and out, where data is stored, how to remove it
-- [Benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) — Every published number, with JSON and CSV
-- [Installation Guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/INSTALLATION.md) — Prerequisites, client-specific setup, troubleshooting
-- [Architecture](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/ARCHITECTURE.md) — Data flow, component design, memory budget analysis
-- [Usage Guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/USAGE_GUIDE.md) — Full tool reference with examples
-- [Developer Guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/DEVELOPER_GUIDE.md) — Contributing, adding tools/engines/languages
-- [Research Notes](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/RESEARCH.md) — Library evaluations and technology deep-dives
+- [Benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html): every number, the build of each row, the method and the raw data
+- [Evaluate](docs/EVALUATE.md), [Installation](docs/INSTALLATION.md), [Usage](docs/USAGE_GUIDE.md), [Configuration](docs/CONFIGURATION.md), [Troubleshooting](docs/TROUBLESHOOTING.md), [FAQ](docs/FAQ.md)
+- [Architecture](docs/ARCHITECTURE.md), [Comparison with other tools](docs/COMPARISON.md), [Decision records](docs/adr/), [Changelog](CHANGELOG.md)
+- All docs: [docs/README.md](docs/README.md). For agents: [llms.txt](llms.txt).
 
 ---
 
-## Acknowledgments
+## Contributing
 
-Nexus-MCP consolidates two earlier open-source projects:
+Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the
+[developer guide](docs/DEVELOPER_GUIDE.md):
 
-- **[CodeGrok MCP](https://github.com/shreyasjagannath/CodeGrok_mcp)** by [rdondeti](https://github.com/rdondeti) (Ravitez Dondeti, MIT) — Contributed the symbol extraction pipeline, embedding service, parallel indexer, core data models, and memory retrieval system.
-- **[code-graph-mcp](https://github.com/entrepeneur4lyf/code-graph-mcp)** by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) — Contributed the ast-grep structural parser, rustworkx graph engine, complexity analysis, and relationship extraction.
+```bash
+git clone https://github.com/jaggernaut007/Nexus-MCP.git && cd Nexus-MCP
+pip install -e ".[dev]"
+pytest -v && ruff check .
+```
 
-Source files retain "Ported from" attribution in their module docstrings. See [ADR-001](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-001-single-mcp-consolidation.md) for the consolidation rationale.
+A change ships only when it lowers the agent's token use and keeps the search accuracy gate
+(`python -m evals.retrieval.run`). The rule is in [CONTRIBUTING.md](CONTRIBUTING.md).
+
+Nexus-MCP grew from two MIT projects: [CodeGrok MCP](https://github.com/shreyasjagannath/CodeGrok_mcp)
+by [rdondeti](https://github.com/rdondeti) and [code-graph-mcp](https://github.com/entrepeneur4lyf/code-graph-mcp)
+by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) ([ADR-001](docs/adr/ADR-001-single-mcp-consolidation.md)).
 
 ---
 
 ## License
 
-[MIT](LICENSE). Free to use, copy, modify and distribute, for any purpose, including at work.
-
-Versions 2.0.1 to 2.2.3 were released under the PolyForm Noncommercial License 1.0.0. Anyone who
-obtained one of those versions keeps the terms they got. Versions 0.1.0, 0.1.1 and 2.0.0 were MIT.
-Every new release is MIT.
+[MIT](LICENSE). Free for any use, including at work. Versions 2.0.1 to 2.2.3 were released
+under the PolyForm Noncommercial License 1.0.0; anyone who got one of those versions keeps
+those terms. Every new release is MIT.
 
 If Nexus-MCP saves you tokens at work, a star or a sponsorship is welcome. Neither is required.
 
@@ -1746,7 +1122,7 @@ A callers result (immediate or transitive) also has `references`: every line whe
 
 The caller list holds only the calls that static analysis resolved, so it is a lower bound. `references` is the complete text answer, so a separate grep is not needed. Source files come first, each line with its code (at most 8 lines per file, 60 lines in all, 110 characters per line). A source file past the budget is a line count in `more_files`. Test files are a line count each in `test_files`. `truncated` says when a cap cut the list, and the totals always count everything. In the caller lists a test file with more than 3 symbols shows 3 and `+N more`. A name with no graph node (a constant, or a language without graph support) returns its `references` with an empty caller list instead of an error.
 
-> **Limit:** call edges are static and name-based. Dynamic dispatch, callbacks and reflection are invisible, and a name shared by several definitions gets no edge. Treat results as a lower bound and use `search` for other call sites. See [Known Limitations](../README.md#known-limitations).
+> **Limit:** call edges are static and name-based. Dynamic dispatch, callbacks and reflection are invisible, and a name shared by several definitions gets no edge. Treat results as a lower bound and use `search` for other call sites. See [Known Limitations](../README.md#known-limits).
 
 #### `analyze`
 Run code analysis on the indexed codebase: complexity metrics, dependency analysis, code smells and quality scores.
@@ -1825,7 +1201,7 @@ export NEXUS_AUDIT_ENABLED=true          # Audit log with correlation IDs
 export NEXUS_RATE_LIMIT_ENABLED=false    # Per-tool token-bucket rate limiting
 ```
 
-See the [README configuration table](../README.md#configuration) for every variable.
+See [CONFIGURATION.md](CONFIGURATION.md) for every variable.
 
 ### Embedding Models
 
@@ -2047,7 +1423,22 @@ Measured: about 90MB idle and 460MB with the model loaded (docs/MEMORY.md). The 
 
 ## Configuration
 
-All settings are in `config.py` with NEXUS_ env prefix. See README for the full table.
+All settings are in `config.py` with NEXUS_ env prefix. See [CONFIGURATION.md](CONFIGURATION.md) for the full table.
+
+## Technology Choices
+
+This table was in the README before 2026-11-08.
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **Vector store** | LanceDB | mmap, disk-backed: about 20–50 MB overhead against the in-memory model of ChromaDB. Native Tantivy FTS gives one store for vectors and BM25. ([ADR-002](adr/ADR-002-lancedb-over-chromadb.md)) |
+| **Embeddings** | bge-small-en | 384 dimensions, no `trust_remote_code`. Lazy load and unload keep RAM flat after indexing. ([ADR-004](adr/ADR-004-bge-small-default-model.md)) |
+| **Graph engine** | rustworkx PyDiGraph | Rust-backed, O(1) node lookup, PageRank and centrality. Thread-safe with an RLock. ([ADR-006](adr/ADR-006-rustworkx-graph-engine.md)) |
+| **Symbol parser** | tree-sitter | 25+ languages, AST-level symbol extraction, parallel through a thread pool. ([ADR-005](adr/ADR-005-dual-parser-strategy.md)) |
+| **Graph parser** | ast-grep | Containment and import edges; call edges are resolved after the last batch ([ADR-019](adr/ADR-019-call-edge-resolution.md)). Runs in sequence for graph consistency. |
+| **Chunking** | Symbol-based | One chunk per function or class. Deterministic SHA256 IDs prevent duplicate inserts. ([ADR-008](adr/ADR-008-code-chunk-strategy.md)) |
+| **Persistence** | SQLite + LanceDB | Graph in SQLite (warm start), vectors and FTS in LanceDB, mtimes in JSON. |
+| **MCP framework** | FastMCP | stdio transport, tool registration and schema generation. |
 
 ---
 

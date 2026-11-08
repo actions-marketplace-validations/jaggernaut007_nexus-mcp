@@ -181,7 +181,7 @@ All settings via environment variables with `NEXUS_` prefix:
 | `NEXUS_AUTO_RESTORE` | `true` | Reattach to the stored index when a new process starts |
 | `NEXUS_WARM_START` | `true` | Load the index and the embedding model in the background at server start |
 
-The [README](../README.md#configuration) lists every variable.
+[CONFIGURATION.md](CONFIGURATION.md) lists every variable.
 
 ---
 

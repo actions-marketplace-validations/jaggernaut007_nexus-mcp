@@ -3,27 +3,26 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Nexus-MCP: MCP Server for AI Coding Agent Memory &amp; Code Search</title>
-  <meta name="description" content="Local MCP server that gives Claude Code, Cursor and other AI coding agents persistent project memory, a live codebase map and code search that cuts agent turns. No API keys.">
-  <meta name="keywords" content="MCP server, Model Context Protocol, Claude Code memory, AI coding agent context, code search MCP, codebase documentation, semantic code search">
+  <title>Nexus-MCP: code search that cuts coding-agent tokens</title>
+  <meta name="description" content="Local MCP server for Claude Code, Cursor, Codex and any MCP client. Hybrid code search and a code graph: the agent reaches the right file with far fewer tokens. Measured on 12 open-source repos in 10 languages. No API keys, MIT.">
   <meta name="author" content="Shreyas Jagannath">
   <meta name="robots" content="index, follow, max-snippet:-1, max-image-preview:large, max-video-preview:-1">
   <link rel="canonical" href="https://jaggernaut007.github.io/nexus-mcp/">
   <meta property="og:site_name" content="Nexus-MCP">
   <meta property="og:type" content="website">
   <meta property="og:url" content="https://jaggernaut007.github.io/nexus-mcp/">
-  <meta property="og:title" content="Nexus-MCP: MCP Server for AI Coding Agent Memory &amp; Code Search">
-  <meta property="og:description" content="Persistent project memory, a live codebase map and code lookup in fewer turns for any MCP agent. Local, private, no API keys.">
+  <meta property="og:title" content="Nexus-MCP: code search that cuts coding-agent tokens">
+  <meta property="og:description" content="Your coding agent reads less code to find the right file. Measured on 12 open-source repos in 10 languages. Local, no API keys, MIT.">
   <meta property="og:image" content="https://jaggernaut007.github.io/nexus-mcp/og.png">
   <meta property="og:image:width" content="1200">
   <meta property="og:image:height" content="630">
-  <meta property="og:image:alt" content="Nexus-MCP. Your agent forgets. Your codebase shouldn't.">
+  <meta property="og:image:alt" content="Nexus-MCP logo and tagline">
   <meta name="twitter:card" content="summary_large_image">
-  <meta name="twitter:title" content="Nexus-MCP: MCP Server for AI Coding Agent Memory &amp; Code Search">
-  <meta name="twitter:description" content="Persistent project memory, a live codebase map and code lookup in fewer turns for any MCP agent. Local and private.">
+  <meta name="twitter:title" content="Nexus-MCP: code search that cuts coding-agent tokens">
+  <meta name="twitter:description" content="Your coding agent reads less code to find the right file. Local, no API keys, MIT.">
   <meta name="twitter:image" content="https://jaggernaut007.github.io/nexus-mcp/og.png">
-  <meta name="theme-color" content="#f5f1ea" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#111317" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#f6f7f9" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0f1218" media="(prefers-color-scheme: dark)">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="alternate" type="text/plain" href="llms.txt" title="llms.txt">
   <script type="application/ld+json">
@@ -36,43 +35,34 @@
       "url": "https://jaggernaut007.github.io/nexus-mcp/",
       "name": "Nexus-MCP",
       "inLanguage": "en",
-      "publisher": {
-        "@id": "https://jaggernaut007.github.io/nexus-mcp/#author"
-      }
+      "publisher": { "@id": "https://jaggernaut007.github.io/nexus-mcp/#author" }
     },
     {
       "@type": "Person",
       "@id": "https://jaggernaut007.github.io/nexus-mcp/#author",
       "name": "Shreyas Jagannath",
       "url": "https://github.com/jaggernaut007",
-      "sameAs": [
-        "https://github.com/jaggernaut007"
-      ]
+      "sameAs": ["https://github.com/jaggernaut007"]
     },
     {
       "@type": "SoftwareApplication",
       "@id": "https://jaggernaut007.github.io/nexus-mcp/#software",
       "name": "Nexus-MCP",
-      "alternateName": [
-        "nexus-mcp-ci",
-        "Nexus MCP"
-      ],
+      "alternateName": ["nexus-mcp-ci", "Nexus MCP"],
       "applicationCategory": "DeveloperApplication",
       "applicationSubCategory": "Model Context Protocol server",
       "operatingSystem": "macOS, Linux, Windows",
       "programmingLanguage": "Python",
-      "description": "A local MCP server that gives AI coding agents persistent project memory, a live codebase map, hybrid code search and symbol lookup with code. No API keys.",
+      "description": "A local MCP server that gives AI coding agents hybrid code search, symbol lookup with code and a static call graph, so the agent reaches the right file with fewer tokens. No API keys.",
       "url": "https://jaggernaut007.github.io/nexus-mcp/",
       "downloadUrl": "https://pypi.org/project/nexus-mcp-ci/",
       "installUrl": "https://pypi.org/project/nexus-mcp-ci/",
       "codeRepository": "https://github.com/jaggernaut007/Nexus-MCP",
       "license": "https://opensource.org/licenses/MIT",
       "isAccessibleForFree": true,
-      "author": {
-        "@id": "https://jaggernaut007.github.io/nexus-mcp/#author"
-      },
+      "author": { "@id": "https://jaggernaut007.github.io/nexus-mcp/#author" },
       "softwareVersion": "2.4.5",
-      "keywords": "MCP server, Model Context Protocol, AI coding agent, Claude Code, code search, semantic memory, code intelligence, local-first",
+      "keywords": "MCP server, Model Context Protocol, AI coding agent, Claude Code, code search, token efficiency, code graph, local-first",
       "sameAs": [
         "https://github.com/jaggernaut007/Nexus-MCP",
         "https://pypi.org/project/nexus-mcp-ci/",
@@ -86,90 +76,32 @@
         {
           "@type": "Question",
           "name": "What is Nexus-MCP?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Nexus-MCP is a local Model Context Protocol (MCP) server for AI coding agents. It gives an agent persistent project memory, a live map of the codebase, hybrid semantic and keyword code search, and the code of any symbol in one call. It runs on your machine and needs no API keys."
-          }
+          "acceptedAnswer": { "@type": "Answer", "text": "Nexus-MCP is a local Model Context Protocol (MCP) server for AI coding agents. It indexes your code and answers questions about it with hybrid search, symbol lookup and a static call graph. The agent gets the code it needs in one call instead of a series of grep and file reads, so it uses fewer tokens. It runs on your machine and needs no API keys." }
         },
         {
           "@type": "Question",
           "name": "How do I test Nexus-MCP on my own code before I install it?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Run uvx --python 3.12 nexus-mcp-ci eval in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 950 against 17,998 on Chromium base/ (3,638 files), 1,301 against 24,774 on pallets/click (91 files) and 1,234 against 5,385 on the Nexus-MCP source. For real agent cost, nexus-mcp-ci eval --agent claude runs a paid A/B with your own Claude Code login after it shows the cost."
-          }
+          "acceptedAnswer": { "@type": "Answer", "text": "Run uvx --python 3.12 nexus-mcp-ci eval in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. For the real agent cost, nexus-mcp-ci eval --agent claude runs a paid A/B with your own Claude Code login after it shows the cost." }
         },
         {
           "@type": "Question",
-          "name": "How does Nexus-MCP compare with Serena and claude-context?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Serena finds code through language servers and can edit code. claude-context runs hybrid search over a vector database such as Milvus or Zilliz Cloud with an embedding provider. Nexus-MCP is read only and fully local: hybrid vector and BM25 search in a local LanceDB index with a local embedding model, a static call graph for six languages, and project memory. Measure it on your own repository with nexus-mcp-ci eval instead of relying on any comparison."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "How do I give Claude Code persistent memory across sessions?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Install Nexus-MCP with pip install nexus-mcp-ci, then register it with claude mcp add nexus-mcp -- nexus-mcp-ci. The agent can then store decisions, notes and preferences with the memory tool and recall them by meaning in later sessions. The memory store is local and any MCP client can read it."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Does Nexus-MCP lower token use?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "On the projects we measured, yes, through fewer turns. In 12 live questions per project with Claude Sonnet, Nexus-MCP cut turns from 55 to 35 on a private 460-file project and from 93 to 71 on django. Cost fell by 22% and 3%. Cost varies by about 20% over 3 runs, so the django result is about equal."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Is Nexus-MCP free?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Yes. Nexus-MCP is open source under the MIT license, for any use, including at work."
-          }
+          "name": "Does Nexus-MCP lower token use for every project?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Not for every project. The saving is large on code the model does not know and small on code it knows from training, and on a tiny project Grep and Read win. The results table on this page shows every repo we measured, including the ones where Nexus-MCP used more tokens." }
         },
         {
           "@type": "Question",
           "name": "Does my code leave my machine?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "No. Parsing, embeddings, the vector store and the memory store all run locally. Nexus-MCP sends no code to any service, has no telemetry and needs no API keys. The embedding model downloads once, at first use; set NEXUS_OFFLINE=1 after that. The index lives in .nexus/ in your project: nexus-mcp-ci data where lists every stored file and nexus-mcp-ci data clear removes them. Only the opt-in eval --agent (through your own Claude or Codex CLI) and eval share (numbers only) send anything, and both ask first."
-          }
+          "acceptedAnswer": { "@type": "Answer", "text": "No. Parsing, embeddings and the index all run locally. Nexus-MCP sends no code to any service, has no telemetry and needs no API keys. The embedding model downloads once; set NEXUS_OFFLINE=1 after that. Only the opt-in eval --agent and eval share commands send anything, and both ask first." }
         },
         {
           "@type": "Question",
-          "name": "Which AI coding agents and MCP clients does it work with?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Any MCP client that supports the stdio transport. That includes Claude Code, Claude Desktop, Cursor, Windsurf, Cline, Continue and Goose."
-          }
+          "name": "Which agents and languages does it work with?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Any MCP client that supports the stdio transport, including Claude Code, Claude Desktop, Codex, Cursor, VS Code, Cline, Windsurf and Gemini CLI. Search, symbols and the call graph cover Python, TypeScript, JavaScript, Go, Java, Rust, C, C++, C# and PHP. Search covers more than 25 languages." }
         },
         {
           "@type": "Question",
-          "name": "Which programming languages does Nexus-MCP support?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "Search covers more than 25 languages through tree-sitter. The benchmarks page gives measured token savings and accuracy for TypeScript, JavaScript, Java and C++, each on a pinned public project."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "Will the code index go stale?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "A debounced file watcher re-indexes changed files a few seconds after you save. The status and search tools also run a throttled staleness check and flag old results. Branch switches are detected by file modification time."
-          }
-        },
-        {
-          "@type": "Question",
-          "name": "What is not finished yet?",
-          "acceptedAnswer": {
-            "@type": "Answer",
-            "text": "The graph tool uses static call edges, so it cannot see dynamic dispatch or callbacks and its results are a lower bound. The README lists all known limits."
-          }
+          "name": "How does Nexus-MCP compare with Serena and claude-context?",
+          "acceptedAnswer": { "@type": "Answer", "text": "Serena finds code through language servers and can edit code. claude-context runs hybrid search over a vector database with an embedding provider. Nexus-MCP is read only and fully local: hybrid search in a local index with a local embedding model, and a static call graph for ten languages. Measure it on your own repository with nexus-mcp-ci eval instead of relying on any comparison." }
         }
       ]
     }
@@ -178,7 +110,7 @@
   </script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=IBM+Plex+Sans:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
@@ -187,318 +119,199 @@
   <header class="nav">
     <div class="wrap nav-inner">
       <a class="brand" href="#top" aria-label="Nexus-MCP home">
-        <svg width="26" height="26" viewBox="0 0 32 32" aria-hidden="true"><use href="#mark"/></svg>
+        <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true"><use href="#mark"/></svg>
         <span>Nexus-MCP</span>
       </a>
       <nav class="nav-links" aria-label="Primary">
-        <a href="#try">Try it</a>
-        <a href="#problem">Why</a>
-        <a href="#features">Features</a>
         <a href="#results">Results</a>
-        <a href="#tools">Tools</a>
+        <a href="#how">How it works</a>
         <a href="#install">Install</a>
         <a href="#faq">FAQ</a>
       </nav>
-      <a class="btn btn-ghost gh" href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">
+      <a class="btn btn-quiet gh" href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">
         <svg width="16" height="16" viewBox="0 0 16 16" aria-hidden="true"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
-        <span>Star</span>
+        <span>Star on GitHub</span>
         <span class="stars" data-stars hidden></span>
       </a>
     </div>
   </header>
 
   <main id="main">
-    <!-- HERO -->
     <section class="hero" id="top">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="dot"></span> Local MCP server · <a href="https://github.com/jaggernaut007/Nexus-MCP/releases/tag/v2.4.5" rel="noopener">v2.4.5</a> · Python 3.10–3.12</p>
-          <h1>Your agent forgets.<br><em>Your codebase shouldn't.</em></h1>
-          <p class="lede">
-            Nexus-MCP gives AI coding agents the context they lose between sessions.
-            It keeps project decisions in a searchable memory, draws a live map of your
-            architecture, and returns the code your agent asks for in fewer calls. It runs on your machine.
-            It needs no API keys.
-          </p>
-          <div class="cta-row">
-            <div class="cmd" role="group" aria-label="Evaluate command">
-              <span class="prompt" aria-hidden="true">$</span>
-              <code>uvx --python 3.12 nexus-mcp-ci eval</code>
-              <button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci eval" aria-label="Copy evaluate command">Copy</button>
-            </div>
-            <a class="btn btn-primary" href="#try">Test it on your repo →</a>
+          <h1>Your coding agent reads less code to find the right file.</h1>
+          <p class="lede">Nexus-MCP is a local MCP server for Claude Code, Codex, Cursor and any MCP client. The agent asks one question in plain words and gets the code back, instead of a tour of grep and file reads. Same answers, fewer tokens.</p>
+          <div class="cmd" role="group" aria-label="Install command">
+            <span class="prompt" aria-hidden="true">$</span>
+            <code>uvx --python 3.12 nexus-mcp-ci setup</code>
+            <button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci setup" aria-label="Copy the install command">Copy</button>
           </div>
-          <p class="lede small">Free, offline, no LLM calls: it measures Nexus-MCP against Grep and Read on your own code. Already convinced? <a href="#install">Set it up in 60 seconds</a>. Like it? <a href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">Star it on GitHub</a> so other developers find it.</p>
-          <ul class="proof">
-            <li><strong>0</strong> API keys</li>
-            <li><strong>~90 MB</strong> RAM idle</li>
-            <li><strong>25+</strong> languages</li>
-            <li><strong>8</strong> focused tools</li>
+          <p class="hero-sub">Finds your MCP clients and asks before it writes. Not sure yet? <a href="#try">Measure it on your own code first</a>, free and offline.</p>
+          <ul class="hero-facts">
+            <li>Runs on your machine</li>
+            <li>No API keys</li>
+            <li>MIT licence</li>
+            <li data-downloads hidden><a href="https://pepy.tech/projects/nexus-mcp-ci" rel="noopener"><span data-downloads-count></span> downloads</a></li>
           </ul>
         </div>
 
-        <figure class="term" aria-label="Example agent session with Nexus-MCP">
-          <div class="term-bar">
-            <span></span><span></span><span></span>
-            <p>agent session · day 14</p>
-          </div>
-          <pre class="term-body"><code><span class="c"># New session. The agent recalls last week's decision.</span>
-<span class="k">memory</span>(action=<span class="s">"search"</span>, query=<span class="s">"retry policy for payments"</span>)
-<span class="o">→ decision · 9 days ago · tags: file:billing/retry.py</span>
-<span class="o">  "Use exponential backoff, max 5 tries. Never retry</span>
-<span class="o">   card_declined. Agreed with @ops after the March outage."</span>
+        <figure class="trace" aria-labelledby="trace-title">
+          <figcaption id="trace-title">
+            <span class="trace-title">Tokens an agent reads to reach the right file</span>
+            <span class="trace-key"><span class="key key-grep"></span>Grep and Read <span class="key key-nexus"></span>Nexus-MCP</span>
+          </figcaption>
+          <!-- Generated from benchmarks/published/results.json by scripts/publish_results.py. -->
+          <!-- hero:start -->
+<p class="trace-claim"><strong>95% fewer tokens</strong> and <strong>9× faster search</strong>, median of 10 repos in 10 languages. Pick a language:</p><div class="trace-tabs" role="tablist" aria-label="Language"><button role="tab" id="trace-tab-python" aria-controls="trace-python" aria-selected="true">Python</button><button role="tab" id="trace-tab-typescript" aria-controls="trace-typescript" aria-selected="false" tabindex="-1">TypeScript</button><button role="tab" id="trace-tab-javascript" aria-controls="trace-javascript" aria-selected="false" tabindex="-1">JavaScript</button><button role="tab" id="trace-tab-java" aria-controls="trace-java" aria-selected="false" tabindex="-1">Java</button><button role="tab" id="trace-tab-c" aria-controls="trace-c" aria-selected="false" tabindex="-1">C#</button><button role="tab" id="trace-tab-php" aria-controls="trace-php" aria-selected="false" tabindex="-1">PHP</button><button role="tab" id="trace-tab-c" aria-controls="trace-c" aria-selected="false" tabindex="-1">C++</button><button role="tab" id="trace-tab-go" aria-controls="trace-go" aria-selected="false" tabindex="-1">Go</button><button role="tab" id="trace-tab-c" aria-controls="trace-c" aria-selected="false" tabindex="-1">C</button><button role="tab" id="trace-tab-rust" aria-controls="trace-rust" aria-selected="false" tabindex="-1">Rust</button></div><div class="trace-panel" role="tabpanel" id="trace-python" aria-labelledby="trace-tab-python"><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>26,720</strong> tokens</span><span>108 ms</span><span>right file first 20%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:5.2%"></div><p class="lane-stats"><span><strong>1,388</strong> tokens</span><span>23 ms</span><span>right file first 93%</span></p></div><p class="trace-source">pallets/flask, 83 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-typescript" aria-labelledby="trace-tab-typescript" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>16,520</strong> tokens</span><span>159 ms</span><span>right file first 43%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:7.8%"></div><p class="lane-stats"><span><strong>1,286</strong> tokens</span><span>25 ms</span><span>right file first 83%</span></p></div><p class="trace-source">vitejs/vite, 429 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-javascript" aria-labelledby="trace-tab-javascript" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>25,634</strong> tokens</span><span>564 ms</span><span>right file first 37%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:4.9%"></div><p class="lane-stats"><span><strong>1,251</strong> tokens</span><span>34 ms</span><span>right file first 67%</span></p></div><p class="trace-source">webpack/webpack, 822 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-java" aria-labelledby="trace-tab-java" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>48,176</strong> tokens</span><span>201 ms</span><span>right file first 23%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:2.6%"></div><p class="lane-stats"><span><strong>1,241</strong> tokens</span><span>31 ms</span><span>right file first 87%</span></p></div><p class="trace-source">apache/commons-lang, 264 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-c" aria-labelledby="trace-tab-c" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>14,004</strong> tokens</span><span>154 ms</span><span>right file first 23%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:11.0%"></div><p class="lane-stats"><span><strong>1,547</strong> tokens</span><span>25 ms</span><span>right file first 73%</span></p></div><p class="trace-source">JamesNK/Newtonsoft.Json, 242 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-php" aria-labelledby="trace-tab-php" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>13,479</strong> tokens</span><span>712 ms</span><span>right file first 50%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:8.1%"></div><p class="lane-stats"><span><strong>1,086</strong> tokens</span><span>39 ms</span><span>right file first 83%</span></p></div><p class="trace-source">laravel/framework, 1,751 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-c" aria-labelledby="trace-tab-c" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>19,768</strong> tokens</span><span>1,851 ms</span><span>right file first 43%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:6.3%"></div><p class="lane-stats"><span><strong>1,243</strong> tokens</span><span>88 ms</span><span>right file first 80%</span></p></div><p class="trace-source">chromium/chromium, 3,641 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-go" aria-labelledby="trace-tab-go" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>41,034</strong> tokens</span><span>600 ms</span><span>right file first 40%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:2.9%"></div><p class="lane-stats"><span><strong>1,195</strong> tokens</span><span>24 ms</span><span>right file first 83%</span></p></div><p class="trace-source">prometheus/prometheus, 201 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-c" aria-labelledby="trace-tab-c" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>37,139</strong> tokens</span><span>331 ms</span><span>right file first 40%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:2.7%"></div><p class="lane-stats"><span><strong>988</strong> tokens</span><span>34 ms</span><span>right file first 87%</span></p></div><p class="trace-source">redis/redis, 229 files, 30 questions, median per question.</p></div><div class="trace-panel" role="tabpanel" id="trace-rust" aria-labelledby="trace-tab-rust" hidden><div class="lane lane-grep"><p class="lane-name">Grep and Read</p><div class="bar" style="--w:100%"></div><p class="lane-stats"><span><strong>21,138</strong> tokens</span><span>215 ms</span><span>right file first 33%</span></p></div><div class="lane lane-nexus"><p class="lane-name">Nexus-MCP</p><div class="bar" style="--w:3.9%"></div><p class="lane-stats"><span><strong>830</strong> tokens</span><span>27 ms</span><span>right file first 93%</span></p></div><p class="trace-source">tokio-rs/tokio, 381 files, 30 questions, median per question.</p></div>
+          <!-- hero:end -->
+        </figure>
+      </div>
+    </section>
 
-<span class="c"># Where does that live? Ask by concept, not by name.</span>
+    <section class="section" id="results">
+      <div class="wrap">
+        <div class="section-head">
+          <h2>Measured on 12 open-source repos</h2>
+          <p>Each repo is pinned to one commit. The baseline is the agent's own Grep and Read, with the same model, prompt and tools. Losses are shown, not hidden.</p>
+        </div>
+        <div class="results-body">
+          <!-- Generated from benchmarks/published/results.json by scripts/publish_results.py. -->
+          <!-- results:start -->
+<div class="results-summary">
+  <p><strong>95%</strong> fewer tokens to reach the right file, median of 10 repos (89% to 97%).</p>
+  <p><strong>9×</strong> faster search than Grep and Read, median (5× to 25×).</p>
+  <p><strong>8 of 11</strong> repos cost less per task in live Claude Code runs, with 64 of 66 tasks correct against 61.</p>
+</div>
+<h3 id="offline-title">Find the right file <span>offline check, no LLM</span></h3>
+<div class="table-scroll" tabindex="0" role="region" aria-labelledby="offline-title"><table class="bench"><thead><tr><th rowspan="2" scope="col">Language</th><th rowspan="2" scope="col">Repo</th><th colspan="2" scope="colgroup">Right file first</th><th colspan="2" scope="colgroup">Tokens to the right file</th><th colspan="2" scope="colgroup">Search time</th></tr><tr><th scope="col" class="base">Grep</th><th scope="col">Nexus</th><th scope="col" class="base">Grep</th><th scope="col">Nexus</th><th scope="col" class="base">Grep</th><th scope="col">Nexus</th></tr></thead><tbody><tr><th scope="row">Python</th><td class="repo"><a href="https://github.com/pallets/flask" rel="noopener">pallets/<wbr>flask</a><span>83 files</span></td><td class="base">20%</td><td class="win">93%</td><td class="base">26,720</td><td class="win">1,388</td><td class="base">108 ms</td><td class="win">23 ms</td></tr><tr><th scope="row">TypeScript</th><td class="repo"><a href="https://github.com/vitejs/vite" rel="noopener">vitejs/<wbr>vite</a><span>429 files</span></td><td class="base">43%</td><td class="win">83%</td><td class="base">16,520</td><td class="win">1,286</td><td class="base">159 ms</td><td class="win">25 ms</td></tr><tr><th scope="row">JavaScript</th><td class="repo"><a href="https://github.com/webpack/webpack" rel="noopener">webpack/<wbr>webpack</a><span>822 files</span></td><td class="base">37%</td><td class="win">67%</td><td class="base">25,634</td><td class="win">1,251</td><td class="base">564 ms</td><td class="win">34 ms</td></tr><tr><th scope="row">Java</th><td class="repo"><a href="https://github.com/apache/commons-lang" rel="noopener">apache/<wbr>commons-lang</a><span>264 files</span></td><td class="base">23%</td><td class="win">87%</td><td class="base">48,176</td><td class="win">1,241</td><td class="base">201 ms</td><td class="win">31 ms</td></tr><tr><th scope="row">C#</th><td class="repo"><a href="https://github.com/JamesNK/Newtonsoft.Json" rel="noopener">JamesNK/<wbr>Newtonsoft.Json</a><span>242 files</span></td><td class="base">23%</td><td class="win">73%</td><td class="base">14,004</td><td class="win">1,547</td><td class="base">154 ms</td><td class="win">25 ms</td></tr><tr><th scope="row">PHP</th><td class="repo"><a href="https://github.com/laravel/framework" rel="noopener">laravel/<wbr>framework</a><span>1,751 files</span></td><td class="base">50%</td><td class="win">83%</td><td class="base">13,479</td><td class="win">1,086</td><td class="base">712 ms</td><td class="win">39 ms</td></tr><tr><th scope="row">C++</th><td class="repo"><a href="https://chromium.googlesource.com/chromium/src" rel="noopener">chromium/<wbr>chromium</a><span>3,641 files</span></td><td class="base">43%</td><td class="win">80%</td><td class="base">19,768</td><td class="win">1,243</td><td class="base">1,851 ms</td><td class="win">88 ms</td></tr><tr><th scope="row">Go</th><td class="repo"><a href="https://github.com/prometheus/prometheus" rel="noopener">prometheus/<wbr>prometheus</a><span>201 files</span></td><td class="base">40%</td><td class="win">83%</td><td class="base">41,034</td><td class="win">1,195</td><td class="base">600 ms</td><td class="win">24 ms</td></tr><tr><th scope="row">C</th><td class="repo"><a href="https://github.com/redis/redis" rel="noopener">redis/<wbr>redis</a><span>229 files</span></td><td class="base">40%</td><td class="win">87%</td><td class="base">37,139</td><td class="win">988</td><td class="base">331 ms</td><td class="win">34 ms</td></tr><tr><th scope="row">Rust</th><td class="repo"><a href="https://github.com/tokio-rs/tokio" rel="noopener">tokio-rs/<wbr>tokio</a><span>381 files</span></td><td class="base">33%</td><td class="win">93%</td><td class="base">21,138</td><td class="win">830</td><td class="base">215 ms</td><td class="win">27 ms</td></tr></tbody></table></div>
+<h3 id="live-title">Answer the question <span>live Claude Code runs, 6 tasks × 3 runs, median per task</span></h3>
+<div class="table-scroll" tabindex="0" role="region" aria-labelledby="live-title"><table class="bench"><thead><tr><th rowspan="2" scope="col">Language</th><th rowspan="2" scope="col">Repo</th><th colspan="2" scope="colgroup">Tokens per task</th><th colspan="2" scope="colgroup">Cost per task</th><th colspan="2" scope="colgroup">Turns</th><th colspan="2" scope="colgroup">Correct</th></tr><tr><th scope="col" class="base">Grep</th><th scope="col">Nexus</th><th scope="col" class="base">Grep</th><th scope="col">Nexus</th><th scope="col" class="base">Grep</th><th scope="col">Nexus</th><th scope="col" class="base">Grep</th><th scope="col">Nexus</th></tr></thead><tbody><tr><th scope="row">Python</th><td class="repo"><a href="https://github.com/home-assistant/core" rel="noopener">home-assistant/<wbr>core</a><span>build 2.4.1</span></td><td class="base">65,990</td><td class="win">42,458<small>−36%</small></td><td class="base">$0.050</td><td class="win">$0.037<small>−27%</small></td><td class="base">7</td><td>3</td><td class="base">6/6</td><td>6/6</td></tr><tr><th scope="row">Python</th><td class="repo"><a href="https://github.com/django/django" rel="noopener">django/<wbr>django</a><span>build 2.4.1</span></td><td class="base">45,102</td><td class="win">41,916<small>−7%</small></td><td class="base">$0.048</td><td class="win">$0.035<small>−26%</small></td><td class="base">5.5</td><td>2.5</td><td class="base">5/6</td><td>6/6</td></tr><tr><th scope="row">TypeScript</th><td class="repo"><a href="https://github.com/vitejs/vite" rel="noopener">vitejs/<wbr>vite</a><span>build 2.4.0</span></td><td class="base">69,790</td><td class="win">52,411<small>−25%</small></td><td class="base">$0.059</td><td class="win">$0.046<small>−22%</small></td><td class="base">5.5</td><td>4</td><td class="base">6/6</td><td>6/6</td></tr><tr><th scope="row">JavaScript</th><td class="repo"><a href="https://github.com/webpack/webpack" rel="noopener">webpack/<wbr>webpack</a><span>build 2.4.0</span></td><td class="base">100,320</td><td class="win">74,638<small>−26%</small></td><td class="base">$0.077</td><td class="win">$0.068<small>−11%</small></td><td class="base">6</td><td>4.5</td><td class="base">6/6</td><td>6/6</td></tr><tr><th scope="row">Java</th><td class="repo"><a href="https://github.com/apache/commons-lang" rel="noopener">apache/<wbr>commons-lang</a><span>build 2.2.2+11cfccc</span></td><td class="base">50,448</td><td class="win">32,862<small>−35%</small></td><td class="base">$0.044</td><td class="win">$0.022<small>−49%</small></td><td class="base">4.5</td><td>2</td><td class="base">6/6</td><td>6/6</td></tr><tr><th scope="row">C#</th><td class="repo"><a href="https://github.com/JamesNK/Newtonsoft.Json" rel="noopener">JamesNK/<wbr>Newtonsoft.Json</a><span>build 2.2.2+11cfccc</span></td><td class="base">41,929</td><td class="even">42,139<small>+1%</small></td><td class="base">$0.030</td><td class="even">$0.030<small>+1%</small></td><td class="base">3</td><td>2.5</td><td class="base">6/6</td><td>6/6</td></tr><tr><th scope="row">PHP</th><td class="repo"><a href="https://github.com/laravel/framework" rel="noopener">laravel/<wbr>framework</a><span>build 2.2.2+11cfccc</span></td><td class="base">52,919</td><td class="even">51,994<small>−2%</small></td><td class="base">$0.051</td><td class="win">$0.039<small>−24%</small></td><td class="base">5</td><td>3</td><td class="base">5/6</td><td>5/6</td></tr><tr><th scope="row">C++</th><td class="repo"><a href="https://chromium.googlesource.com/chromium/src" rel="noopener">chromium/<wbr>chromium</a><span>build 2.2.2+0430f01</span></td><td class="base">70,495</td><td class="win">60,622<small>−14%</small></td><td class="base">$0.065</td><td class="win">$0.055<small>−16%</small></td><td class="base">6.5</td><td>4.5</td><td class="base">6/6</td><td>6/6</td></tr><tr><th scope="row">Go</th><td class="repo"><a href="https://github.com/prometheus/prometheus" rel="noopener">prometheus/<wbr>prometheus</a><span>build 2.2.2+e5a9d9a</span></td><td class="base">52,014</td><td class="win">45,214<small>−13%</small></td><td class="base">$0.047</td><td class="win">$0.037<small>−22%</small></td><td class="base">4.5</td><td>2.5</td><td class="base">5/6</td><td>6/6</td></tr><tr><th scope="row">C</th><td class="repo"><a href="https://github.com/redis/redis" rel="noopener">redis/<wbr>redis</a><span>build 2.2.2+e5a9d9a</span></td><td class="base">41,752</td><td class="loss">50,578<small>+21%</small></td><td class="base">$0.031</td><td class="even">$0.030<small>−3%</small></td><td class="base">3.5</td><td>3</td><td class="base">6/6</td><td>6/6</td></tr><tr><th scope="row">Rust</th><td class="repo"><a href="https://github.com/tokio-rs/tokio" rel="noopener">tokio-rs/<wbr>tokio</a><span>build 2.2.2+0430f01</span></td><td class="base">41,188</td><td class="loss">61,816<small>+50%</small></td><td class="base">$0.029</td><td class="loss">$0.041<small>+42%</small></td><td class="base">3.5</td><td>4.5</td><td class="base">4/6</td><td>5/6</td></tr></tbody></table></div>
+<p class="results-note">Not there yet: C (redis/redis, +21% tokens, build 2.2.2+e5a9d9a) and Rust (tokio-rs/tokio, +50% tokens, build 2.2.2+0430f01). These runs are older; a rerun on the current build is pending. Each row is the latest run of that repo. The same code can vary by about 20% in cost with 3 runs per task (measured 2026-10-28). <a href="benchmarks.html">Every number, the build of each row and the method</a>.</p>
+          <!-- results:end -->
+        </div>
+      </div>
+    </section>
+
+    <section class="section section-alt" id="how">
+      <div class="wrap how-grid">
+        <div>
+          <h2>How it works</h2>
+          <ol class="steps">
+            <li>
+              <h3>Index once</h3>
+              <p>The first call parses your code with tree-sitter and ast-grep, embeds each function and class with a local model, and stores it in <code>.nexus/</code>. A file watcher keeps the index current after each save.</p>
+            </li>
+            <li>
+              <h3>Ask in plain words</h3>
+              <p><code>search</code> combines meaning and keywords. Its top results carry their whole code, so the agent does not open the file again.</p>
+            </li>
+            <li>
+              <h3>Follow the structure</h3>
+              <p><code>find_symbol</code> returns the code of several names in one call, with callers and callees. <code>graph</code> gives the blast radius before a change.</p>
+            </li>
+          </ol>
+        </div>
+        <figure class="session" aria-label="Example agent session">
+          <pre><code><span class="c"># "Where do we retry failed charges?"</span>
 <span class="k">search</span>(<span class="s">"how failed charges are retried"</span>)
-<span class="o">→ billing/retry.py:42    schedule_retry()      0.94</span>
-<span class="o">→ billing/webhooks.py:18 on_charge_failed()    0.88</span>
+<span class="o">billing/retry.py:42     schedule_retry()   whole code</span>
+<span class="o">billing/webhooks.py:18  on_charge_failed()</span>
 
-<span class="c"># Read it before you touch it. No file tour.</span>
+<span class="c"># Two names, one call</span>
 <span class="k">find_symbol</span>(<span class="s">"schedule_retry, RetryJob"</span>)
-<span class="o">→ billing/retry.py:42-61  def schedule_retry(charge, attempt)</span>
-<span class="o">  code: whole function · callers: on_charge_failed()</span>
-<span class="o">→ billing/jobs.py:8       class RetryJob · outline, 4 methods</span><span class="cursor" aria-hidden="true"></span></code></pre>
+<span class="o">billing/retry.py:42-61  def schedule_retry(charge, attempt)</span>
+<span class="o">  callers: on_charge_failed</span>
+<span class="o">billing/jobs.py:8       class RetryJob, outline of 4 methods</span>
+
+<span class="c"># Before the refactor</span>
+<span class="k">graph</span>(<span class="s">"schedule_retry"</span>, direction=<span class="s">"callers"</span>, transitive=<span class="k">True</span>)
+<span class="o">6 callers in 3 files (static edges: a lower bound)</span></code></pre>
           <figcaption>Illustrative output. Real results depend on your code.</figcaption>
         </figure>
       </div>
     </section>
 
-    <!-- WHAT IS IT (plain definition for search and answer engines) -->
-    <section class="section what" id="what-is-nexus-mcp">
-      <div class="wrap what-grid">
-        <div>
-          <p class="kicker">In one paragraph</p>
-          <h2>What is Nexus-MCP?</h2>
-        </div>
-        <div class="what-copy">
-          <p><strong>Nexus-MCP is a local Model Context Protocol (MCP) server for AI coding agents.</strong> It adds three things an agent lacks by default: persistent project memory across sessions, a live map of your codebase, and the code of any function or class, with its callers, in one call. It works with Claude Code, Claude Desktop, Cursor, Windsurf, Cline, Continue and Goose.</p>
-          <dl class="facts">
-            <div><dt>Install</dt><dd><code>pip install nexus-mcp-ci</code></dd></div>
-            <div><dt>Runs</dt><dd>Locally. No API keys.</dd></div>
-            <div><dt>Transport</dt><dd>MCP over stdio</dd></div>
-            <div><dt>Languages</dt><dd>25+ (tree-sitter)</dd></div>
-            <div><dt>License</dt><dd>MIT. Free for any use, including at work.</dd></div>
-            <div data-downloads hidden><dt>Downloads</dt><dd><a href="https://pepy.tech/projects/nexus-mcp-ci" rel="noopener"><span data-downloads-count></span> total</a> on PyPI (<a href="https://pypistats.org/packages/nexus-mcp-ci" rel="noopener">pypistats</a>)</dd></div>
-            <div><dt>Listed on</dt><dd><a href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">PyPI</a>, <a href="https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP" rel="noopener">Glama</a>, <a href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">GitHub</a></dd></div>
-          </dl>
-        </div>
-      </div>
-    </section>
-
-    <!-- TRY IT (evaluate before you adopt) -->
-    <section class="section install" id="try">
+    <section class="section" id="tools">
       <div class="wrap">
-        <p class="kicker">Not sure yet?</p>
-        <h2>Measure it on your own code first.</h2>
-        <p class="lede small">One command compares Nexus-MCP with Grep and Read on questions made from your project. It is free, runs offline and calls no LLM. Your code does not leave your machine.</p>
-        <ol class="steps">
-          <li>
-            <h3>Run the check in your project folder</h3>
-            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx --python 3.12 nexus-mcp-ci eval</code><button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci eval" aria-label="Copy">Copy</button></div>
-            <p>No project at hand? <code>uvx --python 3.12 nexus-mcp-ci eval --example</code> runs it on the Nexus-MCP source. A public repo URL works too.</p>
-          </li>
-          <li>
-            <h3>Read the verdict</h3>
-            <p>"Strong fit", "Likely fit" or "Weak fit", with the tokens an agent needs to reach the right file. On Chromium's <code>base/</code> (3,638 files): "Strong fit", 950 median tokens against 17,998, and the right file first in 70% of questions against 40%. On <code>pallets/click</code> (91 files): "Strong fit", 1,301 against 24,774, right file first 97% against 27%. On the Nexus-MCP source: 1,234 against 5,385. On a tiny project Grep and Read win, and the report says so. <a href="benchmarks.html">All results</a>.</p>
-          </li>
-          <li>
-            <h3>Adopt, measure the real cost, or share</h3>
-            <p>Install it in 60 seconds. Or run <code>nexus-mcp-ci eval --agent claude</code> for a paid A/B with your own Claude Code login (it shows the cost and asks first). <code>nexus-mcp-ci eval share</code> adds your numbers to the <a href="benchmarks.html">community table</a>, only after you say yes.</p>
-          </li>
-        </ol>
+        <div class="section-head">
+          <h2>What your agent gets</h2>
+          <p>Five tools by default. Each one replaces several grep and read calls. The server tells the agent which tool answers which question when it connects.</p>
+        </div>
+        <dl class="tools">
+          <div><dt><code>search</code></dt><dd>"Where is", "how does". Hybrid search with the whole code of the top results.</dd></div>
+          <div><dt><code>find_symbol</code></dt><dd>Names you know. The code of each, with callers and callees. Long classes come back as an outline.</dd></div>
+          <div><dt><code>graph</code></dt><dd>Who calls this, and what breaks if it changes.</dd></div>
+          <div><dt><code>map</code></dt><dd>Layers, entry points and hub symbols of an unfamiliar repo.</dd></div>
+          <div><dt><code>index</code></dt><dd>The first call in a project. Incremental after that, multi-folder for monorepos.</dd></div>
+        </dl>
+        <p class="tools-more">Set <code>NEXUS_EXTRA_TOOLS=all</code> for <code>memory</code> (decisions that last across sessions), <code>analyze</code> (complexity and code smells) and <code>status</code>. Keep your agent's own grep for exact names you can type.</p>
+        <p class="tools-more">Call graph for Python, TypeScript, JavaScript, Go, Java, Rust, C, C++, C# and PHP. Search for 25+ languages.</p>
       </div>
     </section>
 
-    <!-- PROBLEM -->
-    <section class="section problem" id="problem">
+    <section class="section section-alt" id="install">
       <div class="wrap">
-        <p class="kicker">The problem</p>
-        <h2>Agents write fast. They remember nothing.</h2>
-        <div class="grid3">
-          <article class="pain">
-            <span class="num">01</span>
-            <h3>Every session starts from zero</h3>
-            <p>Why did the team pick this queue? Which test is flaky? The agent does not know. You explain it again, every day.</p>
-          </article>
-          <article class="pain">
-            <span class="num">02</span>
-            <h3>The docs drift from the code</h3>
-            <p>Architecture notes go stale after one refactor. The agent reads the old note and makes a confident, wrong change.</p>
-          </article>
-          <article class="pain">
-            <span class="num">03</span>
-            <h3>Features hide across files</h3>
-            <p>"How does checkout work?" has no single file to open. Grep needs the exact name, and you do not know it yet.</p>
-          </article>
+        <div class="section-head">
+          <h2>Install in a minute</h2>
+          <p>You need <a href="https://docs.astral.sh/uv/getting-started/installation/" rel="noopener">uv</a>. Every route runs the same server.</p>
+        </div>
+        <div class="install">
+          <div class="tabs" role="tablist" aria-label="Install route">
+            <button role="tab" aria-selected="true" aria-controls="tab-setup" id="t-setup">Any client</button>
+            <button role="tab" aria-selected="false" aria-controls="tab-plugin" id="t-plugin" tabindex="-1">Claude Code plugin</button>
+            <button role="tab" aria-selected="false" aria-controls="tab-editor" id="t-editor" tabindex="-1">Cursor and VS Code</button>
+            <button role="tab" aria-selected="false" aria-controls="tab-desktop" id="t-desktop" tabindex="-1">Claude Desktop</button>
+            <button role="tab" aria-selected="false" aria-controls="tab-hand" id="t-hand" tabindex="-1">By hand</button>
+          </div>
+          <div class="panel" role="tabpanel" id="tab-setup" aria-labelledby="t-setup">
+            <div class="cmd"><span class="prompt" aria-hidden="true">$</span><code>uvx --python 3.12 nexus-mcp-ci setup</code><button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci setup" aria-label="Copy">Copy</button></div>
+            <p>Finds Claude Code, Codex, Cursor, VS Code, Cline, Windsurf, Gemini CLI and Claude Desktop, shows each change and asks first. <code>--dry-run</code> shows the changes only; <code>--uninstall</code> removes them. Or tell your agent: "Install Nexus-MCP from github.com/jaggernaut007/Nexus-MCP".</p>
+          </div>
+          <div class="panel" role="tabpanel" id="tab-plugin" aria-labelledby="t-plugin" hidden>
+            <pre class="block"><code>/plugin marketplace add jaggernaut007/Nexus-MCP
+/plugin install nexus-mcp@nexus-mcp</code><button class="copy" data-copy="/plugin marketplace add jaggernaut007/Nexus-MCP&#10;/plugin install nexus-mcp@nexus-mcp" aria-label="Copy">Copy</button></pre>
+            <p>The plugin registers the server and a short skill that tells the agent when to use each tool. Use the plugin or <code>setup</code>, not both.</p>
+          </div>
+          <div class="panel" role="tabpanel" id="tab-editor" aria-labelledby="t-editor" hidden>
+            <p class="links"><a class="btn btn-quiet" href="cursor://anysphere.cursor-deeplink/mcp/install?name=nexus-mcp&amp;config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyItLXB5dGhvbiIsIjMuMTIiLCJuZXh1cy1tY3AtY2kiXX0=">Add to Cursor</a> <a class="btn btn-quiet" href="https://vscode.dev/redirect/mcp/install?name=nexus-mcp&amp;config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--python%22%2C%223.12%22%2C%22nexus-mcp-ci%22%5D%7D" rel="noopener">Add to VS Code</a></p>
+            <p>One click each. Both run <code>uvx --python 3.12 nexus-mcp-ci</code>.</p>
+          </div>
+          <div class="panel" role="tabpanel" id="tab-desktop" aria-labelledby="t-desktop" hidden>
+            <p>Download <code>nexus-mcp.mcpb</code> from the <a href="https://github.com/jaggernaut007/Nexus-MCP/releases/latest" rel="noopener">latest release</a> and open it. Claude Desktop installs the server.</p>
+          </div>
+          <div class="panel" role="tabpanel" id="tab-hand" aria-labelledby="t-hand" hidden>
+            <div class="cmd"><span class="prompt" aria-hidden="true">$</span><code>claude mcp add nexus-mcp -- uvx --python 3.12 nexus-mcp-ci</code><button class="copy" data-copy="claude mcp add nexus-mcp -- uvx --python 3.12 nexus-mcp-ci" aria-label="Copy">Copy</button></div>
+            <pre class="block"><code>{
+  "mcpServers": {
+    "nexus-mcp": { "command": "uvx", "args": ["--python", "3.12", "nexus-mcp-ci"] }
+  }
+}</code><button class="copy" data-copy='{&#10;  "mcpServers": {&#10;    "nexus-mcp": { "command": "uvx", "args": ["--python", "3.12", "nexus-mcp-ci"] }&#10;  }&#10;}' aria-label="Copy">Copy</button></pre>
+            <p>Any client that speaks MCP over stdio takes this config. Docker and GitHub Actions: <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/DISTRIBUTION.md" rel="noopener">every channel</a>.</p>
+          </div>
+        </div>
+
+        <div class="try" id="try">
+          <div>
+            <h3>Measure it on your code first</h3>
+            <p>About 30 questions made from your project, Grep and Read against Nexus-MCP. Free, offline, no LLM. You get a verdict: Strong fit, Likely fit or Weak fit. On a tiny project Grep and Read win, and the report says so.</p>
+          </div>
+          <div class="cmd"><span class="prompt" aria-hidden="true">$</span><code>uvx --python 3.12 nexus-mcp-ci eval</code><button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci eval" aria-label="Copy the evaluate command">Copy</button></div>
         </div>
       </div>
     </section>
 
-    <!-- FEATURES -->
-    <section class="section features" id="features">
-      <div class="wrap">
-        <p class="kicker">What Nexus-MCP adds</p>
-        <h2>Three kinds of context your agent is missing.</h2>
-
-        <div class="feature">
-          <div class="feature-copy">
-            <span class="tag">Context · <code>memory</code></span>
-            <h3>Project memory that outlives the session</h3>
-            <p>The agent stores decisions, preferences, status and notes as it works. The next session recalls them by meaning, not by file name.</p>
-            <ul class="ticks">
-              <li>Store, search and delete with one tool and three actions</li>
-              <li>Tag a memory to a file or a symbol, then filter by tag</li>
-              <li>Kept with the project index, in the <code>.nexus</code> folder</li>
-              <li>One local store. Any MCP client can read it, so your context stays when you change agents.</li>
-            </ul>
-          </div>
-          <div class="feature-demo">
-<pre><code><span class="k">memory</span>(
-  action=<span class="s">"store"</span>,
-  content=<span class="s">"Auth tokens live 15 min. Refresh
-           tokens rotate on every use."</span>,
-  tags=<span class="s">"decision,file:auth/tokens.py"</span>,
-)
-<span class="o">→ stored · id m_7f3a</span></code></pre>
-          </div>
-        </div>
-
-        <div class="feature flip">
-          <div class="feature-copy">
-            <span class="tag">Documentation · <code>map</code> · <code>analyze</code></span>
-            <h3>Architecture docs that update themselves</h3>
-            <p>Ask for a map and get the layers, entry points, key classes and hub symbols of the code as it is now. A file watcher re-indexes after each change, so the map does not go stale.</p>
-            <ul class="ticks">
-              <li>Summary, architecture or full detail, in one call</li>
-              <li>Complexity, code smells and dependency metrics per path</li>
-              <li>Incremental re-index on file change. Branch switches too.</li>
-            </ul>
-          </div>
-          <div class="feature-demo">
-<pre><code><span class="k">map</span>(detail=<span class="s">"architecture"</span>)
-<span class="o">→ layers</span>
-<span class="o">    api/        → 14 files · entry: main.py</span>
-<span class="o">    services/   → 22 files · hub: OrderService</span>
-<span class="o">    storage/    →  9 files</span>
-<span class="o">  entry points  main.py, worker.py, cli.py</span>
-<span class="o">  languages     python 81% · typescript 19%</span>
-
-<span class="k">analyze</span>(<span class="s">"services/"</span>)
-<span class="o">→ 2 functions over complexity 15</span>
-<span class="o">  1 long parameter list · OrderService.create</span></code></pre>
-          </div>
-        </div>
-
-        <div class="feature">
-          <div class="feature-copy">
-            <span class="tag">Code · <code>search</code> · <code>find_symbol</code></span>
-            <h3>Understand a feature without a file tour</h3>
-            <p>Describe the behaviour in your own words. Hybrid search combines meaning and keywords to find the right functions, and its top results carry their whole code. Then <code>find_symbol</code> gives the code of several names in one call, with their callers and callees.</p>
-            <ul class="ticks">
-              <li>Vector + BM25 search, merged with Reciprocal Rank Fusion</li>
-              <li>Exact names in a query come first; source files before tests</li>
-              <li>A long class comes back as an outline; ask for <code>Class.method</code></li>
-            </ul>
-          </div>
-          <div class="feature-demo">
-<pre><code><span class="k">search</span>(<span class="s">"where do we stop duplicate orders"</span>)
-<span class="o">→ orders/idempotency.py:12  check_key()   0.93</span>
-<span class="o">→ api/middleware.py:57      dedupe()      0.86</span>
-
-<span class="k">find_symbol</span>(<span class="s">"check_key, dedupe"</span>)
-<span class="o">→ code, file, line range,</span>
-<span class="o">  direct callers and callees of each</span></code></pre>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- COMPLEMENT -->
-    <section class="section complement">
-      <div class="wrap complement-grid">
+    <section class="section" id="privacy">
+      <div class="wrap privacy-grid">
         <div>
-          <p class="kicker">Works with your agent, not against it</p>
-          <h2>Grep for names. Nexus for everything grep cannot see.</h2>
-          <p class="lede small">Your agent already has fast, exact file search. Keep it. Nexus-MCP does not replace it. Use native search for a name you can type. Call Nexus when the answer needs meaning, history or structure.</p>
-        </div>
-        <table class="split">
-          <caption class="sr">When to use native search and when to use Nexus-MCP</caption>
-          <thead><tr><th scope="col">You need…</th><th scope="col">Use</th></tr></thead>
-          <tbody>
-            <tr><td>An exact name or string you can type</td><td><span class="pill muted">native grep</span></td></tr>
-            <tr><td>Code that matches an idea, not a name</td><td><span class="pill">search</span></td></tr>
-            <tr><td>Why a decision was made last month</td><td><span class="pill">memory</span></td></tr>
-            <tr><td>The shape of an unfamiliar repo</td><td><span class="pill">map</span></td></tr>
-            <tr><td>Hotspots before a refactor</td><td><span class="pill">analyze</span></td></tr>
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- RESULTS -->
-    <section class="section results" id="results">
-      <div class="wrap complement-grid">
-        <div>
-          <p class="kicker">Measured, not estimated</p>
-          <h2>Fewer turns for the same answers.</h2>
-          <p class="lede small">Each turn of an agent reads the whole conversation again, so a saved turn is a saved cost. We ran 12 questions per project with Claude Sonnet, 3 runs each, against an agent with only Grep and Read. The saving is large on code the model does not know and small on code it knows. Run the <a href="https://github.com/jaggernaut007/Nexus-MCP/tree/main/benchmarks" rel="noopener">benchmark</a> on your own project before you rely on it.</p>
-        </div>
-        <table class="split">
-          <caption class="sr">Live benchmark of Nexus-MCP against Grep and Read, version 2.1</caption>
-          <thead><tr><th scope="col">Nexus-MCP against Grep and Read</th><th scope="col">Result</th></tr></thead>
-          <tbody>
-            <!-- Generated from benchmarks/published/results.json by scripts/publish_results.py. -->
-            <!-- results:start -->
-            <tr><td>Private Python project, 460 files: turns</td><td><span class="pill">55 → 35</span></td></tr>
-            <tr><td>Private Python project: cost</td><td><span class="pill">−22%</span></td></tr>
-            <tr><td>Django, 3,000 files: turns</td><td><span class="pill">93 → 71</span></td></tr>
-            <tr><td>Django: cost</td><td><span class="pill muted">−3%</span></td></tr>
-            <tr><td>Correct answers: Nexus, then Grep and Read</td><td><span class="pill muted">71 · 70 of 72</span></td></tr>
-            <tr><td>Chromium base/, 3,638 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">17,998 → 950</span></td></tr>
-            <tr><td>pallets/click, 91 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">24,774 → 1,301</span></td></tr>
-            <tr><td>Nexus-MCP source, 59 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">5,385 → 1,234</span></td></tr>
-            <tr><td>TypeScript, vitejs/<wbr>vite: right file first, Nexus-MCP 2.2.2 → 2.4.0 (<code>eval</code>, no LLM)</td><td><span class="pill">83%</span></td></tr>
-            <tr><td>JavaScript, webpack/<wbr>webpack: right file first with Nexus-MCP (<code>eval</code>, no LLM)</td><td><span class="pill">67%</span></td></tr>
-            <tr><td>Java, apache/<wbr>commons-lang: right file first, Nexus-MCP 2.2.2 → 2.4.0 pre-release (11cfccc) (<code>eval</code>, no LLM)</td><td><span class="pill">87%</span></td></tr>
-            <tr><td>C++, chromium/<wbr>chromium: right file first with Nexus-MCP (<code>eval</code>, no LLM)</td><td><span class="pill">83%</span></td></tr>
-            <!-- results:end -->
-          </tbody>
-        </table>
-      </div>
-    </section>
-
-    <!-- TOOLS -->
-    <section class="section tools" id="tools">
-      <div class="wrap">
-        <p class="kicker">The tool surface</p>
-        <h2>Eight tools. Each one earns its call.</h2>
-        <div class="tool-grid">
-          <div class="tool"><code>memory</code><p>Store, search and delete project knowledge across sessions.</p></div>
-          <div class="tool"><code>map</code><p>Project summary and architecture: layers, entry points, hubs.</p></div>
-          <div class="tool"><code>analyze</code><p>Complexity, code smells and dependency metrics for a path.</p></div>
-          <div class="tool"><code>search</code><p>Hybrid semantic + keyword search. Top results carry their code.</p></div>
-          <div class="tool"><code>find_symbol</code><p>The code of one or more names, with callers and callees.</p></div>
-          <div class="tool"><code>graph</code><p>Callers, callees, change impact and text references.</p></div>
-          <div class="tool"><code>index</code><p>Incremental, multi-folder indexing with an auto-watch.</p></div>
-          <div class="tool"><code>status</code><p>Index counts, memory use and a staleness flag.</p></div>
-        </div>
-      </div>
-    </section>
-
-    <!-- PRIVATE -->
-    <section class="section private">
-      <div class="wrap grid4">
-        <div class="fact"><h3>Private by design</h3><p>Embeddings run locally. Your code never leaves the machine. It works offline and in air-gapped setups. <code>nexus-mcp-ci data where</code> lists every file it stores; <code>data clear</code> removes them. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">What goes in and out</a>.</p></div>
-        <div class="fact"><h3>Light on your laptop</h3><p>Disk-backed vectors and a lazy-loaded model keep it near 90 MB idle. With the embedding model loaded it uses about 460 MB.</p></div>
-        <div class="fact"><h3>Any MCP client</h3><p>Standard stdio transport. Config by <code>NEXUS_*</code> environment variables, not vendor files.</p></div>
-        <div class="fact"><h3>Safe defaults</h3><p>Input validation, read-only permission mode, audit logs with redaction, and optional rate limits.</p></div>
-      </div>
-      <div class="wrap complement-grid dataflow" id="privacy">
-        <div>
-          <p class="kicker">What goes in and out</p>
-          <h2>Your code stays on your machine.</h2>
-          <p class="lede small">The server makes no network calls and has no telemetry. Two downloads come in once: the package and the embedding model (set <code>NEXUS_OFFLINE=1</code> after that). Nothing goes out unless you run one of two opt-in commands, and both ask first.</p>
-          <p class="lede small"><code>nexus-mcp-ci data where</code> lists everything stored. <code>nexus-mcp-ci data clear</code> removes it. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">Every flow and location</a>.</p>
+          <h2>Your code stays on your machine</h2>
+          <p>The server makes no network calls and has no telemetry. Two downloads come in once: the package and the embedding model. Nothing goes out unless you run one of two opt-in commands, and both ask first.</p>
+          <ul class="plain-list">
+            <li><code>nexus-mcp-ci data where</code> lists every stored file.</li>
+            <li><code>nexus-mcp-ci data clear</code> removes them.</li>
+            <li>About 90 MB of memory idle, about 460 MB with the model loaded.</li>
+          </ul>
+          <p><a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">Every flow and storage location</a></p>
         </div>
         <figure class="flow">
           <svg viewBox="0 0 400 440" role="img" aria-labelledby="flow-title flow-desc">
@@ -508,36 +321,36 @@
               <marker id="flow-in" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="flow-head"/></marker>
               <marker id="flow-out" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0 0L10 5L0 10z" class="flow-head-out"/></marker>
             </defs>
-            <rect class="flow-ext" x="10" y="10" width="180" height="46" rx="10"/>
+            <rect class="flow-ext" x="10" y="10" width="180" height="46" rx="8"/>
             <text class="flow-name" x="100" y="30" text-anchor="middle">PyPI</text>
             <text class="flow-note" x="100" y="47" text-anchor="middle">the package, once</text>
-            <rect class="flow-ext" x="210" y="10" width="180" height="46" rx="10"/>
+            <rect class="flow-ext" x="210" y="10" width="180" height="46" rx="8"/>
             <text class="flow-name" x="300" y="30" text-anchor="middle">Hugging Face</text>
             <text class="flow-note" x="300" y="47" text-anchor="middle">the model, once</text>
             <line class="flow-line" x1="100" y1="58" x2="100" y2="86" marker-end="url(#flow-in)"/>
             <line class="flow-line" x1="300" y1="58" x2="300" y2="86" marker-end="url(#flow-in)"/>
-            <rect class="flow-machine" x="10" y="88" width="380" height="232" rx="16"/>
-            <text class="flow-label" x="26" y="110">YOUR MACHINE</text>
-            <rect class="flow-box" x="50" y="124" width="300" height="40" rx="10"/>
+            <rect class="flow-machine" x="10" y="88" width="380" height="232" rx="12"/>
+            <text class="flow-label" x="26" y="110">Your machine</text>
+            <rect class="flow-box" x="50" y="124" width="300" height="40" rx="8"/>
             <text class="flow-name" x="200" y="149" text-anchor="middle">Your code</text>
             <line class="flow-line" x1="200" y1="166" x2="200" y2="186" marker-end="url(#flow-in)"/>
             <text class="flow-note" x="212" y="181">read</text>
-            <rect class="flow-box flow-core" x="50" y="188" width="300" height="48" rx="10"/>
+            <rect class="flow-box flow-core" x="50" y="188" width="300" height="48" rx="8"/>
             <text class="flow-name" x="200" y="208" text-anchor="middle">Nexus-MCP server</text>
-            <text class="flow-note flow-mono" x="200" y="226" text-anchor="middle">index, graph, memory in .nexus/</text>
+            <text class="flow-note" x="200" y="226" text-anchor="middle">index and graph in .nexus/</text>
             <line class="flow-line" x1="200" y1="238" x2="200" y2="258" marker-start="url(#flow-in)" marker-end="url(#flow-in)"/>
             <text class="flow-note" x="212" y="253">stdio</text>
-            <rect class="flow-box" x="50" y="260" width="300" height="44" rx="10"/>
+            <rect class="flow-box" x="50" y="260" width="300" height="44" rx="8"/>
             <text class="flow-name" x="200" y="281" text-anchor="middle">Your agent</text>
             <text class="flow-note" x="200" y="297" text-anchor="middle">Claude Code, Codex, Cursor</text>
             <line class="flow-line flow-optin" x1="100" y1="322" x2="100" y2="350" marker-end="url(#flow-out)"/>
             <line class="flow-line flow-optin" x1="300" y1="322" x2="300" y2="350" marker-end="url(#flow-out)"/>
-            <rect class="flow-ext flow-optin" x="10" y="352" width="180" height="46" rx="10"/>
-            <text class="flow-name" x="100" y="372" text-anchor="middle">Anthropic / OpenAI</text>
-            <text class="flow-note flow-mono" x="100" y="389" text-anchor="middle">eval --agent only</text>
-            <rect class="flow-ext flow-optin" x="210" y="352" width="180" height="46" rx="10"/>
+            <rect class="flow-ext flow-optin" x="10" y="352" width="180" height="46" rx="8"/>
+            <text class="flow-name" x="100" y="372" text-anchor="middle">Anthropic or OpenAI</text>
+            <text class="flow-note" x="100" y="389" text-anchor="middle">eval --agent only</text>
+            <rect class="flow-ext flow-optin" x="210" y="352" width="180" height="46" rx="8"/>
             <text class="flow-name" x="300" y="372" text-anchor="middle">GitHub issue</text>
-            <text class="flow-note flow-mono" x="300" y="389" text-anchor="middle">eval share, numbers only</text>
+            <text class="flow-note" x="300" y="389" text-anchor="middle">eval share, numbers only</text>
             <line class="flow-line" x1="20" y1="424" x2="48" y2="424"/>
             <text class="flow-note" x="56" y="428">downloaded once</text>
             <line class="flow-line flow-optin" x1="200" y1="424" x2="228" y2="424"/>
@@ -547,128 +360,46 @@
       </div>
     </section>
 
-    <!-- INSTALL -->
-    <section class="section install" id="install">
-      <div class="wrap">
-        <p class="kicker">Get started</p>
-        <h2>Install once. Every agent gets the context.</h2>
-
-        <ol class="steps">
-          <li>
-            <h3>Install and connect, with one command</h3>
-            <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>uvx --python 3.12 nexus-mcp-ci setup</code><button class="copy" data-copy="uvx --python 3.12 nexus-mcp-ci setup" aria-label="Copy">Copy</button></div>
-            <p class="note">Needs <a href="https://docs.astral.sh/uv/" rel="noopener">uv</a>. It finds your MCP clients, shows each change, and asks before it writes. Or tell your agent: &ldquo;Install Nexus-MCP from github.com/jaggernaut007/Nexus-MCP&rdquo;.</p>
-            <p class="note">One click: <a href="cursor://anysphere.cursor-deeplink/mcp/install?name=nexus-mcp&amp;config=eyJjb21tYW5kIjoidXZ4IiwiYXJncyI6WyItLXB5dGhvbiIsIjMuMTIiLCJuZXh1cy1tY3AtY2kiXX0=">Add to Cursor</a> &middot; <a href="https://vscode.dev/redirect/mcp/install?name=nexus-mcp&amp;config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--python%22%2C%223.12%22%2C%22nexus-mcp-ci%22%5D%7D" rel="noopener">Add to VS Code</a></p>
-          </li>
-          <li>
-            <h3>Or connect by hand</h3>
-            <div class="tabs" role="tablist" aria-label="MCP client">
-              <button role="tab" aria-selected="true" aria-controls="tab-cc" id="t-cc">Claude Code</button>
-              <button role="tab" aria-selected="false" aria-controls="tab-plugin" id="t-plugin" tabindex="-1">Claude Code plugin</button>
-              <button role="tab" aria-selected="false" aria-controls="tab-desktop" id="t-desktop" tabindex="-1">Claude Desktop</button>
-              <button role="tab" aria-selected="false" aria-controls="tab-other" id="t-other" tabindex="-1">Cursor, Cline, Goose…</button>
-            </div>
-            <div class="panel" role="tabpanel" id="tab-cc" aria-labelledby="t-cc">
-              <div class="cmd wide"><span class="prompt" aria-hidden="true">$</span><code>claude mcp add nexus-mcp -- nexus-mcp-ci</code><button class="copy" data-copy="claude mcp add nexus-mcp -- nexus-mcp-ci" aria-label="Copy">Copy</button></div>
-            </div>
-            <div class="panel" role="tabpanel" id="tab-plugin" aria-labelledby="t-plugin" hidden>
-              <pre class="block"><code>/plugin marketplace add jaggernaut007/Nexus-MCP
-/plugin install nexus-mcp@nexus-mcp</code><button class="copy" data-copy="/plugin marketplace add jaggernaut007/Nexus-MCP&#10;/plugin install nexus-mcp@nexus-mcp" aria-label="Copy">Copy</button></pre>
-              <p class="note">The plugin registers the server and adds skills that teach the agent when to use each tool.</p>
-            </div>
-            <div class="panel" role="tabpanel" id="tab-desktop" aria-labelledby="t-desktop" hidden>
-              <pre class="block"><code>{
-  "mcpServers": {
-    "nexus-mcp": { "command": "nexus-mcp-ci", "args": [] }
-  }
-}</code><button class="copy" data-copy='{&#10;  "mcpServers": {&#10;    "nexus-mcp": { "command": "nexus-mcp-ci", "args": [] }&#10;  }&#10;}' aria-label="Copy">Copy</button></pre>
-              <p class="note">Add this to <code>claude_desktop_config.json</code>.</p>
-            </div>
-            <div class="panel" role="tabpanel" id="tab-other" aria-labelledby="t-other" hidden>
-              <pre class="block"><code>{
-  "nexus-mcp": {
-    "command": "nexus-mcp-ci",
-    "transport": "stdio"
-  }
-}</code><button class="copy" data-copy='{&#10;  "nexus-mcp": {&#10;    "command": "nexus-mcp-ci",&#10;    "transport": "stdio"&#10;  }&#10;}' aria-label="Copy">Copy</button></pre>
-              <p class="note">Any client that speaks MCP over stdio works the same way.</p>
-            </div>
-          </li>
-          <li>
-            <h3>Ask your agent a question</h3>
-            <p>The agent calls <code>index</code> on first use. After that, it recalls memory, maps the repo and finds code for you. A file watcher keeps the index current.</p>
-          </li>
-        </ol>
-      </div>
-    </section>
-
-
-    <!-- FAQ -->
-    <section class="section faq" id="faq">
-      <div class="wrap faq-wrap">
-        <div>
-          <p class="kicker">Questions</p>
-          <h2>Before you install.</h2>
-        </div>
+    <section class="section section-alt" id="faq">
+      <div class="wrap faq-grid">
+        <h2>Questions</h2>
         <div class="faq-list">
           <details>
             <summary>What is Nexus-MCP?</summary>
-            <p>Nexus-MCP is a local Model Context Protocol (MCP) server for AI coding agents. It gives an agent persistent project memory, a live map of the codebase, hybrid semantic and keyword code search, and the code of any symbol in one call. It runs on your machine and needs no API keys.</p>
+            <p>A local Model Context Protocol (MCP) server for AI coding agents. It indexes your code and answers questions about it with hybrid search, symbol lookup and a static call graph. The agent gets the code it needs in one call instead of a series of grep and file reads, so it uses fewer tokens. It runs on your machine and needs no API keys.</p>
           </details>
           <details>
             <summary>How do I test Nexus-MCP on my own code before I install it?</summary>
-            <p>Run <code>uvx --python 3.12 nexus-mcp-ci eval</code> in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. Measured median tokens to reach the right file, Nexus-MCP against Grep and Read: 950 against 17,998 on Chromium <code>base/</code> (3,638 files), 1,301 against 24,774 on <code>pallets/click</code> (91 files) and 1,234 against 5,385 on the Nexus-MCP source. For real agent cost, <code>nexus-mcp-ci eval --agent claude</code> runs a paid A/B with your own Claude Code login after it shows the cost. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md" rel="noopener">The full guide</a>.</p>
+            <p>Run <code>uvx --python 3.12 nexus-mcp-ci eval</code> in your project folder. It compares Nexus-MCP with Grep and Read on about 30 questions made from your code, offline and with no LLM calls, and prints a verdict: Strong fit, Likely fit or Weak fit. For the real agent cost, <code>nexus-mcp-ci eval --agent claude</code> runs a paid A/B with your own Claude Code login after it shows the cost. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md" rel="noopener">The full guide</a>.</p>
           </details>
           <details>
-            <summary>How does Nexus-MCP compare with Serena and claude-context?</summary>
-            <p>Serena finds code through language servers and can edit code. claude-context runs hybrid search over a vector database such as Milvus or Zilliz Cloud with an embedding provider. Nexus-MCP is read only and fully local: hybrid vector and BM25 search in a local LanceDB index with a local embedding model, a static call graph for six languages, and project memory. Measure it on your own repository with <code>nexus-mcp-ci eval</code> instead of relying on any comparison.</p>
-          </details>
-          <details>
-            <summary>How do I give Claude Code persistent memory across sessions?</summary>
-            <p>Install Nexus-MCP with <code>pip install nexus-mcp-ci</code>, then register it with <code>claude mcp add nexus-mcp -- nexus-mcp-ci</code>. The agent can then store decisions, notes and preferences with the memory tool and recall them by meaning in later sessions. The memory store is local and any MCP client can read it.</p>
-          </details>
-          <details>
-            <summary>Does Nexus-MCP lower token use?</summary>
-            <p>On the projects we measured, yes, through fewer turns. In 12 live questions per project with Claude Sonnet, Nexus-MCP cut turns from 55 to 35 on a private 460-file project and from 93 to 71 on django. Cost fell by 22% and 3%. Cost varies by about 20% over 3 runs, so the django result is about equal. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALS.md" rel="noopener">docs/EVALS.md</a> has every number.</p>
-          </details>
-          <details>
-            <summary>Is Nexus-MCP free?</summary>
-            <p>Yes. The source is public on GitHub under the <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE" rel="noopener">MIT</a> license. You can use it for any purpose, including at work.</p>
+            <summary>Does Nexus-MCP lower token use for every project?</summary>
+            <p>Not for every project. The saving is large on code the model does not know and small on code it knows from training, and on a tiny project Grep and Read win. The <a href="#results">results table</a> shows every repo we measured, including the ones where Nexus-MCP used more tokens.</p>
           </details>
           <details>
             <summary>Does my code leave my machine?</summary>
-            <p>No. Parsing, embeddings, the vector store and the memory store all run locally. Nexus-MCP sends no code to any service, has no telemetry and needs no API keys. The embedding model downloads once, at first use; set <code>NEXUS_OFFLINE=1</code> after that. The index lives in <code>.nexus/</code> in your project: <code>nexus-mcp-ci data where</code> lists every stored file and <code>nexus-mcp-ci data clear</code> removes them. Only the opt-in <code>eval --agent</code> (through your own Claude or Codex CLI) and <code>eval share</code> (numbers only) send anything, and both ask first. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md" rel="noopener">Every flow and storage location</a>.</p>
+            <p>No. Parsing, embeddings and the index all run locally. Nexus-MCP sends no code to any service, has no telemetry and needs no API keys. The embedding model downloads once; set <code>NEXUS_OFFLINE=1</code> after that. Only the opt-in <code>eval --agent</code> and <code>eval share</code> commands send anything, and both ask first.</p>
           </details>
           <details>
-            <summary>Which AI coding agents and MCP clients does it work with?</summary>
-            <p>Any MCP client that supports the stdio transport. That includes Claude Code, Claude Desktop, Cursor, Windsurf, Cline, Continue and Goose.</p>
+            <summary>Which agents and languages does it work with?</summary>
+            <p>Any MCP client that supports the stdio transport, including Claude Code, Claude Desktop, Codex, Cursor, VS Code, Cline, Windsurf and Gemini CLI. Search, symbols and the call graph cover Python, TypeScript, JavaScript, Go, Java, Rust, C, C++, C# and PHP. Search covers more than 25 languages.</p>
           </details>
           <details>
-            <summary>Which programming languages does Nexus-MCP support?</summary>
-            <p>Search covers more than 25 languages through tree-sitter. The <a href="benchmarks.html">benchmarks page</a> gives measured token savings and accuracy for TypeScript, JavaScript, Java and C++, each on a pinned public project.</p>
-          </details>
-          <details>
-            <summary>Will the code index go stale?</summary>
-            <p>A debounced file watcher re-indexes changed files a few seconds after you save. The status and search tools also run a throttled staleness check and flag old results. Branch switches are detected by file modification time.</p>
-          </details>
-          <details>
-            <summary>What is not finished yet?</summary>
-            <p>The graph tool uses static call edges, so it cannot see dynamic dispatch or callbacks and its results are a lower bound. <a href="https://github.com/jaggernaut007/Nexus-MCP#readme" rel="noopener">The README</a> lists all known limits.</p>
+            <summary>How does Nexus-MCP compare with Serena and claude-context?</summary>
+            <p>Serena finds code through language servers and can edit code. claude-context runs hybrid search over a vector database with an embedding provider. Nexus-MCP is read only and fully local: hybrid search in a local index with a local embedding model, and a static call graph for ten languages. Measure it on your own repository with <code>nexus-mcp-ci eval</code> instead of relying on any comparison. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/COMPARISON.md" rel="noopener">Feature table</a>.</p>
           </details>
         </div>
       </div>
     </section>
 
-    <!-- CTA -->
     <section class="section final">
       <div class="wrap final-inner">
-        <h2>Give your agent a memory.</h2>
-        <p>Start with your own numbers: <code>uvx --python 3.12 nexus-mcp-ci eval</code>. Then star the repo, share your result, or send a pull request. Feedback from real projects shapes what ships next.</p>
-        <div class="cta-row center">
-          <a class="btn btn-primary" href="#try">Evaluate on your repo</a>
-          <a class="btn btn-ghost" href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">Star on GitHub</a>
-          <a class="btn btn-ghost" href="https://github.com/jaggernaut007/Nexus-MCP/issues" rel="noopener">Open an issue</a>
-          <a class="btn btn-ghost" href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">View on PyPI</a>
+        <h2>Try it on the repo you work in today</h2>
+        <p>Install it with one command, or measure it first. If it saves you tokens, a star helps other developers find it.</p>
+        <div class="final-actions">
+          <a class="btn btn-primary" href="#install">Install Nexus-MCP</a>
+          <a class="btn btn-quiet" href="https://github.com/jaggernaut007/Nexus-MCP" rel="noopener">Star on GitHub</a>
+          <a class="btn btn-quiet" href="https://github.com/jaggernaut007/Nexus-MCP/issues" rel="noopener">Report an issue</a>
         </div>
       </div>
     </section>
@@ -676,18 +407,18 @@
 
   <footer class="footer">
     <div class="wrap footer-inner">
-      <p>© <span data-year>2026</span> Shreyas Jagannath · <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE">MIT</a></p>
-      <p><a href="https://github.com/jaggernaut007/Nexus-MCP#readme">Docs</a> · <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md">Changelog</a> · <a href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">PyPI</a> · <a href="https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP" rel="noopener">Glama</a> · <a href="llms.txt">llms.txt</a></p>
+      <p>© <span data-year>2026</span> Shreyas Jagannath. <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE">MIT licence</a>.</p>
+      <p class="footer-links"><a href="benchmarks.html">Benchmarks</a> <a href="https://github.com/jaggernaut007/Nexus-MCP#readme">Docs</a> <a href="https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md">Changelog</a> <a href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">PyPI</a> <a href="https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP" rel="noopener">Glama</a> <a href="llms.txt">llms.txt</a></p>
     </div>
   </footer>
 
   <svg width="0" height="0" style="position:absolute" aria-hidden="true">
     <symbol id="mark" viewBox="0 0 32 32">
       <rect x="1" y="1" width="30" height="30" rx="8" fill="var(--ink)"/>
-      <circle cx="10" cy="10" r="3" fill="var(--accent)"/>
+      <path d="M10 10 L22 16 L10 22" stroke="var(--paper)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
+      <circle cx="10" cy="10" r="3" fill="var(--signal)"/>
       <circle cx="22" cy="16" r="3" fill="var(--paper)"/>
       <circle cx="10" cy="22" r="3" fill="var(--paper)"/>
-      <path d="M10 10 L22 16 L10 22" stroke="var(--paper)" stroke-width="1.6" fill="none" stroke-linecap="round"/>
     </symbol>
   </svg>
 
