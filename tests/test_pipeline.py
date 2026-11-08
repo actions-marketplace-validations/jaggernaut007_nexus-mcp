@@ -143,6 +143,7 @@ class TestIndexResult:
         assert d["total_symbols"] == 10
         assert d["total_chunks"] == 8
         assert "time_seconds" in d
+        assert "unchanged" not in d  # only an unchanged index carries the flag
 
 
 # --- IndexingPipeline tests ---
@@ -223,6 +224,20 @@ class TestIndexingPipeline:
         assert result.files_added == 0
         assert result.files_modified == 0
         assert result.files_deleted == 0
+
+    def test_incremental_no_changes_reports_the_stored_index(self, mini_codebase, settings):
+        # Regression (Cline report, 2.4.3): an unchanged index answered total_files 0 and
+        # total_symbols 0, which reads as an empty index.
+        pipeline = _make_pipeline(settings)
+        first = pipeline.index(mini_codebase)
+
+        result = pipeline.incremental_index(mini_codebase)
+        assert result.unchanged is True
+        assert result.total_files == first.total_files > 0
+        assert result.total_symbols > 0
+        assert result.total_chunks == pipeline.vector_engine.count() > 0
+        assert result.graph_nodes == first.graph_nodes
+        assert result.to_dict()["unchanged"] is True
 
     def test_incremental_falls_back_to_full(self, mini_codebase, settings):
         """If no metadata exists, incremental falls back to full index."""
@@ -310,6 +325,8 @@ class TestMultiIndexIncremental:
         assert second.files_added == 0
         assert second.files_modified == 0
         assert second.files_deleted == 0
+        assert second.unchanged is True
+        assert second.total_files == 2
 
     def test_second_call_detects_new_file(self, tmp_path, settings):
         root_a = tmp_path / "a"

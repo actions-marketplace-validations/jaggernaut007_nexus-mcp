@@ -77,6 +77,16 @@ class TestIndex:
         assert result["total_chunks"] > 0
         assert result["time_seconds"] > 0
 
+    def test_index_returns_the_server_version(self, mini_codebase, tmp_path):
+        # `status` is hidden by default. The install guide checks the version with `index`.
+        from nexus_mcp import __version__
+
+        async def run():
+            _, _, result = await _setup_indexed(mini_codebase, tmp_path / ".nexus")
+            return result
+
+        assert asyncio.run(run())["version"] == __version__
+
     def test_index_invalid_path(self):
         mcp = server_module.create_server()
         result = asyncio.run(_call_tool(mcp, "index", {"path": "/nonexistent/path"}))

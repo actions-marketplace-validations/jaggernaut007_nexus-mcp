@@ -64,9 +64,14 @@ class IndexResult:
     files_added: int = 0
     files_modified: int = 0
     files_deleted: int = 0
+    # True when no file changed since the last index: the stored index was attached as it is.
+    unchanged: bool = False
 
     def to_dict(self) -> Dict[str, Any]:
-        return asdict(self)
+        data = asdict(self)
+        if not self.unchanged:
+            del data["unchanged"]
+        return data
 
 
 def discover_files(root: Path, settings: Settings) -> List[Path]:
@@ -461,7 +466,7 @@ class IndexingPipeline:
         changed_files = new_files | modified_files
 
         if not changed_files and not deleted_files:
-            return IndexResult(time_seconds=time.time() - start)
+            return self._unchanged_result(len(current_mtimes), start)
 
         # Remove deleted/modified from engines
         for fp in deleted_files | modified_files:
@@ -555,6 +560,26 @@ class IndexingPipeline:
             ),
         }
 
+    def _unchanged_result(self, total_files: int, start: float) -> IndexResult:
+        """The result when no file changed: the size of the stored index, not zeros.
+
+        Zeros read as an empty index (an install report took them for a failure).
+        """
+        stats = self._graph_engine.get_statistics()
+        try:
+            chunks = self._vector_engine.count()
+        except Exception:  # an unreadable table: the counts are only for the reader
+            chunks = 0
+        return IndexResult(
+            total_files=total_files,
+            total_symbols=stats["total_nodes"],
+            total_chunks=chunks,
+            graph_nodes=stats["total_nodes"],
+            graph_relationships=stats["total_relationships"],
+            time_seconds=time.time() - start,
+            unchanged=True,
+        )
+
     def _incremental_multi_index(
         self,
         resolved_paths: List[Path],
@@ -570,7 +595,7 @@ class IndexingPipeline:
         changed_files = new_files | modified_files
 
         if not changed_files and not deleted_files:
-            return IndexResult(time_seconds=time.time() - start)
+            return self._unchanged_result(len(current_mtimes), start)
 
         for fp in deleted_files | modified_files:
             self._vector_engine.delete_by_filepath(fp)

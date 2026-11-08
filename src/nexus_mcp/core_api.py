@@ -824,7 +824,9 @@ async def index(
 
     await _ensure_file_watcher(state, settings.auto_watch_enabled)
 
-    return result.to_dict()
+    # The server version: `status` is hidden by default, and an agent must be able to see
+    # which build answers (an old build in another config looks the same from the client).
+    return {**result.to_dict(), "version": __version__}
 
 
 # --- Search -----------------------------------------------------------------
