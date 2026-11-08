@@ -26,8 +26,10 @@ The project aims at lower token use for an agent, with the same accuracy.
 
 ## Published numbers
 
-Do not edit a block between `<!-- results:start -->` and `<!-- results:end -->` by hand. Edit
-`benchmarks/published/results.json`, then run `python scripts/publish_results.py`. CI runs it
+Do not edit a block between `<!-- results:start -->` and `<!-- results:end -->` (or
+`<!-- hero:start -->` in `site/index.html`) by hand. Edit `benchmarks/published/results.json`
+(the `repos` list comes from `python -m benchmarks.latest_published`), then run
+`python scripts/publish_results.py`. CI runs it
 with `--check`. `docs/CLI.md` and `docs/CONFIGURATION.md` are generated too: run
 `python scripts/gen_cli_docs.py` (Python 3.12) and `python scripts/gen_config_docs.py`.
 `python scripts/check_docs.py` checks versions, tool counts, the docs index and the generated

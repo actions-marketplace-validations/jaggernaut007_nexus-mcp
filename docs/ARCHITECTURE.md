@@ -168,4 +168,19 @@ Measured: about 90MB idle and 460MB with the model loaded (docs/MEMORY.md). The 
 
 ## Configuration
 
-All settings are in `config.py` with NEXUS_ env prefix. See README for the full table.
+All settings are in `config.py` with NEXUS_ env prefix. See [CONFIGURATION.md](CONFIGURATION.md) for the full table.
+
+## Technology Choices
+
+This table was in the README before 2026-11-08.
+
+| Layer | Technology | Why |
+|-------|-----------|-----|
+| **Vector store** | LanceDB | mmap, disk-backed: about 20–50 MB overhead against the in-memory model of ChromaDB. Native Tantivy FTS gives one store for vectors and BM25. ([ADR-002](adr/ADR-002-lancedb-over-chromadb.md)) |
+| **Embeddings** | bge-small-en | 384 dimensions, no `trust_remote_code`. Lazy load and unload keep RAM flat after indexing. ([ADR-004](adr/ADR-004-bge-small-default-model.md)) |
+| **Graph engine** | rustworkx PyDiGraph | Rust-backed, O(1) node lookup, PageRank and centrality. Thread-safe with an RLock. ([ADR-006](adr/ADR-006-rustworkx-graph-engine.md)) |
+| **Symbol parser** | tree-sitter | 25+ languages, AST-level symbol extraction, parallel through a thread pool. ([ADR-005](adr/ADR-005-dual-parser-strategy.md)) |
+| **Graph parser** | ast-grep | Containment and import edges; call edges are resolved after the last batch ([ADR-019](adr/ADR-019-call-edge-resolution.md)). Runs in sequence for graph consistency. |
+| **Chunking** | Symbol-based | One chunk per function or class. Deterministic SHA256 IDs prevent duplicate inserts. ([ADR-008](adr/ADR-008-code-chunk-strategy.md)) |
+| **Persistence** | SQLite + LanceDB | Graph in SQLite (warm start), vectors and FTS in LanceDB, mtimes in JSON. |
+| **MCP framework** | FastMCP | stdio transport, tool registration and schema generation. |

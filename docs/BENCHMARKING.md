@@ -4,6 +4,15 @@ This page tells you how to run the per-language benchmark again for a new releas
 One command runs every tier. Published numbers come from
 `benchmarks/published/results.json` (see [ADR-021](adr/ADR-021-results-publishing-and-sharing.md)).
 
+To publish a run:
+
+1. Archive it in `benchmarks/runs/<label>/` with `scripts/archive_runs.py`.
+2. Add the label to `ORDER` in `benchmarks/latest_published.py`, at its place by commit date.
+3. Run `python -m benchmarks.latest_published`. It keeps the latest run of each repo and tier.
+4. Run `python scripts/publish_results.py`. It rewrites the README, the site and `llms.txt`.
+
+Every repo row names the build of its run, so an old run stays visible as old.
+
 ## Languages and corpora
 
 `benchmarks/corpora.yaml` pins one open-source project for each language. Each pin is a

@@ -16,4 +16,5 @@ Research notes for libraries and technologies used in Nexus-MCP. Check here befo
 | watchdog | Ported from code-graph-mcp | Debounced watcher with async support |
 | pathspec | Used in Phase 2 | .gitignore matching; use `"gitignore"` pattern (not deprecated `"gitwildmatch"`) |
 | pyarrow | Used in Phase 2 | LanceDB schema definition; `pa.list_(pa.float32(), dims)` for vector columns |
+| Open-source adoption | [OSS-ADOPTION.md](OSS-ADOPTION.md) | What makes developers adopt a tool (2026-11-08): README and site pattern, credible benchmarks, distribution, and a growth checklist |
 | rich | Optional (self_test) | Console tables, panels, colored output. Graceful fallback to plain print when not installed |

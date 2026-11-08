@@ -1,15 +1,19 @@
 {
-  "schema_version": 2,
-  "updated": "2026-10-28",
-  "version": "2.1.0",
+  "schema_version": 3,
+  "updated": "2026-11-08",
+  "version": "2.4.5",
   "method": {
-    "agent": "Claude Code, Claude Sonnet, headless (claude -p)",
-    "questions_per_project": 12,
-    "runs_per_question": 3,
+    "agent": "Claude Code with Claude Sonnet, medium effort, headless",
+    "tasks_per_repo": 6,
+    "runs_per_task": 3,
+    "aggregate": "the median over tasks of each task's median of 3 runs",
     "baseline": "Grep, Glob and Read only",
-    "nexus": "the Nexus-MCP server plus its routing skill",
-    "noise": "The same code can vary by about 20% in cost with 3 runs per question (measured 2026-10-28).",
-    "source": "https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALS.md"
+    "nexus": "the same built-in tools plus the Nexus-MCP server and its instructions",
+    "offline": "nexus-mcp-ci eval: about 30 questions made from each repo, the right file from the parser, no LLM; tokens are characters divided by 4",
+    "latest_rule": "One row per repo: the latest run of each tier. The Grep and Read side does not depend on the Nexus-MCP build, so it can come from an earlier run.",
+    "noise": "The same code can vary by about 20% in cost with 3 runs per task (measured 2026-10-28).",
+    "source": "https://github.com/jaggernaut007/Nexus-MCP/blob/main/benchmarks/README.md#methodology",
+    "runs": "https://github.com/jaggernaut007/Nexus-MCP/tree/main/benchmarks/runs"
   },
   "runs": [
     {
@@ -31,27 +35,6 @@
         "correct": 35,
         "of": 36
       }
-    },
-    {
-      "id": "django-a67e5b4",
-      "project": "Django",
-      "public": true,
-      "url": "https://github.com/django/django",
-      "files": 3000,
-      "commit": "a67e5b4",
-      "date": "2026-10-28",
-      "baseline": {
-        "cost_usd": 0.894,
-        "turns": 93,
-        "correct": 34,
-        "of": 36
-      },
-      "nexus": {
-        "cost_usd": 0.863,
-        "turns": 71,
-        "correct": 36,
-        "of": 36
-      }
     }
   ],
   "retrieval": {
@@ -66,24 +49,6 @@
     }
   },
   "quick_tier": [
-    {
-      "project": "Chromium base/",
-      "url": "https://github.com/chromium/chromium/tree/599789097af11286fca074380e8a3634cea2fa25/base",
-      "files": 3638,
-      "date": "2026-11-03",
-      "questions": 40,
-      "verdict": "Strong fit",
-      "grep": {
-        "hit_at_1": 0.4,
-        "hit_at_3": 0.58,
-        "median_tokens": 17998
-      },
-      "nexus": {
-        "hit_at_1": 0.7,
-        "hit_at_3": 0.9,
-        "median_tokens": 950
-      }
-    },
     {
       "project": "pallets/click",
       "url": "https://github.com/pallets/click",
@@ -302,254 +267,595 @@
       ]
     }
   ],
-  "languages": [
+  "repos": [
     {
+      "name": "home-assistant",
+      "language": "Python",
+      "project": "home-assistant/core",
+      "url": "https://github.com/home-assistant/core",
+      "pin": "5b0d396bd84113aabf694d23cdbddbdaf574ca78",
+      "files": null,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-v2.4.1",
+          "build": "built-in tools",
+          "median_tokens": 65990,
+          "cost_usd": 0.05,
+          "turns": 7.0,
+          "wall_seconds": 22.7,
+          "correct": 6,
+          "of": 6
+        },
+        "nexus": {
+          "run": "languages-v2.4.1",
+          "build": "2.4.1",
+          "median_tokens": 42458,
+          "cost_usd": 0.0367,
+          "turns": 3.0,
+          "wall_seconds": 29.3,
+          "correct": 6,
+          "of": 6
+        }
+      }
+    },
+    {
+      "name": "django",
+      "language": "Python",
+      "project": "django/django",
+      "url": "https://github.com/django/django",
+      "pin": "318a316a4c86a65bede68144f9546a6056d91379",
+      "files": null,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-v2.4.1",
+          "build": "built-in tools",
+          "median_tokens": 45102,
+          "cost_usd": 0.0477,
+          "turns": 5.5,
+          "wall_seconds": 16.4,
+          "correct": 5,
+          "of": 6
+        },
+        "nexus": {
+          "run": "languages-v2.4.1",
+          "build": "2.4.1",
+          "median_tokens": 41916,
+          "cost_usd": 0.0351,
+          "turns": 2.5,
+          "wall_seconds": 19.6,
+          "correct": 6,
+          "of": 6
+        }
+      }
+    },
+    {
+      "name": "flask",
+      "language": "Python",
+      "project": "pallets/flask",
+      "url": "https://github.com/pallets/flask",
+      "pin": "d73fa1cdcbd8b1465c151db8924ba58b1dd14e35",
+      "files": 83,
+      "quick": {
+        "run": "languages-py-fix",
+        "build": "2.4.0+53594ad",
+        "date": "2026-11-07",
+        "questions": 30,
+        "index_seconds": 107.0,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.2,
+          "hit_at_3": 0.433,
+          "median_tokens": 26720,
+          "median_ms": 107.8
+        },
+        "nexus": {
+          "hit_at_1": 0.933,
+          "hit_at_3": 0.933,
+          "median_tokens": 1388,
+          "median_ms": 23.2
+        }
+      },
+      "retrieval_hit_at_1": 0.59,
+      "calls_per_fn": 0.52
+    },
+    {
+      "name": "vite",
       "language": "TypeScript",
       "project": "vitejs/vite",
       "url": "https://github.com/vitejs/vite",
       "pin": "483512809bbdb399d66be59af0f5aeb01ccb7181",
       "files": 429,
-      "model": "sonnet",
-      "effort": "medium",
-      "isolation": "reduced",
-      "before": {
-        "nexus_version": "2.2.2",
-        "date": "2026-11-05",
-        "index_seconds": 362.6,
-        "quick_tier": {
-          "grep": {
-            "hit_at_1": 0.433,
-            "median_tokens": 16519.5
-          },
-          "nexus": {
-            "hit_at_1": 0.833,
-            "median_tokens": 1321.5
-          },
-          "verdict": "Strong fit"
+      "quick": {
+        "run": "languages-py-fix",
+        "build": "2.4.0+53594ad",
+        "date": "2026-11-07",
+        "questions": 30,
+        "index_seconds": 111.2,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.433,
+          "hit_at_3": 0.633,
+          "median_tokens": 16520,
+          "median_ms": 158.9
         },
-        "retrieval_hit_at_1": 0.47,
-        "graph": {
-          "fn_nodes": 1689,
-          "calls_per_fn": 1.4
-        },
-        "live": {
-          "baseline": {
-            "median_tokens": 71166,
-            "cost_usd": 0.062,
-            "correct": 6,
-            "of": 6
-          },
-          "nexus": {
-            "median_tokens": 57268,
-            "cost_usd": 0.048,
-            "correct": 6,
-            "of": 6
-          }
+        "nexus": {
+          "hit_at_1": 0.833,
+          "hit_at_3": 0.933,
+          "median_tokens": 1286,
+          "median_ms": 25.1
         }
       },
-      "after": {
-        "nexus_version": "2.4.0",
-        "date": "2026-11-06",
-        "index_seconds": 137.2,
-        "quick_tier": {
-          "grep": {
-            "hit_at_1": 0.433,
-            "median_tokens": 16519.5
-          },
-          "nexus": {
-            "hit_at_1": 0.833,
-            "median_tokens": 1285.5
-          },
-          "verdict": "Strong fit"
+      "retrieval_hit_at_1": 0.47,
+      "calls_per_fn": 1.4,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-v2.4.0",
+          "build": "built-in tools",
+          "median_tokens": 69790,
+          "cost_usd": 0.0594,
+          "turns": 5.5,
+          "wall_seconds": 24.6,
+          "correct": 6,
+          "of": 6
         },
-        "retrieval_hit_at_1": 0.47,
-        "graph": {
-          "fn_nodes": 1689,
-          "calls_per_fn": 1.4
-        },
-        "live": {
-          "baseline": {
-            "median_tokens": 69790,
-            "cost_usd": 0.059,
-            "correct": 6,
-            "of": 6
-          },
-          "nexus": {
-            "median_tokens": 52411,
-            "cost_usd": 0.046,
-            "correct": 6,
-            "of": 6
-          }
+        "nexus": {
+          "run": "languages-v2.4.0",
+          "build": "2.4.0",
+          "median_tokens": 52411,
+          "cost_usd": 0.0464,
+          "turns": 4.0,
+          "wall_seconds": 23.7,
+          "correct": 6,
+          "of": 6
         }
       }
     },
     {
+      "name": "webpack",
       "language": "JavaScript",
       "project": "webpack/webpack",
       "url": "https://github.com/webpack/webpack",
       "pin": "f6366b0bc2afbf1f5494f33e81f2bd0588b802cc",
       "files": 822,
-      "model": "sonnet",
-      "effort": "medium",
-      "isolation": "reduced",
-      "before": {
-        "nexus_version": "2.4.0",
-        "date": "2026-11-06",
-        "index_seconds": 530.3,
-        "quick_tier": {
-          "grep": {
-            "hit_at_1": 0.367,
-            "median_tokens": 25634.0
-          },
-          "nexus": {
-            "hit_at_1": 0.667,
-            "median_tokens": 1251.0
-          },
-          "verdict": "Strong fit"
+      "quick": {
+        "run": "languages-py-fix",
+        "build": "2.4.0+53594ad",
+        "date": "2026-11-07",
+        "questions": 30,
+        "index_seconds": 479.3,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.367,
+          "hit_at_3": 0.567,
+          "median_tokens": 25634,
+          "median_ms": 564.2
         },
-        "retrieval_hit_at_1": 0.2,
-        "graph": {
-          "fn_nodes": 5030,
-          "calls_per_fn": 1.38
+        "nexus": {
+          "hit_at_1": 0.667,
+          "hit_at_3": 0.833,
+          "median_tokens": 1251,
+          "median_ms": 33.7
+        }
+      },
+      "retrieval_hit_at_1": 0.2,
+      "calls_per_fn": 1.38,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-v2.4.0",
+          "build": "built-in tools",
+          "median_tokens": 100320,
+          "cost_usd": 0.0767,
+          "turns": 6.0,
+          "wall_seconds": 29.7,
+          "correct": 6,
+          "of": 6
         },
-        "live": {
-          "baseline": {
-            "median_tokens": 100320,
-            "cost_usd": 0.077,
-            "correct": 6,
-            "of": 6
-          },
-          "nexus": {
-            "median_tokens": 74638,
-            "cost_usd": 0.068,
-            "correct": 6,
-            "of": 6
-          }
+        "nexus": {
+          "run": "languages-v2.4.0",
+          "build": "2.4.0",
+          "median_tokens": 74638,
+          "cost_usd": 0.0679,
+          "turns": 4.5,
+          "wall_seconds": 25.1,
+          "correct": 6,
+          "of": 6
         }
       }
     },
     {
+      "name": "commons-lang",
       "language": "Java",
       "project": "apache/commons-lang",
       "url": "https://github.com/apache/commons-lang",
       "pin": "e547d704b21a1b10a2dae0158f7288d7afa4d064",
       "files": 264,
-      "model": "sonnet",
-      "effort": "medium",
-      "isolation": "reduced",
-      "before": {
-        "nexus_version": "2.2.2",
-        "date": "2026-11-05",
-        "index_seconds": 633.3,
-        "quick_tier": {
-          "grep": {
-            "hit_at_1": 0.233,
-            "median_tokens": 48175.5
-          },
-          "nexus": {
-            "hit_at_1": 0.867,
-            "median_tokens": 1277.0
-          },
-          "verdict": "Strong fit"
+      "quick": {
+        "run": "languages-final",
+        "build": "2.2.2+11cfccc",
+        "date": "2026-11-06",
+        "questions": 30,
+        "index_seconds": 265.5,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.233,
+          "hit_at_3": 0.7,
+          "median_tokens": 48176,
+          "median_ms": 200.9
         },
-        "retrieval_hit_at_1": 0.73,
-        "graph": {
-          "fn_nodes": 4177,
-          "calls_per_fn": 0.75
-        },
-        "live": {
-          "baseline": {
-            "median_tokens": 58755,
-            "cost_usd": 0.047,
-            "correct": 6,
-            "of": 6
-          },
-          "nexus": {
-            "median_tokens": 34601,
-            "cost_usd": 0.023,
-            "correct": 6,
-            "of": 6
-          }
+        "nexus": {
+          "hit_at_1": 0.867,
+          "hit_at_3": 1.0,
+          "median_tokens": 1241,
+          "median_ms": 30.7
         }
       },
-      "after": {
-        "nexus_version": "2.4.0 pre-release (11cfccc)",
-        "date": "2026-11-06",
-        "index_seconds": 265.5,
-        "quick_tier": {
-          "grep": {
-            "hit_at_1": 0.233,
-            "median_tokens": 48175.5
-          },
-          "nexus": {
-            "hit_at_1": 0.867,
-            "median_tokens": 1241.0
-          },
-          "verdict": "Strong fit"
+      "retrieval_hit_at_1": 0.73,
+      "calls_per_fn": 0.75,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-final",
+          "build": "built-in tools",
+          "median_tokens": 50448,
+          "cost_usd": 0.0436,
+          "turns": 4.5,
+          "wall_seconds": 15.5,
+          "correct": 6,
+          "of": 6
         },
-        "retrieval_hit_at_1": 0.73,
-        "graph": {
-          "fn_nodes": 4177,
-          "calls_per_fn": 0.75
-        },
-        "live": {
-          "baseline": {
-            "median_tokens": 50448,
-            "cost_usd": 0.044,
-            "correct": 6,
-            "of": 6
-          },
-          "nexus": {
-            "median_tokens": 32862,
-            "cost_usd": 0.022,
-            "correct": 6,
-            "of": 6
-          }
+        "nexus": {
+          "run": "languages-final",
+          "build": "2.2.2+11cfccc",
+          "median_tokens": 32862,
+          "cost_usd": 0.0223,
+          "turns": 2.0,
+          "wall_seconds": 14.9,
+          "correct": 6,
+          "of": 6
         }
       }
     },
     {
+      "name": "newtonsoft-json",
+      "language": "C#",
+      "project": "JamesNK/Newtonsoft.Json",
+      "url": "https://github.com/JamesNK/Newtonsoft.Json",
+      "pin": "52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa",
+      "files": 242,
+      "quick": {
+        "run": "languages-final",
+        "build": "2.2.2+11cfccc",
+        "date": "2026-11-06",
+        "questions": 30,
+        "index_seconds": 174.9,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.233,
+          "hit_at_3": 0.633,
+          "median_tokens": 14004,
+          "median_ms": 154.3
+        },
+        "nexus": {
+          "hit_at_1": 0.733,
+          "hit_at_3": 0.8,
+          "median_tokens": 1547,
+          "median_ms": 25.0
+        }
+      },
+      "retrieval_hit_at_1": 0.67,
+      "calls_per_fn": 1.15,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-final",
+          "build": "built-in tools",
+          "median_tokens": 41929,
+          "cost_usd": 0.0297,
+          "turns": 3.0,
+          "wall_seconds": 14.4,
+          "correct": 6,
+          "of": 6
+        },
+        "nexus": {
+          "run": "languages-final",
+          "build": "2.2.2+11cfccc",
+          "median_tokens": 42139,
+          "cost_usd": 0.03,
+          "turns": 2.5,
+          "wall_seconds": 15.7,
+          "correct": 6,
+          "of": 6
+        }
+      }
+    },
+    {
+      "name": "laravel",
+      "language": "PHP",
+      "project": "laravel/framework",
+      "url": "https://github.com/laravel/framework",
+      "pin": "7d6d8e86138e9dcc250a29bd72cfe5d5dd7b3d6c",
+      "files": 1751,
+      "quick": {
+        "run": "languages-final",
+        "build": "2.2.2+11cfccc",
+        "date": "2026-11-06",
+        "questions": 30,
+        "index_seconds": 880.4,
+        "verdict": "Likely fit",
+        "grep": {
+          "hit_at_1": 0.5,
+          "hit_at_3": 0.8,
+          "median_tokens": 13479,
+          "median_ms": 712.4
+        },
+        "nexus": {
+          "hit_at_1": 0.833,
+          "hit_at_3": 0.9,
+          "median_tokens": 1086,
+          "median_ms": 39.3
+        }
+      },
+      "retrieval_hit_at_1": 0.53,
+      "calls_per_fn": 1.06,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-final",
+          "build": "built-in tools",
+          "median_tokens": 52919,
+          "cost_usd": 0.0512,
+          "turns": 5.0,
+          "wall_seconds": 19.6,
+          "correct": 5,
+          "of": 6
+        },
+        "nexus": {
+          "run": "languages-final",
+          "build": "2.2.2+11cfccc",
+          "median_tokens": 51994,
+          "cost_usd": 0.0391,
+          "turns": 3.0,
+          "wall_seconds": 20.1,
+          "correct": 5,
+          "of": 6
+        }
+      }
+    },
+    {
+      "name": "chromium-base",
       "language": "C++",
       "project": "chromium/chromium",
       "url": "https://chromium.googlesource.com/chromium/src",
       "pin": "d8ebdd25980e38badccc265758aa508e6592000e",
       "files": 3641,
-      "model": "sonnet",
-      "effort": "medium",
-      "isolation": "reduced",
-      "before": {
-        "nexus_version": "2.2.2",
-        "date": "2026-11-05",
-        "index_seconds": 4373.5,
-        "quick_tier": {
-          "grep": {
-            "hit_at_1": 0.367,
-            "median_tokens": 16096.5
-          },
-          "nexus": {
-            "hit_at_1": 0.833,
-            "median_tokens": 953.0
-          },
-          "verdict": "Strong fit"
+      "quick": {
+        "run": "languages-final",
+        "build": "2.2.2+11cfccc",
+        "date": "2026-11-06",
+        "questions": 30,
+        "index_seconds": 2606.4,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.433,
+          "hit_at_3": 0.6,
+          "median_tokens": 19768,
+          "median_ms": 1851.1
         },
-        "retrieval_hit_at_1": 0.4,
-        "graph": {
-          "fn_nodes": 0,
-          "calls_per_fn": 0
+        "nexus": {
+          "hit_at_1": 0.8,
+          "hit_at_3": 0.9,
+          "median_tokens": 1243,
+          "median_ms": 88.0
+        }
+      },
+      "retrieval_hit_at_1": 0.4,
+      "calls_per_fn": 1.32,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-before",
+          "build": "built-in tools",
+          "median_tokens": 70495,
+          "cost_usd": 0.0651,
+          "turns": 6.5,
+          "wall_seconds": 22.0,
+          "correct": 6,
+          "of": 6
         },
-        "live": {
-          "baseline": {
-            "median_tokens": 70495,
-            "cost_usd": 0.065,
-            "correct": 6,
-            "of": 6
-          },
-          "nexus": {
-            "median_tokens": 60622,
-            "cost_usd": 0.055,
-            "correct": 6,
-            "of": 6
-          }
+        "nexus": {
+          "run": "languages-before",
+          "build": "2.2.2+0430f01",
+          "median_tokens": 60622,
+          "cost_usd": 0.0546,
+          "turns": 4.5,
+          "wall_seconds": 25.3,
+          "correct": 6,
+          "of": 6
+        }
+      }
+    },
+    {
+      "name": "prometheus",
+      "language": "Go",
+      "project": "prometheus/prometheus",
+      "url": "https://github.com/prometheus/prometheus",
+      "pin": "4bfb6bb5b3dbecb86f81c687cae9885ecfefb3a2",
+      "files": 201,
+      "quick": {
+        "run": "languages-final",
+        "build": "2.2.2+11cfccc",
+        "date": "2026-11-06",
+        "questions": 30,
+        "index_seconds": 118.0,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.4,
+          "hit_at_3": 0.633,
+          "median_tokens": 41034,
+          "median_ms": 600.1
+        },
+        "nexus": {
+          "hit_at_1": 0.833,
+          "hit_at_3": 0.967,
+          "median_tokens": 1195,
+          "median_ms": 24.4
+        }
+      },
+      "retrieval_hit_at_1": 0.4,
+      "calls_per_fn": 1.83,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-before",
+          "build": "built-in tools",
+          "median_tokens": 52014,
+          "cost_usd": 0.0469,
+          "turns": 4.5,
+          "wall_seconds": 18.5,
+          "correct": 5,
+          "of": 6
+        },
+        "nexus": {
+          "run": "live-opt2",
+          "build": "2.2.2+e5a9d9a",
+          "median_tokens": 45214,
+          "cost_usd": 0.0367,
+          "turns": 2.5,
+          "wall_seconds": 21.7,
+          "correct": 6,
+          "of": 6
+        }
+      }
+    },
+    {
+      "name": "redis",
+      "language": "C",
+      "project": "redis/redis",
+      "url": "https://github.com/redis/redis",
+      "pin": "a05f30c971ad5c291b9a5b2c688b43ee13ac0c13",
+      "files": 229,
+      "quick": {
+        "run": "languages-final",
+        "build": "2.2.2+11cfccc",
+        "date": "2026-11-06",
+        "questions": 30,
+        "index_seconds": 507.8,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.4,
+          "hit_at_3": 0.633,
+          "median_tokens": 37139,
+          "median_ms": 330.9
+        },
+        "nexus": {
+          "hit_at_1": 0.867,
+          "hit_at_3": 0.933,
+          "median_tokens": 988,
+          "median_ms": 33.5
+        }
+      },
+      "retrieval_hit_at_1": 0.47,
+      "calls_per_fn": 3.38,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-before",
+          "build": "built-in tools",
+          "median_tokens": 41752,
+          "cost_usd": 0.0312,
+          "turns": 3.5,
+          "wall_seconds": 13.3,
+          "correct": 6,
+          "of": 6
+        },
+        "nexus": {
+          "run": "live-opt2",
+          "build": "2.2.2+e5a9d9a",
+          "median_tokens": 50578,
+          "cost_usd": 0.0302,
+          "turns": 3.0,
+          "wall_seconds": 17.2,
+          "correct": 6,
+          "of": 6
+        }
+      }
+    },
+    {
+      "name": "tokio",
+      "language": "Rust",
+      "project": "tokio-rs/tokio",
+      "url": "https://github.com/tokio-rs/tokio",
+      "pin": "695a07dd5e5baae82eb8b6931afa61029cd9b854",
+      "files": 381,
+      "quick": {
+        "run": "languages-final",
+        "build": "2.2.2+11cfccc",
+        "date": "2026-11-06",
+        "questions": 30,
+        "index_seconds": 257.4,
+        "verdict": "Strong fit",
+        "grep": {
+          "hit_at_1": 0.333,
+          "hit_at_3": 0.7,
+          "median_tokens": 21138,
+          "median_ms": 214.7
+        },
+        "nexus": {
+          "hit_at_1": 0.933,
+          "hit_at_3": 1.0,
+          "median_tokens": 830,
+          "median_ms": 26.6
+        }
+      },
+      "retrieval_hit_at_1": 0.73,
+      "calls_per_fn": 0.88,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "baseline": {
+          "run": "languages-before",
+          "build": "built-in tools",
+          "median_tokens": 41188,
+          "cost_usd": 0.0285,
+          "turns": 3.5,
+          "wall_seconds": 13.2,
+          "correct": 4,
+          "of": 6
+        },
+        "nexus": {
+          "run": "languages-before",
+          "build": "2.2.2+0430f01",
+          "median_tokens": 61816,
+          "cost_usd": 0.0406,
+          "turns": 4.5,
+          "wall_seconds": 16.6,
+          "correct": 5,
+          "of": 6
         }
       }
     }

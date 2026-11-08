@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Docs
+
+- The README (830 to about 200 lines) and the site lead with one story: the agent reaches the
+  right file with fewer tokens. The site has a new design and a hero trace of tokens to the
+  right file for each language. The benchmarks page uses the same styles.
+- Published numbers: one row per benchmark repo, the latest run of each tier, from
+  `benchmarks/runs/` (`python -m benchmarks.latest_published`). 12 repos in 10 languages, up
+  from 4. Search time (median ms per lookup) and turns per task are new columns. Each row
+  names its build. C and Rust, where Nexus-MCP used more tokens on the 2.2.2 build, are shown.
+- `results.json` schema 3: `repos` replaces `languages`. `benchmarks/to_published.py` is
+  removed. The 2.1.0 Django run and the 2026-11-03 Chromium `eval` row are replaced by newer
+  runs of the same repos.
+- New: `docs/COMPARISON.md`, `docs/research/OSS-ADOPTION.md` (adoption research and a growth
+  checklist). The technology table moved to `docs/ARCHITECTURE.md`.
+- North-star gate: not applicable. No code of the server changed, so token use and hit@1 do
+  not change.
+
 ## [2.4.5] - 2026-11-08
 
 Fixes from the third Cline install test. The 2.4.4 test passed after a manual fix of the

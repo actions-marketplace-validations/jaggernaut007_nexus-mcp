@@ -20,13 +20,15 @@ Start with the group that matches what you want to do.
 
 ## Understand
 
-- [ARCHITECTURE.md](ARCHITECTURE.md): data flow and component design
+- [ARCHITECTURE.md](ARCHITECTURE.md): data flow, component design and technology choices
+- [COMPARISON.md](COMPARISON.md): features of Nexus-MCP next to Serena and claude-context
 - [MEMORY.md](MEMORY.md): measured memory use
 - [EVALS.md](EVALS.md): the benchmark method and the run history
 - [BENCHMARKING.md](BENCHMARKING.md): rerun the per-language benchmark for a release
 - [RESEARCH.md](RESEARCH.md): library evaluations
 - [DISTRIBUTION.md](DISTRIBUTION.md): every install channel, and the owner steps for each
 - [SUBMISSIONS.md](SUBMISSIONS.md): ready-to-paste text for each marketplace listing
+- [research/OSS-ADOPTION.md](research/OSS-ADOPTION.md): what makes developers adopt a tool, and the growth checklist
 - [GITHUB-ACTION.md](GITHUB-ACTION.md): run Nexus-MCP in a GitHub workflow
 - [adr/](adr/): architecture decision records (ADR-001 to ADR-024)
 

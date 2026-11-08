@@ -1,35 +1,45 @@
-project,files,commit,date,condition,cost_usd,turns,correct,of,language,phase,nexus_version,median_tokens,hit_at_1,index_seconds,fn_nodes,calls_per_fn
-Private Python project,460,a67e5b4,2026-10-28,grep_and_read,0.571,55,36,36,,,,,,,,
-Private Python project,460,a67e5b4,2026-10-28,nexus_mcp,0.446,35,35,36,,,,,,,,
-Django,3000,a67e5b4,2026-10-28,grep_and_read,0.894,93,34,36,,,,,,,,
-Django,3000,a67e5b4,2026-10-28,nexus_mcp,0.863,71,36,36,,,,,,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,eval_grep_and_read,,,,,TypeScript,before,2.2.2,16519.5,0.433,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,eval_nexus_mcp,,,,,TypeScript,before,2.2.2,1321.5,0.833,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,nexus_mcp_index,,,,,TypeScript,before,2.2.2,,0.47,362.6,1689,1.4
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,grep_and_read,0.062,,6,6,TypeScript,before,2.2.2,71166,,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-05,nexus_mcp,0.048,,6,6,TypeScript,before,2.2.2,57268,,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,eval_grep_and_read,,,,,TypeScript,after,2.4.0,16519.5,0.433,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,eval_nexus_mcp,,,,,TypeScript,after,2.4.0,1285.5,0.833,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,nexus_mcp_index,,,,,TypeScript,after,2.4.0,,0.47,137.2,1689,1.4
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,grep_and_read,0.059,,6,6,TypeScript,after,2.4.0,69790,,,,
-vitejs/vite,429,483512809bbdb399d66be59af0f5aeb01ccb7181,2026-11-06,nexus_mcp,0.046,,6,6,TypeScript,after,2.4.0,52411,,,,
-webpack/webpack,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,2026-11-06,eval_grep_and_read,,,,,JavaScript,before,2.4.0,25634.0,0.367,,,
-webpack/webpack,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,2026-11-06,eval_nexus_mcp,,,,,JavaScript,before,2.4.0,1251.0,0.667,,,
-webpack/webpack,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,2026-11-06,nexus_mcp_index,,,,,JavaScript,before,2.4.0,,0.2,530.3,5030,1.38
-webpack/webpack,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,2026-11-06,grep_and_read,0.077,,6,6,JavaScript,before,2.4.0,100320,,,,
-webpack/webpack,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,2026-11-06,nexus_mcp,0.068,,6,6,JavaScript,before,2.4.0,74638,,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,eval_grep_and_read,,,,,Java,before,2.2.2,48175.5,0.233,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,eval_nexus_mcp,,,,,Java,before,2.2.2,1277.0,0.867,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,nexus_mcp_index,,,,,Java,before,2.2.2,,0.73,633.3,4177,0.75
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,grep_and_read,0.047,,6,6,Java,before,2.2.2,58755,,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-05,nexus_mcp,0.023,,6,6,Java,before,2.2.2,34601,,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,eval_grep_and_read,,,,,Java,after,2.4.0 pre-release (11cfccc),48175.5,0.233,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,eval_nexus_mcp,,,,,Java,after,2.4.0 pre-release (11cfccc),1241.0,0.867,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,nexus_mcp_index,,,,,Java,after,2.4.0 pre-release (11cfccc),,0.73,265.5,4177,0.75
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,grep_and_read,0.044,,6,6,Java,after,2.4.0 pre-release (11cfccc),50448,,,,
-apache/commons-lang,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,2026-11-06,nexus_mcp,0.022,,6,6,Java,after,2.4.0 pre-release (11cfccc),32862,,,,
-chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,eval_grep_and_read,,,,,C++,before,2.2.2,16096.5,0.367,,,
-chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,eval_nexus_mcp,,,,,C++,before,2.2.2,953.0,0.833,,,
-chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,nexus_mcp_index,,,,,C++,before,2.2.2,,0.4,4373.5,0,0
-chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,grep_and_read,0.065,,6,6,C++,before,2.2.2,70495,,,,
-chromium/chromium,3641,d8ebdd25980e38badccc265758aa508e6592000e,2026-11-05,nexus_mcp,0.055,,6,6,C++,before,2.2.2,60622,,,,
+repo,language,files,pin,tier,condition,build,run,median_tokens,hit_at_1,median_ms,cost_usd,turns,wall_seconds,correct,of
+home-assistant/core,Python,,5b0d396bd84113aabf694d23cdbddbdaf574ca78,live,grep_and_read,built-in tools,languages-v2.4.1,65990,,,0.05,7.0,22.7,6,6
+home-assistant/core,Python,,5b0d396bd84113aabf694d23cdbddbdaf574ca78,live,nexus_mcp,2.4.1,languages-v2.4.1,42458,,,0.0367,3.0,29.3,6,6
+django/django,Python,,318a316a4c86a65bede68144f9546a6056d91379,live,grep_and_read,built-in tools,languages-v2.4.1,45102,,,0.0477,5.5,16.4,5,6
+django/django,Python,,318a316a4c86a65bede68144f9546a6056d91379,live,nexus_mcp,2.4.1,languages-v2.4.1,41916,,,0.0351,2.5,19.6,6,6
+pallets/flask,Python,83,d73fa1cdcbd8b1465c151db8924ba58b1dd14e35,offline,grep_and_read,built-in tools,languages-py-fix,26720,0.2,107.8,,,,,
+pallets/flask,Python,83,d73fa1cdcbd8b1465c151db8924ba58b1dd14e35,offline,nexus_mcp,2.4.0+53594ad,languages-py-fix,1388,0.933,23.2,,,,,
+vitejs/vite,TypeScript,429,483512809bbdb399d66be59af0f5aeb01ccb7181,offline,grep_and_read,built-in tools,languages-py-fix,16520,0.433,158.9,,,,,
+vitejs/vite,TypeScript,429,483512809bbdb399d66be59af0f5aeb01ccb7181,offline,nexus_mcp,2.4.0+53594ad,languages-py-fix,1286,0.833,25.1,,,,,
+vitejs/vite,TypeScript,429,483512809bbdb399d66be59af0f5aeb01ccb7181,live,grep_and_read,built-in tools,languages-v2.4.0,69790,,,0.0594,5.5,24.6,6,6
+vitejs/vite,TypeScript,429,483512809bbdb399d66be59af0f5aeb01ccb7181,live,nexus_mcp,2.4.0,languages-v2.4.0,52411,,,0.0464,4.0,23.7,6,6
+webpack/webpack,JavaScript,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,offline,grep_and_read,built-in tools,languages-py-fix,25634,0.367,564.2,,,,,
+webpack/webpack,JavaScript,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,offline,nexus_mcp,2.4.0+53594ad,languages-py-fix,1251,0.667,33.7,,,,,
+webpack/webpack,JavaScript,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,live,grep_and_read,built-in tools,languages-v2.4.0,100320,,,0.0767,6.0,29.7,6,6
+webpack/webpack,JavaScript,822,f6366b0bc2afbf1f5494f33e81f2bd0588b802cc,live,nexus_mcp,2.4.0,languages-v2.4.0,74638,,,0.0679,4.5,25.1,6,6
+apache/commons-lang,Java,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,offline,grep_and_read,built-in tools,languages-final,48176,0.233,200.9,,,,,
+apache/commons-lang,Java,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,offline,nexus_mcp,2.2.2+11cfccc,languages-final,1241,0.867,30.7,,,,,
+apache/commons-lang,Java,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,live,grep_and_read,built-in tools,languages-final,50448,,,0.0436,4.5,15.5,6,6
+apache/commons-lang,Java,264,e547d704b21a1b10a2dae0158f7288d7afa4d064,live,nexus_mcp,2.2.2+11cfccc,languages-final,32862,,,0.0223,2.0,14.9,6,6
+JamesNK/Newtonsoft.Json,C#,242,52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa,offline,grep_and_read,built-in tools,languages-final,14004,0.233,154.3,,,,,
+JamesNK/Newtonsoft.Json,C#,242,52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa,offline,nexus_mcp,2.2.2+11cfccc,languages-final,1547,0.733,25.0,,,,,
+JamesNK/Newtonsoft.Json,C#,242,52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa,live,grep_and_read,built-in tools,languages-final,41929,,,0.0297,3.0,14.4,6,6
+JamesNK/Newtonsoft.Json,C#,242,52fa3aef1f2cadcd3a3f874251eddc98d3efbbaa,live,nexus_mcp,2.2.2+11cfccc,languages-final,42139,,,0.03,2.5,15.7,6,6
+laravel/framework,PHP,1751,7d6d8e86138e9dcc250a29bd72cfe5d5dd7b3d6c,offline,grep_and_read,built-in tools,languages-final,13479,0.5,712.4,,,,,
+laravel/framework,PHP,1751,7d6d8e86138e9dcc250a29bd72cfe5d5dd7b3d6c,offline,nexus_mcp,2.2.2+11cfccc,languages-final,1086,0.833,39.3,,,,,
+laravel/framework,PHP,1751,7d6d8e86138e9dcc250a29bd72cfe5d5dd7b3d6c,live,grep_and_read,built-in tools,languages-final,52919,,,0.0512,5.0,19.6,5,6
+laravel/framework,PHP,1751,7d6d8e86138e9dcc250a29bd72cfe5d5dd7b3d6c,live,nexus_mcp,2.2.2+11cfccc,languages-final,51994,,,0.0391,3.0,20.1,5,6
+chromium/chromium,C++,3641,d8ebdd25980e38badccc265758aa508e6592000e,offline,grep_and_read,built-in tools,languages-final,19768,0.433,1851.1,,,,,
+chromium/chromium,C++,3641,d8ebdd25980e38badccc265758aa508e6592000e,offline,nexus_mcp,2.2.2+11cfccc,languages-final,1243,0.8,88.0,,,,,
+chromium/chromium,C++,3641,d8ebdd25980e38badccc265758aa508e6592000e,live,grep_and_read,built-in tools,languages-before,70495,,,0.0651,6.5,22.0,6,6
+chromium/chromium,C++,3641,d8ebdd25980e38badccc265758aa508e6592000e,live,nexus_mcp,2.2.2+0430f01,languages-before,60622,,,0.0546,4.5,25.3,6,6
+prometheus/prometheus,Go,201,4bfb6bb5b3dbecb86f81c687cae9885ecfefb3a2,offline,grep_and_read,built-in tools,languages-final,41034,0.4,600.1,,,,,
+prometheus/prometheus,Go,201,4bfb6bb5b3dbecb86f81c687cae9885ecfefb3a2,offline,nexus_mcp,2.2.2+11cfccc,languages-final,1195,0.833,24.4,,,,,
+prometheus/prometheus,Go,201,4bfb6bb5b3dbecb86f81c687cae9885ecfefb3a2,live,grep_and_read,built-in tools,languages-before,52014,,,0.0469,4.5,18.5,5,6
+prometheus/prometheus,Go,201,4bfb6bb5b3dbecb86f81c687cae9885ecfefb3a2,live,nexus_mcp,2.2.2+e5a9d9a,live-opt2,45214,,,0.0367,2.5,21.7,6,6
+redis/redis,C,229,a05f30c971ad5c291b9a5b2c688b43ee13ac0c13,offline,grep_and_read,built-in tools,languages-final,37139,0.4,330.9,,,,,
+redis/redis,C,229,a05f30c971ad5c291b9a5b2c688b43ee13ac0c13,offline,nexus_mcp,2.2.2+11cfccc,languages-final,988,0.867,33.5,,,,,
+redis/redis,C,229,a05f30c971ad5c291b9a5b2c688b43ee13ac0c13,live,grep_and_read,built-in tools,languages-before,41752,,,0.0312,3.5,13.3,6,6
+redis/redis,C,229,a05f30c971ad5c291b9a5b2c688b43ee13ac0c13,live,nexus_mcp,2.2.2+e5a9d9a,live-opt2,50578,,,0.0302,3.0,17.2,6,6
+tokio-rs/tokio,Rust,381,695a07dd5e5baae82eb8b6931afa61029cd9b854,offline,grep_and_read,built-in tools,languages-final,21138,0.333,214.7,,,,,
+tokio-rs/tokio,Rust,381,695a07dd5e5baae82eb8b6931afa61029cd9b854,offline,nexus_mcp,2.2.2+11cfccc,languages-final,830,0.933,26.6,,,,,
+tokio-rs/tokio,Rust,381,695a07dd5e5baae82eb8b6931afa61029cd9b854,live,grep_and_read,built-in tools,languages-before,41188,,,0.0285,3.5,13.2,4,6
+tokio-rs/tokio,Rust,381,695a07dd5e5baae82eb8b6931afa61029cd9b854,live,nexus_mcp,2.2.2+0430f01,languages-before,61816,,,0.0406,4.5,16.6,5,6
+Private Python project,,460,a67e5b4,live-12q,grep_and_read,,private-460-a67e5b4,,,,0.571,55,,36,36
+Private Python project,,460,a67e5b4,live-12q,nexus_mcp,,private-460-a67e5b4,,,,0.446,35,,35,36
