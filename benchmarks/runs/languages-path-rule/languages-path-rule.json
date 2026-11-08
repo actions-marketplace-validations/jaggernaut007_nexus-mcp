@@ -1,0 +1,50 @@
+{
+  "label": "path-rule",
+  "rows": {
+    "home-assistant": {
+      "name": "home-assistant",
+      "language": "Python",
+      "repo": "home-assistant/core",
+      "url": "https://github.com/home-assistant/core.git",
+      "pin": "5b0d396bd84113aabf694d23cdbddbdaf574ca78",
+      "label": "path-rule",
+      "nexus_version": "2.4.0",
+      "nexus_ref": "195090c51c78b671e632d10e841422c50ec50e0f",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-path-rule/home-assistant",
+      "index_meta": null,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "isolation": [
+          "reduced"
+        ],
+        "errors": 0,
+        "conditions": {
+          "baseline": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.0,
+            "wasted_read_ratio_iqr": 0.5,
+            "total_tokens": 65989.5,
+            "fresh_tokens": 6923.5,
+            "total_cost_usd": 0.0500132,
+            "num_turns": 7.0,
+            "wall_seconds": 22.73
+          },
+          "nexus": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.4,
+            "wasted_read_ratio_iqr": 0.85625,
+            "total_tokens": 42458.0,
+            "fresh_tokens": 5939.5,
+            "total_cost_usd": 0.0367427,
+            "num_turns": 3.0,
+            "wall_seconds": 29.255000000000003
+          }
+        }
+      }
+    }
+  }
+}

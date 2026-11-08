@@ -16,6 +16,7 @@ numbers only from `benchmarks/published/results.json`.
 | `languages-refs-fix` | References ranked by the class of a method (`f1e9d56`): the Django live A/B. The console log also holds a Home Assistant index that was stopped before the live tier |
 | `languages-defs-fix` | `defined_in` and the shorter fixed text (`45aec40`): the Django and Home Assistant live A/B. The first Home Assistant live tier stopped on a repo path bug; the console log holds the rerun on the same index |
 | `languages-graph-cap` | The size cap of `graph` results (`cf1bb7a`): the Django and Home Assistant live A/B, on copies of the defs-fix indexes |
+| `languages-path-rule` | The full-path rule in the server instructions (`195090c`): the Home Assistant live A/B, on a copy of the defs-fix index |
 | `setup` | One file per pinned install: version, commit and install time |
 
 Each folder has:

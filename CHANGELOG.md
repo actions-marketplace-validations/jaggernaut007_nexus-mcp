@@ -174,8 +174,17 @@ All notable changes to this project will be documented in this file.
   (`setup.py` for `homeassistant/setup.py`) or not at all. A bare name can fit many files,
   and a reader cannot open it. The results already give the full path. The new rule tells
   the agent to copy that path for each file, function or class that it names. It applies
-  in every project, and it adds about 60 tokens to the instructions. Not yet measured in
-  a live run.
+  in every project, and it adds about 60 tokens to the instructions.
+  - Live A/B of `195090c` on Home Assistant (`benchmarks/runs/languages-path-rule`),
+    Sonnet at medium effort, 6 tasks × 3 reps, on a copy of the defs-fix index.
+  - Nexus against Grep: sum 880,904 / 1,730,618; median 42,396 / 65,990; fresh 152,801 /
+    187,939; cost $0.870 / $1.273; correct 18 / 17 of 18; fact score 0.917 / 0.889;
+    combined 0.949 / 0.917; tasks with fewer tokens 5 of 6. The gate passes.
+  - Before (graph-cap run, `cf1bb7a`): Nexus correct 15 of 18, sum 1,046,718, cost $0.972.
+    The `async_setup_component` task went from 1 to 3 of 3 correct, with a median of
+    53,219 tokens (before 72,656; Grep 76,403).
+  - Grep's totals change much from run to run (sum 2,350,456 in the graph-cap run), so the
+    token gap is less certain than the accuracy result. Django is not rerun with this rule.
 
 - **5 tools by default.** The server shows `index`, `search`, `find_symbol`, `graph` and
   `map`. Set `NEXUS_EXTRA_TOOLS` to `status`, `analyze`, `memory` (comma-separated) or `all`
