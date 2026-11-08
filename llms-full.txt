@@ -387,6 +387,14 @@ Run `benchmarks/` on your own project before you rely on it.
 
 ## The 8 Tools
 
+**New in v2.4.4:** `uvx nexus-mcp-ci setup` says `replace` when it updates an older entry, and
+it updates the Claude Code entry too. `index` gives the size of the stored index and its
+`version`. The background index of `setup` writes `<project>/.nexus/setup-index.log`.
+
+**New in v2.4.3:** the index goes to `<project>/.nexus/` when the server starts outside the
+project, as in Cline (before, `index` failed with `Read-only file system: '/.nexus'`), and
+`nexus-mcp-ci --version` prints the version.
+
 **New in v2.4.2:** every `uvx` launch pins Python 3.12, so the install works when the default
 Python is 3.13 or 3.14.
 
