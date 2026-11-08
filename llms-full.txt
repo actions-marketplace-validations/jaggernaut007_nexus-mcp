@@ -105,7 +105,7 @@ uvx --python 3.12 nexus-mcp-ci eval --example                         # the Nexu
 It asks about 30 questions made from your code and gives a verdict: "Strong fit", "Likely fit"
 or "Weak fit". On a tiny project Grep and Read win, and the report says so. For the real agent
 cost, `nexus-mcp-ci eval --agent claude` runs a paid A/B with your own Claude Code login. It
-shows the cost and asks first. Guide: [docs/EVALUATE.md](docs/EVALUATE.md).
+shows the cost and asks first. Guide: [docs/EVALUATE.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md).
 
 ---
 
@@ -125,7 +125,7 @@ shows the cost and asks first. Guide: [docs/EVALUATE.md](docs/EVALUATE.md).
 Use `setup` or the plugin for Claude Code, not both. Then start a new session and ask a
 question about your code, such as *"where do we retry failed payments?"*. The agent indexes the
 project once, in the background, and a file watcher keeps the index current. Every channel:
-[docs/DISTRIBUTION.md](docs/DISTRIBUTION.md). Python 3.10 to 3.12; the `uvx` launch pins 3.12.
+[docs/DISTRIBUTION.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/DISTRIBUTION.md). Python 3.10 to 3.12; the `uvx` launch pins 3.12.
 
 ---
 
@@ -146,7 +146,7 @@ The server shows five tools by default. Each one replaces several grep and read 
 
 Set `NEXUS_EXTRA_TOOLS=all` to show the three opt-in tools. The server sends its own routing
 instructions when it connects, so the agent knows which tool answers which question. Full
-reference: [docs/USAGE_GUIDE.md](docs/USAGE_GUIDE.md).
+reference: [docs/USAGE_GUIDE.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/USAGE_GUIDE.md).
 
 Keep your agent's own grep. Use it for an exact name or string you can type; use Nexus-MCP
 when the answer needs meaning or structure.
@@ -176,7 +176,7 @@ Your code stays on your machine. The server makes no network calls and has no te
 - **Stored:** the index in `<project>/.nexus/` (add it to `.gitignore`).
   `nexus-mcp-ci data where` lists every file; `nexus-mcp-ci data clear` removes them.
 
-Details: [docs/PRIVACY.md](docs/PRIVACY.md).
+Details: [docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md).
 
 ---
 
@@ -187,7 +187,7 @@ Details: [docs/PRIVACY.md](docs/PRIVACY.md).
 - **C and Rust live runs used more tokens** than Grep and Read on the older 2.2.2 build (see
   Results). A rerun on the current build is pending.
 - **Memory:** about 90 MB idle and about 460 MB with the embedding model loaded
-  ([measurements](docs/MEMORY.md)).
+  ([measurements](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/MEMORY.md)).
 - **Freshness:** edits are picked up after a debounce of a few seconds, not instantly.
 - **Transport:** stdio only.
 
@@ -196,16 +196,16 @@ Details: [docs/PRIVACY.md](docs/PRIVACY.md).
 ## Documentation
 
 - [Benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html): every number, the build of each row, the method and the raw data
-- [Evaluate](docs/EVALUATE.md), [Installation](docs/INSTALLATION.md), [Usage](docs/USAGE_GUIDE.md), [Configuration](docs/CONFIGURATION.md), [Troubleshooting](docs/TROUBLESHOOTING.md), [FAQ](docs/FAQ.md)
-- [Architecture](docs/ARCHITECTURE.md), [Comparison with other tools](docs/COMPARISON.md), [Decision records](docs/adr/), [Changelog](CHANGELOG.md)
-- All docs: [docs/README.md](docs/README.md). For agents: [llms.txt](llms.txt).
+- [Evaluate](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/EVALUATE.md), [Installation](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/INSTALLATION.md), [Usage](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/USAGE_GUIDE.md), [Configuration](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/CONFIGURATION.md), [Troubleshooting](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/TROUBLESHOOTING.md), [FAQ](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/FAQ.md)
+- [Architecture](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/ARCHITECTURE.md), [Comparison with other tools](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/COMPARISON.md), [Decision records](https://github.com/jaggernaut007/Nexus-MCP/tree/main/docs/adr), [Changelog](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md)
+- All docs: [docs/README.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/README.md). For agents: [llms.txt](https://github.com/jaggernaut007/Nexus-MCP/blob/main/llms.txt).
 
 ---
 
 ## Contributing
 
-Issues and pull requests are welcome. Start with [CONTRIBUTING.md](CONTRIBUTING.md) and the
-[developer guide](docs/DEVELOPER_GUIDE.md):
+Issues and pull requests are welcome. Start with [CONTRIBUTING.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CONTRIBUTING.md) and the
+[developer guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/DEVELOPER_GUIDE.md):
 
 ```bash
 git clone https://github.com/jaggernaut007/Nexus-MCP.git && cd Nexus-MCP
@@ -214,17 +214,17 @@ pytest -v && ruff check .
 ```
 
 A change ships only when it lowers the agent's token use and keeps the search accuracy gate
-(`python -m evals.retrieval.run`). The rule is in [CONTRIBUTING.md](CONTRIBUTING.md).
+(`python -m evals.retrieval.run`). The rule is in [CONTRIBUTING.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/CONTRIBUTING.md).
 
 Nexus-MCP grew from two MIT projects: [CodeGrok MCP](https://github.com/shreyasjagannath/CodeGrok_mcp)
 by [rdondeti](https://github.com/rdondeti) and [code-graph-mcp](https://github.com/entrepeneur4lyf/code-graph-mcp)
-by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) ([ADR-001](docs/adr/ADR-001-single-mcp-consolidation.md)).
+by [entrepeneur4lyf](https://github.com/entrepeneur4lyf) ([ADR-001](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/adr/ADR-001-single-mcp-consolidation.md)).
 
 ---
 
 ## License
 
-[MIT](LICENSE).
+[MIT](https://github.com/jaggernaut007/Nexus-MCP/blob/main/LICENSE).
 
 ---
 

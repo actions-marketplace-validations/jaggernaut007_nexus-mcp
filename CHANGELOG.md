@@ -4,6 +4,22 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.6] - 2026-11-08
+
+A docs and listing release. The MCP tools and their behaviour do not change. The PyPI page,
+the MCP Registry entry and every channel manifest get the new tagline: "Your coding agent reads
+less code to find the right file."
+
+### Fixed
+
+- Site: the hero tabs of C, C# and C++ had the same element id, so they showed no panel or the
+  wrong repo. The ids now come from the repo name.
+- README: the downloads badge rounded 5,513 to "6k". It now reads the site's count, rounded
+  down to one decimal ("5.5k").
+- `scripts/publish_results.py` no longer crashes with no live repos or a zero divisor, and
+  marks offline cells as win, even or loss. `benchmarks/latest_published.py` stops when two
+  live sides from different runs have another setup, or when a run folder is not in `ORDER`.
+
 ### Docs
 
 - The README (830 to about 200 lines) and the site lead with one story: the agent reaches the
