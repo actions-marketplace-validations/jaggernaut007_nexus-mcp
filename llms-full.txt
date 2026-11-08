@@ -1122,7 +1122,7 @@ A callers result (immediate or transitive) also has `references`: every line whe
 
 The caller list holds only the calls that static analysis resolved, so it is a lower bound. `references` is the complete text answer, so a separate grep is not needed. Source files come first, each line with its code (at most 8 lines per file, 60 lines in all, 110 characters per line). A source file past the budget is a line count in `more_files`. Test files are a line count each in `test_files`. `truncated` says when a cap cut the list, and the totals always count everything. In the caller lists a test file with more than 3 symbols shows 3 and `+N more`. A name with no graph node (a constant, or a language without graph support) returns its `references` with an empty caller list instead of an error.
 
-> **Limit:** call edges are static and name-based. Dynamic dispatch, callbacks and reflection are invisible, and a name shared by several definitions gets no edge. Treat results as a lower bound and use `search` for other call sites. See [Known Limitations](../README.md#known-limitations).
+> **Limit:** call edges are static and name-based. Dynamic dispatch, callbacks and reflection are invisible, and a name shared by several definitions gets no edge. Treat results as a lower bound and use `search` for other call sites. See [Known Limitations](../README.md#known-limits).
 
 #### `analyze`
 Run code analysis on the indexed codebase: complexity metrics, dependency analysis, code smells and quality scores.
@@ -1201,7 +1201,7 @@ export NEXUS_AUDIT_ENABLED=true          # Audit log with correlation IDs
 export NEXUS_RATE_LIMIT_ENABLED=false    # Per-tool token-bucket rate limiting
 ```
 
-See the [README configuration table](../README.md#configuration) for every variable.
+See [CONFIGURATION.md](CONFIGURATION.md) for every variable.
 
 ### Embedding Models
 

@@ -669,7 +669,7 @@ def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
 <script type="application/ld+json">{json.dumps(dataset)}</script>
 </head>
 <body class="page">
-<header class="nav"><div class="wrap nav-inner"><a class="brand" href="./"><img src="favicon.svg" width="24" height="24" alt=""><span>Nexus-MCP</span></a><nav class="nav-links" aria-label="Primary"><a href="./#results">Results</a><a href="./#install">Install</a><a href="{REPO_URL}" rel="noopener">GitHub</a></nav></div></header>
+<header class="nav"><div class="wrap nav-inner"><a class="brand" href="./"><img src="favicon.svg" width="24" height="24" alt=""><span>Nexus-MCP</span></a><nav class="nav-links" aria-label="Primary"><a href="index.html#results">Results</a><a href="index.html#install">Install</a><a href="{REPO_URL}" rel="noopener">GitHub</a></nav></div></header>
 <main id="main" class="wrap page-main">
 <h1>Benchmarks</h1>
 <p class="lede">{html.escape(summary_sentence(data))}</p>
@@ -682,7 +682,7 @@ def page_html(data: Dict, community: Optional[List[Dict]] = None) -> str:
 {detail_html(data)}</section>
 {other_html(data)}{"".join(comparison_html(c) for c in data.get("comparisons", []))}{community_html(community)}<section class="page-section"><h2>Method</h2>
 <ul>{method}</ul>
-<p>Run it on your own code: <code>uvx nexus-mcp-ci eval</code> (offline, free) or <code>nexus-mcp-ci eval --agent claude</code> (a paid A/B with your own Claude Code login; it shows the cost first). <a href="{html.escape(m["source"])}">Full method</a>, <a href="{html.escape(m["runs"])}">raw runs</a>.</p>
+<p>Run it on your own code: <code>uvx --python 3.12 nexus-mcp-ci eval</code> (offline, free) or <code>nexus-mcp-ci eval --agent claude</code> (a paid A/B with your own Claude Code login; it shows the cost first). <a href="{html.escape(m["source"])}">Full method</a>, <a href="{html.escape(m["runs"])}">raw runs</a>.</p>
 <p>Data: <a href="benchmarks.json">benchmarks.json</a> (source of truth) and <a href="benchmarks.csv">benchmarks.csv</a>.</p></section>
 </main>
 <footer class="footer"><div class="wrap footer-inner"><p>Nexus-MCP, MIT licence</p><p><a href="./">Home</a> <a href="{REPO_URL}" rel="noopener">GitHub</a> <a href="https://pypi.org/project/nexus-mcp-ci/" rel="noopener">PyPI</a></p></div></footer>
