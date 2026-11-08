@@ -375,6 +375,16 @@ def test_instructions_do_not_ask_for_a_status_call_first():
     assert len(SERVER_INSTRUCTIONS) <= 2048
 
 
+def test_instructions_ask_for_the_full_path_of_a_named_file():
+    # Live runs on Home Assistant (2026-11-08): answers with every fact wrote `setup.py`
+    # for `homeassistant/setup.py`, a name that many files share.
+    text = SERVER_INSTRUCTIONS.lower()
+    assert "path from the project root" in text
+    assert "a bare file name can fit many files" in text
+    # The tool routing comes first: Codex reads the first 512 characters before the rest.
+    assert text.index("which tool answers which question") < text.index("bare file name")
+
+
 def test_group_by_file_collapses_a_long_list_of_test_callers():
     from nexus_mcp.core.graph_models import NodeType, UniversalLocation, UniversalNode
 

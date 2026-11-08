@@ -169,6 +169,14 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **The server instructions ask for full file paths in an answer.** In the graph-cap live
+  run on Home Assistant, 3 Nexus answers had every fact but named a file by its bare name
+  (`setup.py` for `homeassistant/setup.py`) or not at all. A bare name can fit many files,
+  and a reader cannot open it. The results already give the full path. The new rule tells
+  the agent to copy that path for each file, function or class that it names. It applies
+  in every project, and it adds about 60 tokens to the instructions. Not yet measured in
+  a live run.
+
 - **5 tools by default.** The server shows `index`, `search`, `find_symbol`, `graph` and
   `map`. Set `NEXUS_EXTRA_TOOLS` to `status`, `analyze`, `memory` (comma-separated) or `all`
   to show the others. Agents almost never called these three in the live benchmark, and

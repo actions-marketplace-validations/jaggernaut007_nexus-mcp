@@ -47,6 +47,10 @@ Which tool answers which question:
 file read for the same name. Each call costs one more read of the whole conversation. \
 Use your built-in grep or file read when you know the exact file or string. Results can \
 be a little old: read the file before you edit it.
+
+Results name each file by its path from the project root. When your answer names a file, \
+or a function or class from a result, write that full path (`src/pkg/setup.py:148`, not \
+`setup.py:148`): a bare file name can fit many files, and the reader cannot open it.
 """
 
 # The instruction line that names each optional tool. It is removed when the tool is off.
