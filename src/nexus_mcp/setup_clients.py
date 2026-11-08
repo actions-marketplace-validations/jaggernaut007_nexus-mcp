@@ -172,6 +172,8 @@ def _launch_text(entry: object) -> str:
     """The command line of a server entry, for a message (`uvx --python 3.12 nexus-mcp-ci`)."""
     if not isinstance(entry, dict):
         return "?"
+    if isinstance(entry.get("transport"), dict):  # the Cline CLI file nests the launch
+        entry = entry["transport"]
     args = entry.get("args") if isinstance(entry.get("args"), list) else []
     return " ".join([str(entry.get("command", "?")), *map(str, args)])
 
@@ -193,7 +195,9 @@ def _entry_message(path: Path, existing: Optional[dict], entry: dict) -> str:
         return f"add MCP server '{SERVER_NAME}' to {path}"
     old = _launch_text(existing)
     if old == _launch_text(entry):
-        return f"keep MCP server '{SERVER_NAME}' in {path} (already `{old}`)"
+        if existing == entry:
+            return f"keep MCP server '{SERVER_NAME}' in {path} (already `{old}`)"
+        return f"update MCP server '{SERVER_NAME}' in {path} (same launch `{old}`, other fields)"
     return f"replace MCP server '{SERVER_NAME}' in {path} (was `{old}`)"
 
 
@@ -329,6 +333,34 @@ def _cline_config(home: Path) -> Path:
             Path(os.environ.get("APPDATA", home / "AppData" / "Roaming")) / "Code" / "User" / tail
         )
     return home / ".config" / "Code" / "User" / tail
+
+
+def _cline_cli_config(home: Path) -> Path:
+    """The config of the Cline CLI and of the Cline that Antigravity runs: `~/.cline/data/...`.
+
+    It is not the VS Code file of `_cline_config`. A machine can have both, and the client that
+    runs reads only one of them.
+    """
+    return home / ".cline" / "data" / "settings" / "cline_mcp_settings.json"
+
+
+def _cline_cli_entry(path: Path, spec: Dict[str, object]) -> dict:
+    """The entry for `_cline_cli_config`. That file nests the launch under `transport`.
+
+    The keys that the user set (`disabled`, `timeout`, `autoApprove`) stay. The entry is
+    enabled, because the command is an install. The default timeout is 300 s, as in the
+    entries that Cline writes: the first search loads the embedding model.
+    """
+    existing = _existing_entry(path, "mcpServers") or {}
+    entry = {k: v for k, v in existing.items() if k not in ("type", "command", "args", "env")}
+    old = existing.get("transport") if isinstance(existing.get("transport"), dict) else {}
+    transport: Dict[str, object] = {"type": "stdio", **spec}
+    if isinstance(old.get("env"), dict):
+        transport["env"] = old["env"]
+    entry["transport"] = transport
+    entry["disabled"] = False
+    entry.setdefault("timeout", 300)
+    return entry
 
 
 def _toml_block(spec: Dict[str, object]) -> str:
@@ -472,8 +504,16 @@ def build_plan(client: str, project: Path, home: Path, with_skill: bool = True) 
                 )
             )
     elif client == "cline":
-        # Cline writes `"type": "stdio"` in the entries that it adds itself.
-        changes.append(_json_entry(_cline_config(home), "mcpServers", dict(spec, type="stdio")))
+        # Two Cline files exist. The Cline CLI (and the Cline that Antigravity runs) reads
+        # `~/.cline/data/settings/...`. The VS Code extension reads its own globalStorage file.
+        # Write the files of the installs that are there: the client that runs reads only one.
+        cli = _cline_cli_config(home)
+        if cli.parent.is_dir():
+            changes.append(_json_entry(cli, "mcpServers", _cline_cli_entry(cli, spec)))
+        vscode = _cline_config(home)
+        if vscode.parent.is_dir() or not changes:
+            # Cline writes `"type": "stdio"` in the entries that it adds itself.
+            changes.append(_json_entry(vscode, "mcpServers", dict(spec, type="stdio")))
     else:
         raise SetupError(f"Unknown client '{client}'. Choose from: {', '.join(CLIENTS)}.")
 
@@ -493,7 +533,7 @@ def detect_clients(home: Path) -> List[str]:
         "windsurf": lambda: (home / ".codeium" / "windsurf").is_dir(),
         "gemini": lambda: shutil.which("gemini") or (home / ".gemini").is_dir(),
         "codex": lambda: shutil.which("codex") or (home / ".codex").is_dir(),
-        "cline": lambda: _cline_config(home).parent.is_dir(),
+        "cline": lambda: any(f(home).parent.is_dir() for f in (_cline_config, _cline_cli_config)),
     }
     for name, probe in probes.items():
         try:

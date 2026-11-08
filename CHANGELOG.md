@@ -4,6 +4,45 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.5] - 2026-11-08
+
+Fixes from the third Cline install test. The 2.4.4 test passed after a manual fix of the
+config. The cause of the two earlier failures: this Cline (the Cline CLI, and the Cline that
+Antigravity runs) reads `~/.cline/data/settings/cline_mcp_settings.json`. `setup --client cline`
+wrote only the file in the VS Code folder, so the entry that it wrote was never read, and the
+old `nexus` entry (a local build) kept running. Every command passed, and the server was still
+the old one.
+
+### Fixed
+
+- **`setup --client cline` wrote only the VS Code file.** It now also writes
+  `~/.cline/data/settings/cline_mcp_settings.json` when that folder exists. That file nests
+  the launch under `transport`, and `setup` keeps the keys of the user (`disabled`, `timeout`,
+  `autoApprove`), sets `disabled` to `false`, and sets a 300 s timeout (the first search loads
+  the embedding model). It writes each Cline install that is there, and `--uninstall` removes
+  each entry. `detect_clients` finds Cline by either folder.
+- **`setup` printed `keep` when the launch was current but the entry had another shape.** It
+  now prints `update ... (same launch, other fields)`.
+
+### Added
+
+- **`llms-install.md`:**
+  - how to find the process of a server (`ps`) and the config file that a client reads
+    (`lsof`);
+  - a rule for success: the server name and the `index` version must be those that were
+    installed, even when every command passed;
+  - the entries that `setup` writes, in both forms;
+  - a warning that `--version` hangs on a build older than 2.4.3;
+  - `git check-ignore .nexus`;
+  - troubleshooting for an old index read by a newer or older build (`text_idx has version 2`);
+  - the tool prefix is the server name (`nexus-mcp__index` in Cline).
+
+### North star
+
+- Tokens: no change. No tool result and no server instruction changes.
+- Accuracy: no change to the parser, the index or the search. The live benchmark was not run
+  again.
+
 ## [2.4.4] - 2026-11-08
 
 Fixes from the second Cline install test (an upgrade from 2.4.2). The 2.4.3 storage fix

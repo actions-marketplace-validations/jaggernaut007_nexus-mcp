@@ -10,11 +10,18 @@ call graph. The server name in the client config is `nexus-mcp`. The PyPI packag
      step 6.
    - To update it, continue with step 2. `setup` replaces the old entry (see "Update an
      existing install").
-   - The tool prefix gives the server name. A server with another name (for example `nexus__search`
-     comes from a server named `nexus`) is not the `nexus-mcp` entry. It comes from another
-     config: a project file such as `.mcp.json`, a plugin, or the config of another client. It
-     can also be a local build of the source. Tell the user which config starts it, and do not
-     add a second entry without the user's yes.
+   - The tool prefix is the name of the server entry. A server with another name (for example
+     `nexus__search` comes from a server named `nexus`) is not the `nexus-mcp` entry. It comes
+     from another config: a project file such as `.mcp.json`, a plugin, or the config of another
+     client. It can also be a local build of the source. Tell the user which config starts it,
+     and do not add a second entry without the user's yes.
+   - To find the process, run `ps -axo pid,ppid,command | grep nexus-mcp-ci`. The command shows
+     the launch: `uvx ... nexus-mcp-ci==<version>`, or the path of a local build such as
+     `.../.venv/bin/nexus-mcp-ci` (a local build can be older than the release). The parent
+     process (`ppid`) is the client.
+   - To find the config file that the client reads, look at the files that the client process
+     holds open: `lsof -p <client pid> | grep -i mcp`. A client can have several config files
+     (see the Cline row of the table), and it reads only one.
 2. Check that `uv` exists. Run `uv --version`.
    - If it is missing, tell the user to install it: https://docs.astral.sh/uv/getting-started/installation/
    - Do not run a remote install script without the user's yes.
@@ -34,16 +41,22 @@ call graph. The server name in the client config is `nexus-mcp`. The PyPI packag
    - The entry runs `uvx --python 3.12 nexus-mcp-ci==<version>`, with the version that ran
      `setup`. The pin keeps the server the same until you run `setup` again to update it.
    - To see the changes first, add `--dry-run`. To see the version, run
-     `uvx --python 3.12 nexus-mcp-ci --version`.
+     `uvx --python 3.12 nexus-mcp-ci --version`. A build older than 2.4.3 does not know
+     `--version`: it starts a server that never ends. If the command prints nothing in 10 seconds,
+     stop it.
    - The background index writes `<project>/.nexus/setup-index.log`. Its last line says `DONE`
      or `FAILED` when the index ends.
 5. Tell the user to restart the server. New tools and a new version appear only after that.
    - Cline: open the MCP Servers panel and restart `nexus-mcp` (or turn it off and on). A new
      chat does not restart a server that runs.
    - Other clients: reload the window, or start a new session.
+   - The install worked only if the server that answers is the one that you installed: its name
+     is the name of the entry that `setup` wrote (`nexus-mcp`), and `index` shows the version of
+     step 4. If the name or the version is different, the install failed, even when every
+     command passed. The file that `setup` wrote is then not the file that the client reads.
 6. In the new session, the tools are `index`, `search`, `find_symbol`, `graph` and `map`.
-   - Some clients show them with a prefix, for example `nexus__index` in Cline or
-     `mcp__nexus-mcp__index` in Claude Code.
+   - Some clients show them with the server name as a prefix, for example `nexus-mcp__index`
+     in Cline or `mcp__nexus-mcp__index` in Claude Code.
    - To check the install, call `search` with a short query, such as the name of a function in
      the project. If it answers "No codebase indexed", call `index` once with the absolute
      project path, then call `search` again.
@@ -62,20 +75,29 @@ call graph. The server name in the client config is `nexus-mcp`. The PyPI packag
 
 ## Where the index is
 
-The index is in `<project>/.nexus/` (add `.nexus/` to `.gitignore`). When the server starts in
+The index is in `<project>/.nexus/` (add `.nexus/` to `.gitignore`; check it with
+`git check-ignore .nexus`). When the server starts in
 the project folder, a new session attaches the index by itself. Some clients, such as Cline,
 start the server in another folder. Then call `index` once in each session, with the absolute
 project path: that path selects the project, and its index is in `<project>/.nexus/`. With an
 existing index this is a fast update. To keep the index in another place, set the environment
 variable `NEXUS_STORAGE_DIR` to an absolute path in the server entry.
 
+An index that a newer build wrote can crash an older build that reads the same folder (see
+"Troubleshooting"). Update the older build, or do not start it in that project.
+
 ## Troubleshooting
 
 - `[Errno 30] Read-only file system: '/.nexus'`: the server that answers is older than 2.4.3.
-  Find the config that starts it (step 1), update it (see "Update an existing install"), and
-  restart the server. After the fix, `/.nexus` does not exist (`ls /.nexus` fails).
-- The tools still show an old version after `setup`: the client did not restart the server.
-  Restart it (step 5).
+  Run `ps -axo pid,ppid,command | grep nexus-mcp-ci` to see its launch, find the config that
+  starts it (step 1), update it (see "Update an existing install"), and restart the server.
+  After the fix, `/.nexus` does not exist (`ls /.nexus` fails), and `index` shows `version`.
+- The tools still show an old version after `setup`: the client did not restart the server, or
+  it reads another config file than the one that `setup` wrote. Restart the server (step 5).
+  If the version stays old, find the file that the client holds open (step 1).
+- `Index text_idx has version 2, which is not supported`, then a Rust panic and
+  `Warm-up failed`: an older build read an index that a newer build wrote. Update the build
+  that answers.
 
 ## What the command changes
 
@@ -91,7 +113,16 @@ Before its first change to a JSON file, `setup` keeps one copy of it as `<file>.
 | `windsurf` | user-level: `~/.codeium/windsurf/mcp_config.json` | none |
 | `gemini` | user-level: `~/.gemini/settings.json` | a marked block in `<project>/GEMINI.md` |
 | `codex` | user-level: a marked block in `~/.codex/config.toml`. Replaces its own block. Stops if you wrote a `[mcp_servers.nexus-mcp]` table by hand. | a marked block in `<project>/AGENTS.md` |
-| `cline` | user-level: `cline_mcp_settings.json` in the VS Code folder of the Cline extension | none |
+| `cline` | user-level, in the files of the Cline installs that exist: `~/.cline/data/settings/cline_mcp_settings.json` (the Cline CLI, and the Cline that Antigravity runs) and `cline_mcp_settings.json` in the VS Code folder of the Cline extension. A client reads only one of them. | none |
+
+`setup` writes these entries. Most clients get the first form. The Cline file in
+`~/.cline/data/settings` nests the launch under `transport`:
+
+```
+"nexus-mcp": {"type": "stdio", "command": "uvx", "args": ["--python", "3.12", "nexus-mcp-ci==<version>"]}
+
+"nexus-mcp": {"transport": {"type": "stdio", "command": "uvx", "args": ["--python", "3.12", "nexus-mcp-ci==<version>"]}, "disabled": false, "timeout": 300}
+```
 
 To remove it: `uvx --python 3.12 nexus-mcp-ci setup --client <client> --uninstall --yes`.
 
