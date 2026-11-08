@@ -26,6 +26,22 @@ class TestPathValidation:
         assert "error" in result
         assert "Not a directory" in result["error"]
 
+    def test_index_host_path_in_a_container_names_the_workspace(self, monkeypatch):
+        from nexus_mcp.config import reset_settings
+
+        monkeypatch.setenv("NEXUS_WORKSPACE", "/workspace")
+        reset_settings()
+        mcp = server_module.create_server()
+        result = asyncio.run(_call_tool(mcp, "index", {"path": "/Users/someone/project"}))
+        assert "Not a directory: /Users/someone/project" in result["error"]
+        assert "Call index with path '/workspace'" in result["error"]
+
+    def test_index_bad_path_outside_a_container_has_no_workspace_hint(self):
+        mcp = server_module.create_server()
+        result = asyncio.run(_call_tool(mcp, "index", {"path": "/nonexistent/path"}))
+        assert "Not a directory: /nonexistent/path" in result["error"]
+        assert "container" not in result["error"]
+
     def test_index_path_with_dotdot_resolves(self, tmp_path):
         """Path with .. is resolved to absolute before validation."""
         sub = tmp_path / "a" / "b"

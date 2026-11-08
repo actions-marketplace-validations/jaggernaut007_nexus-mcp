@@ -26,6 +26,7 @@ Set these as environment variables of the server, for example `claude mcp add ne
 | `NEXUS_AUTO_WATCH` | `true` | Watch indexed folders and reindex changed files in the background. |
 | `NEXUS_STALENESS_CHECK_INTERVAL` | `15.0` | Seconds between stale-file checks in `status` and `search`. |
 | `NEXUS_EXTRA_TOOLS` | unset | Turn on tools that are off by default: `all`, or names from `status`, `analyze`, `memory`. |
+| `NEXUS_WORKSPACE` | unset | Set by a container image: the folder where the project is mounted. The server tells the agent to index this folder. |
 | `NEXUS_IDLE_TIMEOUT` | `10800.0` | Stop the server after this many seconds with no tool call (default 3 hours). `0` turns it off. |
 | `NEXUS_EXIT_ON_PARENT_EXIT` | `true` | Stop the server when the client process that started it is gone. |
 | `NEXUS_SHUTDOWN_TIMEOUT` | `10.0` | Longest wait in seconds for a running index at shutdown. The process then exits. |

@@ -152,6 +152,14 @@ def validate_path(path: str) -> tuple[Optional[Path], Optional[dict]]:
         return None, {"error": f"Invalid path: {e}"}
 
     if not resolved.is_dir():
+        from nexus_mcp.config import get_settings
+
+        workspace = get_settings().workspace
+        if workspace:
+            return None, {
+                "error": f"Not a directory: {path}. This server runs in a container and the "
+                f"project is mounted at {workspace}. Call index with path '{workspace}'."
+            }
         return None, {"error": f"Not a directory: {path}"}
 
     return resolved, None

@@ -385,6 +385,19 @@ def test_instructions_ask_for_the_full_path_of_a_named_file():
     assert text.index("which tool answers which question") < text.index("bare file name")
 
 
+def test_instructions_name_the_workspace_only_in_a_container():
+    # Docker test (2026-11-08): in a container the agent called `index` with its host path.
+    from nexus_mcp.config import OPTIONAL_TOOLS
+    from nexus_mcp.server import instructions_for
+
+    default = instructions_for(set(OPTIONAL_TOOLS))
+    container = instructions_for(set(OPTIONAL_TOOLS), "/workspace")
+    assert "container" not in default
+    assert container.startswith(default)
+    assert "mounted at /workspace: pass that path to `index`" in container
+    assert len(instructions_for(set(), "/workspace")) <= 2048
+
+
 def test_group_by_file_collapses_a_long_list_of_test_callers():
     from nexus_mcp.core.graph_models import NodeType, UniversalLocation, UniversalNode
 
