@@ -109,7 +109,23 @@ All notable changes to this project will be documented in this file.
     token): `graph("async_setup_component")` 222,303 → 6,220; with `transitive=true`
     → 10,506. After the cap, `async_fire` gives 14,165 and `Entity.async_write_ha_state`
     gives 8,131.
-    `defined_in` stays in each result. Not yet measured in a live run.
+    `defined_in` stays in each result.
+  - Live A/B of `cf1bb7a` (`benchmarks/runs/languages-graph-cap`), Sonnet at medium effort,
+    6 tasks × 3 reps, on the defs-fix indexes. The cap changes only the output.
+    - Home Assistant, the `async_setup_component` task: the `graph` result fell to about
+      1,555 tokens, and the median of the task fell from 123,553 to 72,656 tokens (Grep
+      58,977). All 3 runs now have every fact (before: 0 of 3 correct). 1 of 3 is
+      correct: 2 answers write `setup.py` with no folder, which the scorer does not
+      accept. 1 Grep run has the same miss.
+    - Home Assistant, all tasks, Nexus against Grep: sum 1,046,718 / 2,350,456; median
+      51,774 / 48,726; fresh 168,565 / 210,805; cost $0.972 / $1.491; correct 15 / 17 of
+      18; fact score 0.889 / 0.833; combined 0.861 / 0.880; tasks with fewer tokens 3 of 6.
+      The gate still fails by 2 runs. Each Nexus miss has all the facts and leaves out a
+      file path.
+    - Django, Nexus against Grep: sum 884,896 / 1,276,331; median 32,924 / 46,538; fresh
+      113,262 / 168,863; cost $0.728 / $1.134; correct 16 / 16 of 18; combined 0.847 /
+      0.833; tasks with fewer tokens 4 of 6. The `SQLCompiler.as_sql` task fell from
+      77,526 to 33,573 tokens (Grep 199,128).
 
 ### Fixed
 

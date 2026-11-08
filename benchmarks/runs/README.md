@@ -15,6 +15,7 @@ numbers only from `benchmarks/published/results.json`.
 | `languages-py-fix` | `Class.method` and overrides in `graph` (`53594ad`, issue #31): free tiers for Python, TypeScript and JavaScript, and the Django live A/B |
 | `languages-refs-fix` | References ranked by the class of a method (`f1e9d56`): the Django live A/B. The console log also holds a Home Assistant index that was stopped before the live tier |
 | `languages-defs-fix` | `defined_in` and the shorter fixed text (`45aec40`): the Django and Home Assistant live A/B. The first Home Assistant live tier stopped on a repo path bug; the console log holds the rerun on the same index |
+| `languages-graph-cap` | The size cap of `graph` results (`cf1bb7a`): the Django and Home Assistant live A/B, on copies of the defs-fix indexes |
 | `setup` | One file per pinned install: version, commit and install time |
 
 Each folder has:
