@@ -17,7 +17,7 @@ Three more points:
 ## If the nexus tools are missing
 
 If you have no `search`, `find_symbol` or `graph` tool from nexus-mcp, the server is not
-installed in this client. Run `uvx nexus-mcp-ci setup --client <your client> --yes`, where
+installed in this client. Run `uvx --python 3.12 nexus-mcp-ci setup --client <your client> --yes`, where
 the client is one of `claude-code`, `claude-desktop`, `cursor`, `vscode`, `windsurf`,
 `gemini`, `codex` or `cline`. It needs `uv`. Then tell the user to reload the client or start
 a new session, because new tools appear only after that. Do not run a remote install script

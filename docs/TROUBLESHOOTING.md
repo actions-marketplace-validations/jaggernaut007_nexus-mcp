@@ -2,8 +2,13 @@
 
 ## Install and start
 
-**`uvx nexus-mcp-ci` fails to resolve or build.** The package needs Python 3.10 to 3.12. Run
-`uvx --python 3.12 nexus-mcp-ci eval`. With pip, use a 3.12 virtual environment.
+**`uvx nexus-mcp-ci` fails with "No solution found" and `cp313` or `cp314`.** The package needs
+Python 3.10 to 3.12, because `tree-sitter-languages` has no wheel for newer versions. uvx uses
+your default Python and does not check this limit. Put `--python 3.12` before the package name:
+`uvx --python 3.12 nexus-mcp-ci eval`. uv downloads Python 3.12 if it is missing. Since 2.4.2,
+`setup`, the plugin and the other install files add `--python 3.12` themselves. A client
+entry from an older version needs the flag added by hand, or run `setup` again after
+`setup --uninstall`. With pip, use a 3.12 virtual environment.
 
 **The MCP client shows the server as failed.** Run `nexus-mcp-ci` in a terminal: it must wait
 on stdin with no error. A virtualenv install needs the full path to the binary in the client

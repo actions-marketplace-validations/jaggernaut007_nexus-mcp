@@ -52,12 +52,26 @@ def test_mcpb_entry_point_starts_the_server():
 
 
 def test_every_channel_pins_the_project_version():
+    # Requirement changed on 2026-11-08: each uvx launch also pins Python 3.12, because uvx
+    # ignores `requires-python` and Python 3.13+ has no tree-sitter-languages wheel.
     want = _version()
     gemini = json.loads((ROOT / "gemini-extension.json").read_text())
-    assert gemini["mcpServers"]["nexus-mcp"]["args"] == [f"nexus-mcp-ci=={want}"]
+    assert gemini["mcpServers"]["nexus-mcp"]["args"] == [
+        "--python",
+        "3.12",
+        f"nexus-mcp-ci=={want}",
+    ]
     plugin = json.loads((ROOT / "plugin" / ".mcp.json").read_text())
     assert plugin["mcpServers"]["nexus-mcp"]["command"] == "uvx"
-    assert plugin["mcpServers"]["nexus-mcp"]["args"] == [f"nexus-mcp-ci=={want}"]
+    assert plugin["mcpServers"]["nexus-mcp"]["args"] == [
+        "--python",
+        "3.12",
+        f"nexus-mcp-ci=={want}",
+    ]
+    server = json.loads((ROOT / "server.json").read_text())
+    package = server["packages"][0]
+    assert package["runtimeHint"] == "uvx"
+    assert package["runtimeArguments"] == [{"type": "named", "name": "--python", "value": "3.12"}]
     assert f'"nexus-mcp-ci=={want}"' in (ROOT / "mcpb" / "pyproject.toml").read_text()
 
 
@@ -93,7 +107,11 @@ def test_vscode_link_in_the_readme_decodes_to_a_uvx_launch():
     )
     assert match
     config = json.loads(urllib.parse.unquote(match.group(1)))
-    assert config == {"type": "stdio", "command": "uvx", "args": ["nexus-mcp-ci"]}
+    assert config == {
+        "type": "stdio",
+        "command": "uvx",
+        "args": ["--python", "3.12", "nexus-mcp-ci"],
+    }
 
 
 def test_cursor_link_on_the_site_decodes_to_a_uvx_launch():
@@ -105,7 +123,7 @@ def test_cursor_link_on_the_site_decodes_to_a_uvx_launch():
     )
     assert match
     config = json.loads(base64.b64decode(urllib.parse.unquote(match.group(1))))
-    assert config == {"command": "uvx", "args": ["nexus-mcp-ci"]}
+    assert config == {"command": "uvx", "args": ["--python", "3.12", "nexus-mcp-ci"]}
 
 
 def test_action_is_a_composite_action_with_the_documented_inputs():
@@ -176,7 +194,7 @@ def test_bump_version_changes_every_pinned_file(tmp_path, monkeypatch):
         assert json.loads((tmp_path / rel).read_text())["version"] == "9.8.7"
     for rel in ("plugin/.mcp.json", "gemini-extension.json"):
         args = json.loads((tmp_path / rel).read_text())["mcpServers"]["nexus-mcp"]["args"]
-        assert args == ["nexus-mcp-ci==9.8.7"]
+        assert args == ["--python", "3.12", "nexus-mcp-ci==9.8.7"]
     assert 'nexus-mcp-ci==9.8.7"' in (tmp_path / "mcpb" / "pyproject.toml").read_text()
 
 

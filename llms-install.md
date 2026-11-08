@@ -9,7 +9,7 @@ call graph and project memory. Install it for the client that you run in. Follow
 2. Run this command in the project folder. Replace `<client>` with your own client:
    `claude-code`, `claude-desktop`, `cursor`, `vscode`, `windsurf`, `gemini`, `codex` or `cline`.
    ```
-   uvx nexus-mcp-ci setup --client <client> --yes
+   uvx --python 3.12 nexus-mcp-ci setup --client <client> --yes
    ```
    The command adds the server entry and the skill text to that client. It starts an index of
    the folder in the background. To see the changes first, add `--dry-run`.
@@ -19,6 +19,6 @@ call graph and project memory. Install it for the client that you run in. Follow
    `NEXUS_EXTRA_TOOLS=all` is set. If a tool answers "No codebase indexed", call `index` once
    with the absolute project path.
 
-To remove it: `uvx nexus-mcp-ci setup --client <client> --uninstall --yes`.
+To remove it: `uvx --python 3.12 nexus-mcp-ci setup --client <client> --uninstall --yes`.
 
 Licence: MIT.

@@ -31,7 +31,7 @@ needs no API key, and makes no network call of its own. MIT license.
 Nexus-MCP is a local MCP server that gives an AI coding agent hybrid code search, a static call
 graph and the code of any symbol. The agent reads fewer files, so it uses fewer tokens. Call
 graphs for 10 languages. It runs on your machine. No API key and no telemetry. Install with one
-command: `uvx nexus-mcp-ci setup`.
+command: `uvx --python 3.12 nexus-mcp-ci setup`.
 
 ## What it does (for a longer form)
 
@@ -141,7 +141,7 @@ Submitted on 2026-11-08 from `main` @ `8a4c45a`, with these choices:
   (`plugin/README.md`: the opt-in agent tier and share steps); retention "Not retained";
   under 18 "No".
 - **Reviewer note:** the name note above, and: "The evaluate skill and the nexus-evaluator agent
-  run the same package's CLI (`uvx nexus-mcp-ci eval`) through Bash, only when the user asks.
+  run the same package's CLI (`uvx --python 3.12 nexus-mcp-ci eval`) through Bash, only when the user asks.
   They run no other code."
 - **New versions:** auto-publish on, GitHub push webhook on. Follow the release order in
   [RELEASING.md](RELEASING.md), so the plugin pin never reaches `main` before PyPI has it.

@@ -4,7 +4,7 @@ The site FAQ (`site/index.html`, visible and JSON-LD) gives the same answers in 
 
 ## How do I test Nexus-MCP on my own code before I install it?
 
-Run `uvx nexus-mcp-ci eval` in the project folder. It is free, runs offline and calls no LLM.
+Run `uvx --python 3.12 nexus-mcp-ci eval` in the project folder. It is free, runs offline and calls no LLM.
 It compares Nexus-MCP with Grep and Read on about 30 questions made from your code and prints
 "Strong fit", "Likely fit" or "Weak fit". See [EVALUATE.md](EVALUATE.md).
 

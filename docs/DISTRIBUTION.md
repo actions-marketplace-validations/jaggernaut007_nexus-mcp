@@ -2,11 +2,11 @@
 
 How a user gets Nexus-MCP, and what the owner must do for each channel. The default path for a
 new user is in the [README](../README.md#quickstart-60-seconds): ask the agent to install it, or
-run `uvx nexus-mcp-ci setup`.
+run `uvx --python 3.12 nexus-mcp-ci setup`.
 
 | Channel | Who it serves | Files in this repo | Published by |
 |---|---|---|---|
-| `uvx nexus-mcp-ci setup` | every client | `src/nexus_mcp/setup_clients.py`, `llms-install.md` | PyPI release |
+| `uvx --python 3.12 nexus-mcp-ci setup` | every client | `src/nexus_mcp/setup_clients.py`, `llms-install.md` | PyPI release |
 | PyPI | everyone | `pyproject.toml` | `publish.yml` on a release |
 | Claude Code plugin | Claude Code | `.claude-plugin/`, `plugin/` | the repository itself |
 | MCP Registry | registry clients | `server.json` | `publish.yml` on a release |

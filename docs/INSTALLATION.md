@@ -9,7 +9,7 @@ You need [uv](https://docs.astral.sh/uv/getting-started/installation/). Then ask
 "Install Nexus-MCP from https://github.com/jaggernaut007/Nexus-MCP", or run:
 
 ```bash
-uvx nexus-mcp-ci setup
+uvx --python 3.12 nexus-mcp-ci setup
 ```
 
 `setup` finds your MCP clients (Claude Code, Claude Desktop, Cursor, VS Code, Windsurf, Gemini CLI,

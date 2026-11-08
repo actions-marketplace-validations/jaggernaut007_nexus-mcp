@@ -20,8 +20,8 @@ Nexus-MCP is a local code-intelligence MCP server for Claude Code, Codex, Cursor
 **Not sure yet? Measure it on your own code first.** It is free, runs offline, calls no LLM and takes a few minutes:
 
 ```bash
-uvx nexus-mcp-ci eval            # the current folder
-uvx nexus-mcp-ci eval --example  # or the Nexus-MCP source, if you have no project at hand
+uvx --python 3.12 nexus-mcp-ci eval            # the current folder
+uvx --python 3.12 nexus-mcp-ci eval --example  # or the Nexus-MCP source, if you have no project at hand
 ```
 
 You get a verdict ("Strong fit", "Likely fit" or "Weak fit") and the tokens an agent needs to reach the right file, with and without Nexus-MCP. Nothing leaves your machine. See [Evaluate on your project](#evaluate-on-your-project).
@@ -96,10 +96,10 @@ estimated: see [Token efficiency](#token-efficiency) and `benchmarks/`.
 Decide with your own numbers. The quick check is free, offline and calls no LLM:
 
 ```bash
-uvx nexus-mcp-ci eval                                   # the current folder
-uvx nexus-mcp-ci eval path/to/project                   # another folder
-uvx nexus-mcp-ci eval https://github.com/pallets/flask  # a public repo (shallow clone)
-uvx nexus-mcp-ci eval --example                         # the Nexus-MCP source, offline
+uvx --python 3.12 nexus-mcp-ci eval                                   # the current folder
+uvx --python 3.12 nexus-mcp-ci eval path/to/project                   # another folder
+uvx --python 3.12 nexus-mcp-ci eval https://github.com/pallets/flask  # a public repo (shallow clone)
+uvx --python 3.12 nexus-mcp-ci eval --example                         # the Nexus-MCP source, offline
 ```
 
 It asks about 30 questions made from your own code and compares Grep and Read with one
@@ -159,7 +159,7 @@ The agent reads [`llms-install.md`](llms-install.md) and runs one command. You c
 same command yourself:
 
 ```bash
-uvx nexus-mcp-ci setup
+uvx --python 3.12 nexus-mcp-ci setup
 ```
 
 `setup` finds the MCP clients on your machine, shows each change, and asks before it writes
@@ -174,7 +174,7 @@ answers which question even without the skill.
 
 Other ways in, each with the same server:
 
-- **VS Code:** [Install in VS Code](https://vscode.dev/redirect/mcp/install?name=nexus-mcp&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22nexus-mcp-ci%22%5D%7D)
+- **VS Code:** [Install in VS Code](https://vscode.dev/redirect/mcp/install?name=nexus-mcp&config=%7B%22type%22%3A%22stdio%22%2C%22command%22%3A%22uvx%22%2C%22args%22%3A%5B%22--python%22%2C%223.12%22%2C%22nexus-mcp-ci%22%5D%7D)
 - **Cursor:** the "Add to Cursor" button on the [website](https://jaggernaut007.github.io/nexus-mcp/#install)
 - **Claude Desktop:** download `nexus-mcp.mcpb` from the [latest release](https://github.com/jaggernaut007/Nexus-MCP/releases/latest) and open it
 - **Gemini CLI:** `gemini extensions install https://github.com/jaggernaut007/Nexus-MCP`

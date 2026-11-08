@@ -1,7 +1,7 @@
 # Contributing
 
 Thank you for your help. The fastest useful contribution is a result: run
-`uvx nexus-mcp-ci eval` on your project and share it with `nexus-mcp-ci eval share <id>`.
+`uvx --python 3.12 nexus-mcp-ci eval` on your project and share it with `nexus-mcp-ci eval share <id>`.
 
 ## Set up
 

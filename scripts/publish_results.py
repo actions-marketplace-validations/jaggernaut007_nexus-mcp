@@ -641,7 +641,7 @@ code {{ font-size:.9em; }}
 <p>The free offline check: about 30 to 40 questions made from each project, with the right file from the parser. Tokens are a proxy (characters divided by 4). Chromium <code>base/</code> took 25 minutes to index on a laptop; the Nexus-MCP source takes about 30 seconds (<code>--example</code>).</p>
 {quick_table}
 {languages_html(data.get("languages", []))}{"".join(comparison_html(c) for c in data.get("comparisons", []))}{community_html(community)}<h2>Run it on your own code</h2>
-<p><code>uvx nexus-mcp-ci eval</code> runs the free offline check on the current folder. <code>uvx nexus-mcp-ci eval --agent claude</code> runs the paid A/B with your own Claude Code login, after it shows the cost.</p>
+<p><code>uvx --python 3.12 nexus-mcp-ci eval</code> runs the free offline check on the current folder. <code>uvx --python 3.12 nexus-mcp-ci eval --agent claude</code> runs the paid A/B with your own Claude Code login, after it shows the cost.</p>
 <h2>Data</h2>
 <ul>
 <li><a href="benchmarks.json">benchmarks.json</a> (source of truth)</li>

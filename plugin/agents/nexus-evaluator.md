@@ -7,7 +7,7 @@ tools: Bash, Read
 
 Run the Nexus-MCP quick eval and report a short summary.
 
-1. Use the runner the caller names, or the first that works: `nexus-mcp-ci`, `uvx nexus-mcp-ci`,
+1. Use the runner the caller names, or the first that works: `nexus-mcp-ci`, `uvx --python 3.12 nexus-mcp-ci`,
    `pipx run nexus-mcp-ci`.
 2. Run `<runner> eval <folder> --json` (the folder defaults to `.`). Never add `--agent`,
    `--preset` or `share`. Those spend LLM API tokens or post data, and need the user's yes in the main

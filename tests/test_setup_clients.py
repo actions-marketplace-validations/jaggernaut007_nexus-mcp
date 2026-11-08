@@ -30,10 +30,13 @@ def _run(home, project, *extra):
     return sc.run_setup(["--home", str(home), "--project", str(project), "--no-index", *extra])
 
 
-def test_launch_spec_uses_uvx():
+def test_launch_spec_uses_uvx_with_python_3_12():
+    # Requirement changed on 2026-11-08: uvx picks the default Python, not one that fits
+    # `requires-python`. On Python 3.13+ the install failed (no tree-sitter-languages wheel).
     spec = sc.launch_spec()
     assert spec["command"] == "uvx"
-    assert spec["args"][0].startswith("nexus-mcp-ci")
+    assert spec["args"][:2] == ["--python", "3.12"]
+    assert spec["args"][2].startswith("nexus-mcp-ci")
 
 
 def test_skill_text_has_front_matter_and_install_section():
@@ -252,9 +255,9 @@ def test_launch_spec_is_not_pinned_for_a_source_install(monkeypatch):
             return self._direct_url
 
     monkeypatch.setattr(md, "distribution", lambda name: Dist('{"url": "file:///src"}'))
-    assert sc.launch_spec()["args"] == ["nexus-mcp-ci"]
+    assert sc.launch_spec()["args"] == ["--python", "3.12", "nexus-mcp-ci"]
     monkeypatch.setattr(md, "distribution", lambda name: Dist(None))
-    assert sc.launch_spec()["args"] == ["nexus-mcp-ci==9.9.9"]
+    assert sc.launch_spec()["args"] == ["--python", "3.12", "nexus-mcp-ci==9.9.9"]
 
 
 def test_write_atomic_keeps_the_file_mode(tmp_path):
