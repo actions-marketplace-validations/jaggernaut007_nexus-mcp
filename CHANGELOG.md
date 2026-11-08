@@ -98,6 +98,19 @@ All notable changes to this project will be documented in this file.
     agent greps again.
   - Run logs are in `benchmarks/runs/languages-refs-fix` and `languages-defs-fix`.
 
+- **`graph` results have a size cap.** A symbol with thousands of callers gave a result
+  above the 25k-token MCP limit of Claude Code.
+  - `graph` lists at most 60 source files and 10 test files of callers (or of impacted
+    files with `transitive=true`). `callers_not_listed` or `impacted_not_listed` gives the
+    rest as counts: files, test files, symbols and the 10 largest folders.
+  - `references` lists at most 20 files in `more_files` and in `test_files`.
+    `more_files_not_listed` and `test_files_not_listed` count the rest (files and lines).
+  - Measured on the Home Assistant index (characters of the JSON result, about 4 per
+    token): `graph("async_setup_component")` 222,303 → 6,220; with `transitive=true`
+    → 10,506. After the cap, `async_fire` gives 14,165 and `Entity.async_write_ha_state`
+    gives 8,131.
+    `defined_in` stays in each result. Not yet measured in a live run.
+
 ### Fixed
 
 - **Security review of this branch.**

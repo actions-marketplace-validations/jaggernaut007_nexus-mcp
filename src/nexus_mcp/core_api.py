@@ -408,11 +408,56 @@ def _group_by_file(
     file keeps its first few symbols and a count of the rest: in the benchmark one file
     held 40 test functions that call one symbol, and an agent needs the file, not the 40.
     """
+    return _collapse_test_symbols(_group_names(nodes, codebase_path))
+
+
+def _group_names(
+    nodes: List[UniversalNode], codebase_path: Optional[Path] = None
+) -> dict[str, list[str]]:
+    """Symbols as `file -> ["name:line", ...]`, in the order given, with no file cut."""
     grouped: dict[str, list[str]] = {}
     for node in nodes:
         short = _serialize_node_compact(node, codebase_path)
         grouped.setdefault(short["file"], []).append(f"{short['name']}:{short['start_line']}")
-    return _collapse_test_symbols(grouped)
+    return grouped
+
+
+MAX_GRAPH_SOURCE_FILES = 60  # source files of callers listed by `graph`; the rest are counts
+MAX_GRAPH_TEST_FILES = 10  # test files of callers listed by `graph`; the rest are counts
+MAX_OMITTED_DIRS = 10  # folders named in the count of the files that are not listed
+
+
+def _cap_files(
+    grouped: dict[str, list[str]],
+) -> tuple[dict[str, list[str]], Optional[dict[str, Any]]]:
+    """Keep the first source and test files of a `graph` result. Count the rest by folder.
+
+    On Home Assistant `graph("async_setup_component")` named 4,979 callers in about 3,000
+    files, mostly tests: 222,303 characters, about 55k tokens. Claude Code does not give
+    the agent an MCP result above 25k tokens in full, so the agent grepped again and lost
+    `defined_in`. Returns the listed files (test symbols collapsed) and the count of the
+    rest, or None when every file is listed.
+    """
+    from collections import Counter
+
+    from nexus_mcp.engines.fusion import is_test_path
+
+    ordered = sorted(grouped, key=lambda f: (is_test_path(f), f))
+    source = [f for f in ordered if not is_test_path(f)]
+    tests = [f for f in ordered if is_test_path(f)]
+    kept = source[:MAX_GRAPH_SOURCE_FILES] + tests[:MAX_GRAPH_TEST_FILES]
+    dropped = source[MAX_GRAPH_SOURCE_FILES:] + tests[MAX_GRAPH_TEST_FILES:]
+    listed = _collapse_test_symbols({f: grouped[f] for f in kept})
+    if not dropped:
+        return listed, None
+    dirs = Counter("/".join(PurePosixPath(f).parts[:-1][:2]) or "." for f in dropped)
+    omitted: dict[str, Any] = {
+        "files": len(dropped),
+        "test_files": len(dropped) - max(0, len(source) - MAX_GRAPH_SOURCE_FILES),
+        "symbols": sum(len(grouped[f]) for f in dropped),
+        "by_folder": dict(dirs.most_common(MAX_OMITTED_DIRS)),
+    }
+    return listed, omitted
 
 
 def _collapse_test_symbols(grouped: dict[str, list[str]]) -> dict[str, list[str]]:
@@ -1487,15 +1532,14 @@ def _graph_immediate(
     defined_in = _defined_in(state, matches)
     if defined_in:
         result["defined_in"] = defined_in
-    result |= {
-        "direction": direction,
-        "total": len(related_nodes),
-        direction: (
-            _group_by_file(related_nodes, state.codebase_path)
-            if detail == "compact"
-            else [_serialize_node(n, state.codebase_path) for n in related_nodes[:MAX_FULL_NODES]]
-        ),
-    }
+    omitted = None
+    if detail == "compact":
+        listed, omitted = _cap_files(_group_names(related_nodes, state.codebase_path))
+    else:
+        listed = [_serialize_node(n, state.codebase_path) for n in related_nodes[:MAX_FULL_NODES]]
+    result |= {"direction": direction, "total": len(related_nodes), direction: listed}
+    if omitted:
+        result[f"{direction}_not_listed"] = omitted
     if detail != "compact" and len(related_nodes) > MAX_FULL_NODES:
         result["truncated"] = (
             f"The first {MAX_FULL_NODES} of {len(related_nodes)} are shown. "
@@ -1545,6 +1589,11 @@ def _merge_references(found: list[tuple[Path, dict[str, Any]]]) -> dict[str, Any
         for key in ("files", "more_files", "test_files"):
             for path, value in refs.get(key, {}).items():
                 merged.setdefault(key, {})[f"{root.name}/{path}"] = value
+        for key in ("more_files_not_listed", "test_files_not_listed"):
+            if refs.get(key):
+                rest = merged.setdefault(key, {"files": 0, "lines": 0})
+                rest["files"] += refs[key]["files"]
+                rest["lines"] += refs[key]["lines"]
     return merged
 
 
@@ -1645,7 +1694,9 @@ def _graph_transitive_impact(
     # per-symbol list out. A 46,000-character result was measured on a widely used symbol.
     if compact:
         del result["impacted_symbols"]
-        result["impacted_files"] = _collapse_test_symbols(by_file)
+        result["impacted_files"], omitted = _cap_files(by_file)
+        if omitted:
+            result["impacted_not_listed"] = omitted
     elif len(all_impacted) > MAX_FULL_NODES:
         result["impacted_symbols"] = all_impacted[:MAX_FULL_NODES]
         result["truncated"] = (

@@ -90,7 +90,7 @@ All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchma
 An agent that explores a codebase with Grep and Read pays for every call: each call is one more
 turn, and each turn reads the whole conversation again. Nexus-MCP answers a question about code
 in fewer calls. `search` returns the whole code of its top results, `find_symbol` returns the
-code of several names in one call, and `graph` returns every text reference beside the call
+code of several names in one call, and `graph` returns the text references beside the call
 edges.
 
 The north star of the project is lower token use with the same accuracy. It is measured, not

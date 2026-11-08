@@ -403,9 +403,9 @@ def create_server():
         ] = False,
     ) -> dict[str, Any]:
         """Trace the call graph: who calls a function (direction='callers') or what it
-        calls ('callees'). transitive=true lists everything that depends on it; use it
+        calls ('callees'). transitive=true covers everything that depends on it; use it
         before you change, rename or delete a shared function ("what breaks if I change
-        X"). A callers result also has `references`, every whole-word use of the name,
+        X"). A callers result also has `references`, the whole-word uses of the name,
         so no grep is needed. For a method, pass `Class.method`: the result also lists the
         `overrides` in subclasses. Edges are static: calls through callbacks, reflection
         or dynamic dispatch show only in `references`."""

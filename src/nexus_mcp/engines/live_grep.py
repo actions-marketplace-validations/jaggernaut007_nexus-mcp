@@ -16,6 +16,9 @@ logger = logging.getLogger(__name__)
 
 REFERENCES_TIMEOUT_S = 10
 REFERENCE_TEXT_CHARS = 110
+# At most this many files in each count map (`more_files`, `test_files`). On Home Assistant
+# `async_setup_component` had 1,200+ test files, about 58,000 characters of counts.
+MAX_COUNTED_FILES = 20
 # At most this many class names rank the reference files (a class and its subclasses).
 MAX_RELATED_NAMES = 200
 # Files whose lines are noise for "where is this name used": translations, prose, maps and
@@ -237,10 +240,16 @@ class LiveGrepEngine:
             "files": files,
             "truncated": truncated,
         }
-        if more_files:
-            result["more_files"] = more_files
-        if test_files:
-            result["test_files"] = test_files
+        for key, counts in (("more_files", more_files), ("test_files", test_files)):
+            if not counts:
+                continue
+            paths = list(counts)
+            result[key] = {p: counts[p] for p in paths[:MAX_COUNTED_FILES]}
+            rest = paths[MAX_COUNTED_FILES:]
+            if rest:
+                result[f"{key}_not_listed"] = {
+                    "files": len(rest), "lines": sum(counts[p] for p in rest),
+                }
         if non_code["files"]:
             result["non_code"] = non_code
         if definitions:
