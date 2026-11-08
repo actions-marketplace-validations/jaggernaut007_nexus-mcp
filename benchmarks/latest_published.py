@@ -2,12 +2,13 @@
 
 The raw runs are in benchmarks/runs/<label>/. A repo can have many runs. This script keeps
 only the latest run of each tier (the offline check, retrieval, graph, the live A/B), so the
-README and the site show one row per repo. A repo with only old runs keeps its old run, and
-each row names the build that made it.
+README and the site show one row per repo. A repo with only old runs keeps its old run. Each
+row names the build of its run.
 
 The Grep and Read side of the live A/B does not depend on the Nexus-MCP build. So the latest
 Nexus-MCP side is paired with the latest Grep and Read side, even when they come from two runs.
-This is the rule that scripts/publish_results.py has always used.
+scripts/publish_results.py used the same rule before. The two sides must have the same model,
+effort and number of tasks; else the build stops with an error.
 
 Usage:
     python -m benchmarks.latest_published          # rewrite the "repos" list
@@ -117,10 +118,13 @@ def _latest(runs: List[Dict[str, Dict[str, Any]]], name: str, test) -> Optional[
 
 
 def _has_quick(row: Dict[str, Any]) -> bool:
+    """True when the row has a usable offline-check summary."""
     return _ok(row.get("quick")) and "summary" in row["quick"]
 
 
 def _has_side(side: str):
+    """A test for rows whose live tier has the condition `side` ("baseline" or "nexus")."""
+
     def test(row: Dict[str, Any]) -> bool:
         live = row.get("live")
         return _ok(live) and side in (live.get("conditions") or {})
@@ -128,7 +132,28 @@ def _has_side(side: str):
     return test
 
 
+def check_pair(name: str, nexus: Dict[str, Any], baseline: Dict[str, Any]) -> None:
+    """Raise ValueError when two live sides from different runs do not have the same setup.
+
+    The pair is fair only with the same model, effort and number of tasks.
+    """
+    if nexus is baseline:
+        return
+    n, b = nexus["live"], baseline["live"]
+    for key in ("model", "effort"):
+        if n.get(key) != b.get(key):
+            raise ValueError(
+                f"{name}: the live sides differ in {key} "
+                f"({nexus['_label']}: {n.get(key)}, {baseline['_label']}: {b.get(key)})"
+            )
+    tasks_n = n["conditions"]["nexus"]["n_tasks"]
+    tasks_b = b["conditions"]["baseline"]["n_tasks"]
+    if tasks_n != tasks_b:
+        raise ValueError(f"{name}: the live sides have {tasks_n} and {tasks_b} tasks")
+
+
 def quick_entry(row: Dict[str, Any]) -> Dict[str, Any]:
+    """The published offline-check block of a row."""
     q = row["quick"]
     s = q["summary"]
     return {
@@ -151,6 +176,7 @@ def quick_entry(row: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def live_side(row: Dict[str, Any], side: str) -> Dict[str, Any]:
+    """The published block of one live condition (`side`) of a row."""
     c = row["live"]["conditions"][side]
     return {
         "run": row["_label"],
@@ -188,10 +214,12 @@ def repo_entry(name: str, runs: List[Dict[str, Dict[str, Any]]]) -> Optional[Dic
     graph = _latest(runs, name, lambda r: _ok(r.get("graph")))
     if graph:
         fns, calls = graph_totals(graph["graph"], base["language"])
-        entry["calls_per_fn"] = round(calls / fns, 2) if fns else 0
+        # No function nodes: there is no rate to show, so publish None (a dash), not 0.
+        entry["calls_per_fn"] = round(calls / fns, 2) if fns else None
     nexus = _latest(runs, name, _has_side("nexus"))
     baseline = _latest(runs, name, _has_side("baseline"))
     if nexus and baseline:
+        check_pair(name, nexus, baseline)
         live = nexus["live"]
         entry["live"] = {
             "model": live.get("model", "sonnet"),
@@ -203,16 +231,31 @@ def repo_entry(name: str, runs: List[Dict[str, Dict[str, Any]]]) -> Optional[Dic
     return entry
 
 
-def build(runs_dir: Path = RUNS_DIR) -> List[Dict[str, Any]]:
-    runs = load_runs(runs_dir)
+def build(runs_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
+    """The published entry of each repo in REPOS. A repo with no usable run is left out."""
+    runs = load_runs(runs_dir or RUNS_DIR)
     return [e for e in (repo_entry(name, runs) for name in REPOS) if e]
 
 
+def unlisted_runs(runs_dir: Optional[Path] = None) -> List[str]:
+    """Run folders in benchmarks/runs/ that ORDER does not list. Such a run is never read."""
+    root = runs_dir or RUNS_DIR
+    skip = {"setup"}
+    return sorted(
+        p.name for p in root.iterdir() if p.is_dir() and p.name not in ORDER and p.name not in skip
+    )
+
+
 def main(argv: Optional[List[str]] = None) -> int:
+    """Rewrite "repos" in results.json. With --check, write nothing and return 1 when stale."""
     p = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     p.add_argument("--check", action="store_true", help="Fail when the list is out of date")
     args = p.parse_args(argv)
     data = json.loads(PUBLISHED.read_text())
+    missing = unlisted_runs()
+    if missing:
+        print(f"benchmarks/runs: add these runs to ORDER: {', '.join(missing)}")
+        return 1
     repos = build()
     if args.check:
         if data.get("repos") != repos:

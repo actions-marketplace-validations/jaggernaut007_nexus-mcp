@@ -33,9 +33,9 @@ def _row(name="commons-lang", language="Java", quick_tokens=None, live=None, ref
     return row
 
 
-def _side(tokens, cost=0.03, correct=6, turns=3.0):
+def _side(tokens, cost=0.03, correct=6, turns=3.0, n_tasks=6):
     return {"total_tokens": tokens, "total_cost_usd": cost, "tasks_correct": correct,
-            "n_tasks": 6, "num_turns": turns, "wall_seconds": 20.04}  # fmt: skip
+            "n_tasks": n_tasks, "num_turns": turns, "wall_seconds": 20.04}  # fmt: skip
 
 
 @pytest.fixture
@@ -83,7 +83,7 @@ def test_build_reads_a_live_only_run_from_jsonl(runs):
     path, write = runs
     write("languages-before", {
         "redis": _row(name="redis", language="C", quick_tokens=900,
-                      live={"baseline": _side(41000), "nexus": _side(66000)}),
+                      live={"baseline": _side(41000, n_tasks=2), "nexus": _side(66000, n_tasks=2)}),
     })  # fmt: skip
     folder = path / "live-opt2"
     folder.mkdir()
@@ -102,7 +102,7 @@ def test_build_reads_a_live_only_run_from_jsonl(runs):
     assert entry["live"]["baseline"]["median_tokens"] == 41000
 
 
-def test_build_skips_a_crashed_tier_and_an_unknown_repo(runs):
+def test_build_skips_a_crashed_tier(runs):
     path, write = runs
     crashed = _row(quick_tokens=1000)
     crashed["quick"] = {"status": "error"}
@@ -111,6 +111,83 @@ def test_build_skips_a_crashed_tier_and_an_unknown_repo(runs):
     (entry,) = lp.build(path)
     assert entry["quick"]["nexus"]["median_tokens"] == 2000
     assert "live" not in entry
+
+
+def test_build_drops_a_repo_with_no_repo_field(runs):
+    path, write = runs
+    bad = _row(quick_tokens=1000)
+    del bad["repo"]
+    write("languages-before", {"commons-lang": bad})
+    assert lp.build(path) == []
+
+
+def test_build_missing_runs_dir_gives_no_entries(tmp_path):
+    assert lp.build(tmp_path / "none") == []
+
+
+def test_repo_entry_zero_functions_gives_no_calls_per_fn(runs):
+    path, write = runs
+    row = _row(quick_tokens=1000)
+    row["graph"] = {"java": {"functions": 0, "calls": 0}}
+    write("languages-before", {"commons-lang": row})
+    (entry,) = lp.build(path)
+    assert entry["calls_per_fn"] is None
+
+
+def test_check_pair_rejects_sides_with_another_setup(runs):
+    path, write = runs
+    write("languages-before", {
+        "commons-lang": _row(live={"baseline": _side(50000), "nexus": _side(40000)}),
+    })  # fmt: skip
+    later = _row(live={"nexus": _side(30000, n_tasks=5)})
+    write("languages-v2.4.1", {"commons-lang": later})
+    with pytest.raises(ValueError, match="6 and 5 tasks|5 and 6 tasks"):
+        lp.build(path)
+    later["live"]["conditions"]["nexus"]["n_tasks"] = 6
+    later["live"]["effort"] = "high"
+    (path / "languages-v2.4.1" / "languages-v2.4.1.json").write_text(
+        json.dumps({"label": "v2.4.1", "rows": {"commons-lang": later}})
+    )
+    with pytest.raises(ValueError, match="effort"):
+        lp.build(path)
+
+
+def test_live_only_rows_skips_an_empty_and_a_blank_jsonl(tmp_path):
+    (tmp_path / "empty.jsonl").write_text("")
+    (tmp_path / "blank.jsonl").write_text("\n  \n")
+    assert lp.live_only_rows(tmp_path) == {}
+
+
+def test_unlisted_runs_names_a_folder_missing_from_order(tmp_path):
+    (tmp_path / "languages-before").mkdir()
+    (tmp_path / "setup").mkdir()
+    (tmp_path / "languages-new").mkdir()
+    assert lp.unlisted_runs(tmp_path) == ["languages-new"]
+
+
+def test_unlisted_runs_is_empty_for_the_committed_runs():
+    assert lp.unlisted_runs() == []
+
+
+def test_main_check_returns_1_when_out_of_date(tmp_path, monkeypatch, capsys):
+    pub = tmp_path / "results.json"
+    pub.write_text(json.dumps({"repos": [{"name": "stale"}]}))
+    monkeypatch.setattr(lp, "PUBLISHED", pub)
+    monkeypatch.setattr(lp, "build", lambda *a, **k: [{"name": "fresh"}])
+    assert lp.main(["--check"]) == 1
+    assert "out of date" in capsys.readouterr().out
+
+
+def test_main_writes_repos_and_keeps_other_keys(tmp_path, monkeypatch):
+    pub = tmp_path / "results.json"
+    pub.write_text(json.dumps({"method": {"k": 1}, "repos": []}))
+    monkeypatch.setattr(lp, "PUBLISHED", pub)
+    monkeypatch.setattr(lp, "ROOT", tmp_path)
+    monkeypatch.setattr(lp, "build", lambda *a, **k: [{"name": "x"}])
+    assert lp.main([]) == 0
+    saved = json.loads(pub.read_text())
+    assert saved["repos"] == [{"name": "x"}] and saved["method"] == {"k": 1}
+    assert lp.main(["--check"]) == 0
 
 
 def test_build_label_of_a_release_run():

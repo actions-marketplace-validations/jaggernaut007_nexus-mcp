@@ -8,10 +8,18 @@ To publish a run:
 
 1. Archive it in `benchmarks/runs/<label>/` with `scripts/archive_runs.py`.
 2. Add the label to `ORDER` in `benchmarks/latest_published.py`, at its place by commit date.
+   A folder that `ORDER` does not list makes step 3 stop with an error.
 3. Run `python -m benchmarks.latest_published`. It keeps the latest run of each repo and tier.
-4. Run `python scripts/publish_results.py`. It rewrites the README, the site and `llms.txt`.
+   It stops when two live sides from different runs have another model, effort or task count.
+4. Run `python scripts/publish_results.py`. It rewrites the `results` block of README.md and
+   llms.txt, the `hero` and `results` blocks of site/index.html, and site/benchmarks.html,
+   site/benchmarks.json and site/benchmarks.csv.
+5. Run `python scripts/build_llms_full.py` to rebuild llms-full.txt.
+6. Run `python -m benchmarks.latest_published --check` and
+   `python scripts/publish_results.py --check`. CI runs both: the first through pytest
+   (`test_published_repos_are_current`), the second as its own step.
 
-Every repo row names the build of its run, so an old run stays visible as old.
+Each repo row names the build of its run, so you can see which rows come from an old build.
 
 ## Languages and corpora
 

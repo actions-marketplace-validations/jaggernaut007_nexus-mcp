@@ -283,7 +283,9 @@ Grep and Read used fewer tokens.
 The numbers are a token proxy (characters divided by 4), not a bill. The agent tier below
 measures the real cost.
 
-Measured results (2026-11-03, 30 to 40 questions each):
+Example results (2026-11-03, 30 to 40 questions each, an older build). The README and the
+[benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html) have the latest
+run of 10 repos in 10 languages, Chromium `base/` included:
 
 | Project | Files | Verdict | Median tokens: Grep and Read → Nexus-MCP | Right file first |
 |---|---:|---|---:|---:|
@@ -291,8 +293,9 @@ Measured results (2026-11-03, 30 to 40 questions each):
 | [pallets/click](https://github.com/pallets/click) | 91 | Strong fit | 24,774 → 1,301 | 27% → 97% |
 | Nexus-MCP source (`--example`) | 59 | Likely fit | 5,385 → 1,234 | 70% → 93% |
 
-Indexing took about 25 minutes for Chromium `base/`, 1 to 2 minutes for click and about 1 minute for the Nexus-MCP source, on a laptop. The source of these numbers is
-`benchmarks/published/results.json`.
+Indexing took about 25 minutes for Chromium `base/`, 1 to 2 minutes for click and about 1 minute for the Nexus-MCP source, on a laptop. The click and Nexus-MCP rows are in
+`benchmarks/published/results.json` (`quick_tier`); the Chromium row was replaced there by a
+newer run.
 
 Question kinds:
 

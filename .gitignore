@@ -50,6 +50,11 @@ Thumbs.db
 .claude/hooks.json
 .claude/settings.json
 .claude/settings.local.json
+.claude/launch.json
+.claude/worktrees/
+
+# Browser-automation output (Playwright MCP console logs and screenshots)
+.playwright-mcp/
 
 # Documentation build artifacts
 docs-pre

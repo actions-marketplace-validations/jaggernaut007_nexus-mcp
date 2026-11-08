@@ -6,6 +6,7 @@ import html
 import importlib.util
 import io
 import json
+import re
 from pathlib import Path
 
 import pytest
@@ -110,6 +111,111 @@ def test_hero_block_has_one_tab_and_panel_per_offline_repo():
     assert block.count('role="tab"') == 3 and block.count('role="tabpanel"') == 3
     assert block.count(" hidden") == 2 and 'aria-selected="true"' in block
     assert 'style="--w:10.0%"' in block  # Java: 1,000 of 10,000 tokens
+
+
+def test_hero_block_ids_are_unique_for_c_like_languages():
+    # "C", "C#" and "C++" all slug to "c": the tab ids must come from the repo name instead.
+    repos = []
+    for lang, name in (("C", "redis"), ("C#", "newtonsoft-json"), ("C++", "chromium-base")):
+        repos.append(dict(_repo(lang, 10000, 1000), name=name))
+    block = publish.hero_block(dict(SAMPLE, repos=repos))
+    ids = re.findall(r' id="([^"]+)"', block)
+    assert len(ids) == len(set(ids)) == 6
+    for target in re.findall(r'aria-controls="([^"]+)"', block):
+        assert f'id="{target}"' in block
+
+
+NO_LIVE = dict(SAMPLE, repos=[_repo("Go", 30000, 3000)])
+
+
+def test_headline_no_live_repos_gives_zero_counts():
+    h = publish.headline(NO_LIVE)
+    assert h["live_repos"] == 0 and h["cost_lower"] == 0 and h["cost_median"] is None
+    assert "live Claude Code" not in publish.summary_sentence(NO_LIVE)
+    assert "repos cost less" not in publish.site_block(NO_LIVE)
+
+
+def test_headline_skips_a_zero_divisor():
+    zero = _repo("Go", 0, 3000)
+    zero["quick"]["nexus"]["median_ms"] = 0
+    h = publish.headline(dict(SAMPLE, repos=[zero]))
+    assert h["token_cut"] is None and h["speedup"] is None
+    assert publish.hero_block(dict(SAMPLE, repos=[zero])).count('role="tab"') == 1
+
+
+def test_headline_counts_never_exceed_repo_counts():
+    h = publish.headline(SAMPLE)
+    assert h["cost_lower"] <= h["live_repos"] <= h["repos"]
+    assert h["tokens_lower"] <= h["live_repos"]
+    assert h["correct_nexus"] <= h["tasks"] and h["correct_baseline"] <= h["tasks_baseline"]
+    assert h["token_cut_min"] <= h["token_cut"] <= h["token_cut_max"]
+
+
+@pytest.mark.parametrize(
+    "new,old,cls",
+    [(94.99, 100, "win"), (95, 100, "even"), (105, 100, "even"), (105.01, 100, "loss")],
+)
+def test_cell_equal_band_boundaries(new, old, cls):
+    assert f'class="{cls}"' in publish._cell(new, old, "x", publish.EQUAL_BAND)
+
+
+def test_cell_higher_is_better_for_hit_rate():
+    assert 'class="win"' in publish._cell(0.9, 0.5, "x", higher=True)
+    assert 'class="loss"' in publish._cell(0.4, 0.5, "x", higher=True)
+    assert 'class="even"' in publish._cell(None, 0.5, "x")
+
+
+def test_not_yet_ignores_a_change_inside_the_band():
+    inside = _repo("Rust", 20000, 1000, base_live=40000, nexus_live=42000)
+    assert publish.not_yet(dict(SAMPLE, repos=[inside])) == []
+    outside = _repo("Rust", 20000, 1000, base_live=40000, nexus_live=42001)
+    assert len(publish.not_yet(dict(SAMPLE, repos=[outside]))) == 1
+
+
+def test_offline_tables_mark_a_nexus_loss_as_a_loss():
+    worse = _repo("Go", 1000, 2000)
+    worse["quick"]["nexus"]["hit_at_1"] = 0.1
+    data = dict(SAMPLE, repos=[worse])
+    row = next(line for line in publish.offline_md(data) if line.startswith("| Go |"))
+    # Hit rate and tokens lose (no bold); search time still wins (bold).
+    assert "**10%**" not in row and "**2,000**" not in row and "**20 ms**" in row
+    html_rows = publish.offline_html(data)
+    assert html_rows.count('class="loss"') == 2 and 'class="win"' in html_rows
+
+
+def test_tables_show_a_dash_for_missing_values():
+    gap = _repo("Go", 1000, 100)
+    gap["quick"]["nexus"]["median_ms"] = None
+    gap["quick"]["grep"]["hit_at_3"] = None
+    data = dict(SAMPLE, repos=[gap])
+    assert "–" in publish.offline_md(data)[-1]
+    assert "–" in publish.detail_html(data) and "–" in publish.hero_block(data)
+
+
+def test_csv_text_repo_without_quick_tier():
+    r = _repo("Go", 1, 1, base_live=100, nexus_live=50)
+    del r["quick"]
+    rows = list(csv.reader(io.StringIO(publish.csv_text(dict(SAMPLE, repos=[r], runs=[])))))
+    assert [x[rows[0].index("tier")] for x in rows[1:]] == ["live", "live"]
+    assert {len(x) for x in rows} == {len(publish.CSV_HEAD)}
+
+
+def test_other_html_escapes_and_handles_a_missing_url():
+    d = copy.deepcopy(DATA)
+    d["quick_tier"][0]["project"] = "<b>x</b>"
+    d["quick_tier"][0].pop("url", None)
+    out = publish.other_html(d)
+    assert "<b>x</b>" not in out and "&lt;b&gt;x&lt;/b&gt;" in out
+
+
+def test_static_claims_match_the_published_headline():
+    # Hand-written taglines quote the median token cut; it must match the data.
+    claim = f"{publish.headline(DATA)['token_cut']:.0%} fewer tokens"
+    for rel in ("README.md", ".claude-plugin/marketplace.json", "glama.json",
+                "mcpb/manifest.json", "plugin/.claude-plugin/plugin.json"):
+        text = (ROOT / rel).read_text()
+        found = set(re.findall(r"\d+% fewer tokens", text))
+        assert found <= {claim}, (rel, found)
 
 
 def test_llms_block_has_no_arrows_and_lists_each_tier():
