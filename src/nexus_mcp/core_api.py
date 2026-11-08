@@ -232,6 +232,23 @@ def _stored_roots(metadata_path: Path) -> List[Path]:
     return roots
 
 
+def storage_base_for(root: Path) -> str:
+    """The folder that a relative storage folder resolves against when `root` is indexed.
+
+    Returns "" (the working folder, the behaviour before 2.4.3) when `root` is the working
+    folder or inside it. `restore_session` looks there at the next start, so a new session
+    attaches the index by itself. Otherwise it returns `root`, so the index goes to
+    `<root>/.nexus`. Cline starts the server in `/`, where `/.nexus` is on a read-only
+    volume, and a folder outside the project would be shared by unrelated projects.
+    A filesystem root never counts as the working folder.
+    """
+    cwd = Path.cwd().resolve()
+    resolved = root.resolve()
+    if cwd.parent != cwd and (resolved == cwd or cwd in resolved.parents):
+        return ""
+    return str(resolved)
+
+
 def restore_session() -> bool:
     """Reattach to the index that is already on disk. Returns True if a codebase is attached.
 
@@ -767,8 +784,13 @@ async def index(
         # waiting for it) nor frees it while the thread still writes (cancel mid-index).
         global _pipeline
         with _pipeline_lock:
-            if _pipeline is None:
+            old_storage = settings.storage_path
+            settings.storage_base = storage_base_for(validated[0])
+            if _pipeline is None or settings.storage_path != old_storage:
+                # The pipeline opens its tables when it is made, so a new storage folder
+                # needs a new pipeline. The memory store is in the same folder.
                 _pipeline = IndexingPipeline(settings)
+                get_state().memory_store = None
 
             if len(validated) > 1:
                 result = _pipeline.multi_index(validated, _cb)

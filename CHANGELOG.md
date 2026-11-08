@@ -4,6 +4,42 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.3] - 2026-11-08
+
+### Fixed
+
+- **`index` failed in Cline with `[Errno 30] Read-only file system: '/.nexus'`.** Cline starts
+  MCP servers with `/` as the working folder, and the default storage folder `.nexus` resolved
+  against the working folder. Found in a Cline install test.
+  - A relative `NEXUS_STORAGE_DIR` now resolves against the indexed project when that project
+    is outside the working folder, or when the working folder is a filesystem root. The index
+    then goes to `<project>/.nexus/`, as the docs already said.
+  - A project in the working folder keeps the old place, so a new session in Claude Code,
+    Cursor and the other clients still attaches the index by itself. An absolute
+    `NEXUS_STORAGE_DIR` (as in the Docker image) does not change.
+  - When `index` moves to another project, the server opens that project's index.
+  - In Cline a new session cannot attach the index by itself, because the server starts in
+    `/`. The agent calls `index` once: with an existing index this is an incremental update
+    (3 ms on the test project).
+  - Tested with a real stdio server started in `/`: `index` and `search` work, and `/.nexus`
+    is not made. Tests: `tests/test_storage_location.py`.
+- **`setup --client cline` wrote no `"type": "stdio"`.** Cline writes it in its own entries.
+
+### Added
+
+- **`nexus-mcp-ci --version`** (and `-V`) prints the version and exits.
+- **`llms-install.md`** fixes from the Cline test: check first whether the tools already work,
+  and add no second entry for a server that runs from another config; most entries are
+  user-level; why the entry pins the version; tool names can have a prefix (`nexus__index` in
+  Cline); check the install with `search`; where the index is, and `NEXUS_STORAGE_DIR`.
+
+### North star
+
+- Tokens: no change. The server instructions and the tool results do not change. In Cline the
+  agent no longer spends failed `index` calls and a repair.
+- Accuracy: no change to the parser, the index or the search. The live benchmark was not run
+  again.
+
 ## [2.4.2] - 2026-11-08
 
 ### Fixed

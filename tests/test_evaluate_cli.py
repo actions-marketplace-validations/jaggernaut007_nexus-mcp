@@ -240,3 +240,14 @@ def test_privacy_offline_switch(monkeypatch):
 
 def test_subprocess_import_is_available():
     assert subprocess  # keeps the import used for the fake runners above
+
+
+@pytest.mark.parametrize("flag", ["--version", "-V"])
+def test_dispatch_version_prints_the_version(flag, capsys, monkeypatch):
+    monkeypatch.setattr(cli, "installed_version", lambda: "9.9.9")
+    assert cli.dispatch([flag]) == 0
+    assert capsys.readouterr().out.strip() == "nexus-mcp-ci 9.9.9"
+
+
+def test_installed_version_is_a_version_string():
+    assert cli.installed_version().count(".") >= 2
