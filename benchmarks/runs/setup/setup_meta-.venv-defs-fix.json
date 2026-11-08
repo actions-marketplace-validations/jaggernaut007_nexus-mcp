@@ -1,0 +1,36 @@
+{
+  "django": {
+    "index_seconds": 2562.1,
+    "peak_rss_mb": 1520,
+    "embedding_model": "default",
+    "result": {
+      "total_files": 3036,
+      "total_symbols": 46052,
+      "total_chunks": 46052,
+      "parse_errors": 0,
+      "graph_nodes": 46893,
+      "graph_relationships": 71366,
+      "time_seconds": 2557.1434779167175,
+      "files_added": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
+  },
+  "home-assistant": {
+    "index_seconds": 10878.3,
+    "peak_rss_mb": 1474,
+    "embedding_model": "default",
+    "result": {
+      "total_files": 17744,
+      "total_symbols": 191416,
+      "total_chunks": 191416,
+      "parse_errors": 0,
+      "graph_nodes": 147120,
+      "graph_relationships": 274762,
+      "time_seconds": 10877.463877916336,
+      "files_added": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
+  }
+}

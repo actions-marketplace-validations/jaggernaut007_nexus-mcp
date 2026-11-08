@@ -59,6 +59,17 @@ Live runs: Claude Code, Claude Sonnet, headless (claude -p), 12 questions per pr
 | [pallets/click](https://github.com/pallets/click) (91 files) | Strong fit | 24,774 → **1,301** | 27% → 97% |
 | Nexus-MCP source (59 files) | Likely fit | 5,385 → **1,234** | 70% → 93% |
 
+Results per language:
+
+| Language | Project | Nexus-MCP version | Index time (s) | Right file first: Grep and Read | Right file first: Nexus-MCP | Tokens to the right file: Grep and Read | Tokens to the right file: Nexus-MCP | Search hit@1 | Calls per function | Live tokens: Grep and Read | Live tokens: Nexus-MCP | Correct: Grep and Read | Correct: Nexus-MCP | Agent |
+|---|---|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---:|---|
+| TypeScript | [vitejs/vite](https://github.com/vitejs/vite) (429 files) | 2.2.2 → 2.4.0 | 362.6 → 137.2 | 43% | 83% | 16,520 | 1,322 → 1,286 | 0.47 | 1.40 | 69,790 | 57,268 → 52,411 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+| JavaScript | [webpack/webpack](https://github.com/webpack/webpack) (822 files) | 2.4.0 | 530.3 | 37% | 67% | 25,634 | 1,251 | 0.20 | 1.38 | 100,320 | 74,638 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+| Java | [apache/commons-lang](https://github.com/apache/commons-lang) (264 files) | 2.2.2 → 2.4.0 pre-release (11cfccc) | 633.3 → 265.5 | 23% | 87% | 48,176 | 1,277 → 1,241 | 0.73 | 0.75 | 50,448 | 34,601 → 32,862 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+| C++ | [chromium/chromium](https://chromium.googlesource.com/chromium/src) (3,641 files) | 2.2.2 | 4,373.5 | 37% | 83% | 16,096 | 953 | 0.40 | 0.00 | 70,495 | 60,622 | 6 of 6 | 6 of 6 | sonnet, medium effort, reduced |
+
+One row for each language, on one pinned public project. A Nexus-MCP cell with an arrow shows the value before and after a fix: before → after. A Grep and Read cell shows the latest run. Right file first and tokens come from `nexus-mcp-ci eval` (no LLM); search hit@1 from the retrieval suite; live tokens and correct answers from the live benchmark.
+
 Nexus-MCP and GitNexus on [Chromium base/](https://chromium.googlesource.com/chromium/src/+/d8ebdd25980e38badccc265758aa508e6592000e/base/) (C++, 4,243 files): 8 tasks, 3 runs each, 2026-11-04.
 
 | Condition | Version | Tokens (median) | Cost per task (median) | Correct |
@@ -79,7 +90,7 @@ All numbers: [benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchma
 An agent that explores a codebase with Grep and Read pays for every call: each call is one more
 turn, and each turn reads the whole conversation again. Nexus-MCP answers a question about code
 in fewer calls. `search` returns the whole code of its top results, `find_symbol` returns the
-code of several names in one call, and `graph` returns every text reference beside the call
+code of several names in one call, and `graph` returns the text references beside the call
 edges.
 
 The north star of the project is lower token use with the same accuracy. It is measured, not
@@ -372,6 +383,13 @@ Run `benchmarks/` on your own project before you rely on it.
 ---
 
 ## The 8 Tools
+
+**New in v2.4.1:** symbols, graph nodes and call edges for C, C++, C#, PHP and Rust;
+`Class.method` names and subclass overrides in `graph`; and a size cap on large `graph`
+results. By default the server shows only `index`, `search`, `find_symbol`, `graph` and
+`map`. Set `NEXUS_EXTRA_TOOLS=all` to show `status`, `analyze` and `memory`; `memory`
+stays on when you already have memories. An index of an earlier version is rebuilt once at
+the first start.
 
 **New in v2.3.0 (no breaking change):** `uvx nexus-mcp-ci setup` installs the server and the
 skill into your MCP clients, new install routes cover Claude Desktop, Gemini CLI, VS Code,
@@ -748,8 +766,8 @@ Expected output: the 8 tools and the Python API exercised with pass/fail per too
 - **bge-small-en uses PyTorch**: The default model runs on PyTorch, not ONNX.
 - **No incremental graph updates**: Graph is rebuilt in full on incremental reindex (only vector/BM25 are incremental at the chunk level).
 - **No SSE transport**: Only stdio transport is currently supported.
-- **Language coverage**: 25+ languages get tree-sitter symbol extraction. ast-grep structure (functions, classes, imports) covers Python, JavaScript, TypeScript, Go, Java, and Rust; other languages have no graph structure.
-- **Call edges are static and name-based.** `graph()` and the `callers`/`callees` fields of `find_symbol()` come from parsing, not runtime tracing. Edges exist for Python, JavaScript, TypeScript, Go, Java and Rust. A call resolves only when the callee is in the same file, in an imported file, or has a unique name in the index. A name shared by several definitions gets no edge, so results are a lower bound. Dynamic dispatch, monkey-patching, callbacks and reflection do not show up, so treat `graph(transitive=True)` as a lower bound on blast radius.
+- **Language coverage**: 12 languages get tree-sitter symbol extraction (Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP, Bash and Kotlin). ast-grep structure (functions, classes, imports) covers Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP; Bash and Kotlin have no graph structure.
+- **Call edges are static and name-based.** `graph()` and the `callers`/`callees` fields of `find_symbol()` come from parsing, not runtime tracing. Edges exist for Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP. A call resolves only when the callee is in the same file, in an imported file, or has a unique name in the index. A name shared by several definitions gets no edge, so results are a lower bound. Dynamic dispatch, monkey-patching, callbacks and reflection do not show up, so treat `graph(transitive=True)` as a lower bound on blast radius.
 - **Complexity is approximate**: cyclomatic complexity counts branch points per function. Only Python counts `and`/`or`, and only Python functions get docstrings on graph nodes.
 - **Auto-reindex has a detection lag**: with the file watcher enabled (default), edits are picked up after a short debounce, and `status()`/`search()` run a throttled staleness check as a backstop — not an instant, per-call guarantee of freshness.
 

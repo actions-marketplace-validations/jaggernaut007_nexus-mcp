@@ -68,6 +68,43 @@ def test_demote_test_files_empty_and_no_path():
     assert fusion.demote_test_files("orders", [{"id": 1}]) == [{"id": 1}]
 
 
+def test_demote_test_files_puts_warning_classes_after_source_and_before_tests():
+    # Webpack, 2026-11-06: `LargeModulesWarning.js` outranked SplitChunksPlugin.js.
+    results = _results(
+        "errors/LargeModulesWarning.js", "tests/test_split.py", "optimize/SplitChunksPlugin.js",
+    )
+    out = fusion.demote_test_files("move shared modules into chunks by size", results)
+    assert [r["filepath"] for r in out] == [
+        "optimize/SplitChunksPlugin.js", "errors/LargeModulesWarning.js", "tests/test_split.py",
+    ]
+
+
+def test_demote_test_files_moves_an_error_class_in_a_plain_file():
+    results = [
+        {"filepath": "forms/fields.py", "symbol_name": "ValidationError", "symbol_type": "class"},
+        {"filepath": "forms/fields.py", "symbol_name": "clean", "symbol_type": "method"},
+    ]
+    out = fusion.demote_test_files("how is a form field cleaned", results)
+    assert [r["symbol_name"] for r in out] == ["clean", "ValidationError"]
+
+
+def test_demote_test_files_keeps_error_classes_when_the_query_asks_for_them():
+    results = _results("errors/LargeModulesWarning.js", "optimize/SplitChunksPlugin.js")
+    assert fusion.demote_test_files("which warning shows for large modules", results) == results
+
+
+@pytest.mark.parametrize("result,expected", [
+    ({"filepath": "lib/errors/ModuleNotFoundError.js"}, True),
+    ({"filepath": "django/core/exceptions.py"}, True),
+    ({"filepath": "a.py", "symbol_name": "RetryError", "symbol_type": "class"}, True),
+    ({"filepath": "a.py", "symbol_name": "handle_error", "symbol_type": "function"}, False),
+    ({"filepath": "lib/optimize/SplitChunksPlugin.js"}, False),
+    ({"filepath": "lib/ErrorHelpers.js"}, False),
+])
+def test_is_error_class(result, expected):
+    assert fusion.is_error_class(result) is expected
+
+
 @pytest.fixture
 def ref_repo(tmp_path):
     (tmp_path / "src").mkdir()
@@ -336,6 +373,16 @@ def test_instructions_do_not_ask_for_a_status_call_first():
     assert "no setup call is needed" in text
     assert "call `status`" not in text
     assert len(SERVER_INSTRUCTIONS) <= 2048
+
+
+def test_instructions_ask_for_the_full_path_of_a_named_file():
+    # Live runs on Home Assistant (2026-11-08): answers with every fact wrote `setup.py`
+    # for `homeassistant/setup.py`, a name that many files share.
+    text = SERVER_INSTRUCTIONS.lower()
+    assert "path from the project root" in text
+    assert "a bare file name can fit many files" in text
+    # The tool routing comes first: Codex reads the first 512 characters before the rest.
+    assert text.index("which tool answers which question") < text.index("bare file name")
 
 
 def test_group_by_file_collapses_a_long_list_of_test_callers():

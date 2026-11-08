@@ -1,0 +1,127 @@
+{
+  "label": "defs-fix",
+  "rows": {
+    "django": {
+      "name": "django",
+      "language": "Python",
+      "repo": "django/django",
+      "url": "https://github.com/django/django.git",
+      "pin": "318a316a4c86a65bede68144f9546a6056d91379",
+      "label": "defs-fix",
+      "nexus_version": "2.4.0",
+      "nexus_ref": "45aec4001d967cabc92cf852aa4204f317b918a3",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-defs-fix/django",
+      "index_meta": {
+        "index_seconds": 2562.1,
+        "peak_rss_mb": 1520,
+        "embedding_model": "default",
+        "result": {
+          "total_files": 3036,
+          "total_symbols": 46052,
+          "total_chunks": 46052,
+          "parse_errors": 0,
+          "graph_nodes": 46893,
+          "graph_relationships": 71366,
+          "time_seconds": 2557.1434779167175,
+          "files_added": 0,
+          "files_modified": 0,
+          "files_deleted": 0
+        }
+      },
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "isolation": [
+          "reduced"
+        ],
+        "errors": 0,
+        "conditions": {
+          "baseline": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.2,
+            "wasted_read_ratio_iqr": 0.475,
+            "total_tokens": 54092.0,
+            "fresh_tokens": 6993.0,
+            "total_cost_usd": 0.050374,
+            "num_turns": 5.5,
+            "wall_seconds": 18.62
+          },
+          "nexus": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.125,
+            "wasted_read_ratio_iqr": 0.4375,
+            "total_tokens": 34874.0,
+            "fresh_tokens": 7352.0,
+            "total_cost_usd": 0.0421947,
+            "num_turns": 2.0,
+            "wall_seconds": 18.0
+          }
+        }
+      }
+    },
+    "home-assistant": {
+      "name": "home-assistant",
+      "language": "Python",
+      "repo": "home-assistant/core",
+      "url": "https://github.com/home-assistant/core.git",
+      "pin": "5b0d396bd84113aabf694d23cdbddbdaf574ca78",
+      "label": "defs-fix",
+      "nexus_version": "2.4.0",
+      "nexus_ref": "45aec4001d967cabc92cf852aa4204f317b918a3",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-defs-fix/home-assistant",
+      "index_meta": {
+        "index_seconds": 10878.3,
+        "peak_rss_mb": 1474,
+        "embedding_model": "default",
+        "result": {
+          "total_files": 17744,
+          "total_symbols": 191416,
+          "total_chunks": 191416,
+          "parse_errors": 0,
+          "graph_nodes": 147120,
+          "graph_relationships": 274762,
+          "time_seconds": 10877.463877916336,
+          "files_added": 0,
+          "files_modified": 0,
+          "files_deleted": 0
+        }
+      },
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "isolation": [
+          "reduced"
+        ],
+        "errors": 0,
+        "conditions": {
+          "baseline": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.0,
+            "wasted_read_ratio_iqr": 0.5,
+            "total_tokens": 56948.0,
+            "fresh_tokens": 5899.0,
+            "total_cost_usd": 0.043179800000000004,
+            "num_turns": 6.0,
+            "wall_seconds": 19.64
+          },
+          "nexus": {
+            "n_tasks": 6,
+            "tasks_correct": 5,
+            "wasted_read_ratio": 0.3333333333333333,
+            "wasted_read_ratio_iqr": 0.6071428571428572,
+            "total_tokens": 50500.0,
+            "fresh_tokens": 5995.5,
+            "total_cost_usd": 0.0389429,
+            "num_turns": 3.0,
+            "wall_seconds": 31.36
+          }
+        }
+      }
+    }
+  }
+}

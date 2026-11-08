@@ -1,0 +1,95 @@
+{
+  "label": "graph-cap",
+  "rows": {
+    "django": {
+      "name": "django",
+      "language": "Python",
+      "repo": "django/django",
+      "url": "https://github.com/django/django.git",
+      "pin": "318a316a4c86a65bede68144f9546a6056d91379",
+      "label": "graph-cap",
+      "nexus_version": "2.4.0",
+      "nexus_ref": "cf1bb7ac7cdbaf3ca4a7968f23dfca85158b2186",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-graph-cap/django",
+      "index_meta": null,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "isolation": [
+          "reduced"
+        ],
+        "errors": 0,
+        "conditions": {
+          "baseline": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.2,
+            "wasted_read_ratio_iqr": 0.475,
+            "total_tokens": 53984.5,
+            "fresh_tokens": 8977.5,
+            "total_cost_usd": 0.055063100000000004,
+            "num_turns": 6.0,
+            "wall_seconds": 19.625
+          },
+          "nexus": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.5,
+            "wasted_read_ratio_iqr": 0.44999999999999996,
+            "total_tokens": 32911.0,
+            "fresh_tokens": 5514.0,
+            "total_cost_usd": 0.034597699999999995,
+            "num_turns": 2.0,
+            "wall_seconds": 20.155
+          }
+        }
+      }
+    },
+    "home-assistant": {
+      "name": "home-assistant",
+      "language": "Python",
+      "repo": "home-assistant/core",
+      "url": "https://github.com/home-assistant/core.git",
+      "pin": "5b0d396bd84113aabf694d23cdbddbdaf574ca78",
+      "label": "graph-cap",
+      "nexus_version": "2.4.0",
+      "nexus_ref": "cf1bb7ac7cdbaf3ca4a7968f23dfca85158b2186",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-graph-cap/home-assistant",
+      "index_meta": null,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "isolation": [
+          "reduced"
+        ],
+        "errors": 0,
+        "conditions": {
+          "baseline": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.0,
+            "wasted_read_ratio_iqr": 0.5,
+            "total_tokens": 50701.5,
+            "fresh_tokens": 5164.5,
+            "total_cost_usd": 0.03727590000000001,
+            "num_turns": 5.0,
+            "wall_seconds": 18.67
+          },
+          "nexus": {
+            "n_tasks": 6,
+            "tasks_correct": 5,
+            "wasted_read_ratio": 0.5,
+            "wasted_read_ratio_iqr": 0.7071428571428571,
+            "total_tokens": 51774.0,
+            "fresh_tokens": 6803.0,
+            "total_cost_usd": 0.043349200000000004,
+            "num_turns": 3.5,
+            "wall_seconds": 29.195
+          }
+        }
+      }
+    }
+  }
+}

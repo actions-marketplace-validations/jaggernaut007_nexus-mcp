@@ -44,7 +44,10 @@ SKIP_DIRS: Set[str] = {
 # holds for a constructor with a member initializer list (`A(L& l) LOCKS(l) : l_(l) {`).
 # 7: a C++ class head with `[[...]]` attributes and macros is a class, and `class A::B {` is
 # named `B` with the parent `A`.
-CHUNK_FORMAT = 7
+# 8: tree-sitter symbols for Rust, PHP and C#; ast-grep function and class nodes for C, C++,
+# C# and PHP; a C declarator inside a function body gives no chunk; Python, JavaScript and
+# TypeScript classes carry `bases` (needed by the `overrides` of `graph`).
+CHUNK_FORMAT = 8
 
 
 @dataclass

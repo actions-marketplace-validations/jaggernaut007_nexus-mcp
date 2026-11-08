@@ -1,5 +1,5 @@
 {
-  "schema_version": 1,
+  "schema_version": 2,
   "updated": "2026-10-28",
   "version": "2.1.0",
   "method": {
@@ -19,8 +19,18 @@
       "files": 460,
       "commit": "a67e5b4",
       "date": "2026-10-28",
-      "baseline": {"cost_usd": 0.571, "turns": 55, "correct": 36, "of": 36},
-      "nexus": {"cost_usd": 0.446, "turns": 35, "correct": 35, "of": 36}
+      "baseline": {
+        "cost_usd": 0.571,
+        "turns": 55,
+        "correct": 36,
+        "of": 36
+      },
+      "nexus": {
+        "cost_usd": 0.446,
+        "turns": 35,
+        "correct": 35,
+        "of": 36
+      }
     },
     {
       "id": "django-a67e5b4",
@@ -30,15 +40,30 @@
       "files": 3000,
       "commit": "a67e5b4",
       "date": "2026-10-28",
-      "baseline": {"cost_usd": 0.894, "turns": 93, "correct": 34, "of": 36},
-      "nexus": {"cost_usd": 0.863, "turns": 71, "correct": 36, "of": 36}
+      "baseline": {
+        "cost_usd": 0.894,
+        "turns": 93,
+        "correct": 34,
+        "of": 36
+      },
+      "nexus": {
+        "cost_usd": 0.863,
+        "turns": 71,
+        "correct": 36,
+        "of": 36
+      }
     }
   ],
   "retrieval": {
     "metric": "hit@1",
     "date": "2026-10-28",
     "source": "https://github.com/jaggernaut007/Nexus-MCP/blob/main/CHANGELOG.md",
-    "suites": {"jobscout": 0.81, "nexus_mcp": 0.80, "shop_repo": 0.50, "flask": 0.64}
+    "suites": {
+      "jobscout": 0.81,
+      "nexus_mcp": 0.8,
+      "shop_repo": 0.5,
+      "flask": 0.64
+    }
   },
   "quick_tier": [
     {
@@ -48,8 +73,16 @@
       "date": "2026-11-03",
       "questions": 40,
       "verdict": "Strong fit",
-      "grep": {"hit_at_1": 0.40, "hit_at_3": 0.58, "median_tokens": 17998},
-      "nexus": {"hit_at_1": 0.70, "hit_at_3": 0.90, "median_tokens": 950}
+      "grep": {
+        "hit_at_1": 0.4,
+        "hit_at_3": 0.58,
+        "median_tokens": 17998
+      },
+      "nexus": {
+        "hit_at_1": 0.7,
+        "hit_at_3": 0.9,
+        "median_tokens": 950
+      }
     },
     {
       "project": "pallets/click",
@@ -58,8 +91,16 @@
       "date": "2026-11-03",
       "questions": 30,
       "verdict": "Strong fit",
-      "grep": {"hit_at_1": 0.27, "hit_at_3": 0.63, "median_tokens": 24774},
-      "nexus": {"hit_at_1": 0.97, "hit_at_3": 1.0, "median_tokens": 1301}
+      "grep": {
+        "hit_at_1": 0.27,
+        "hit_at_3": 0.63,
+        "median_tokens": 24774
+      },
+      "nexus": {
+        "hit_at_1": 0.97,
+        "hit_at_3": 1.0,
+        "median_tokens": 1301
+      }
     },
     {
       "project": "Nexus-MCP source",
@@ -67,8 +108,16 @@
       "date": "2026-11-03",
       "questions": 30,
       "verdict": "Likely fit",
-      "grep": {"hit_at_1": 0.70, "hit_at_3": 0.97, "median_tokens": 5385},
-      "nexus": {"hit_at_1": 0.93, "hit_at_3": 0.97, "median_tokens": 1234}
+      "grep": {
+        "hit_at_1": 0.7,
+        "hit_at_3": 0.97,
+        "median_tokens": 5385
+      },
+      "nexus": {
+        "hit_at_1": 0.93,
+        "hit_at_3": 0.97,
+        "median_tokens": 1234
+      }
     }
   ],
   "comparisons": [
@@ -96,41 +145,153 @@
         "The same mechanical scoring (file recall and required facts) for each condition; every task is published."
       ],
       "conditions": [
-        {"key": "grep_and_read", "label": "Grep and Read", "version": "built-in tools",
-         "median_tokens": 62450, "median_cost_usd": 0.057, "total_cost_usd": 1.58,
-         "median_turns": 5, "correct": 24, "of": 24},
-        {"key": "nexus_mcp", "label": "Nexus-MCP", "version": "2.2.0 with the C++ parser fixes of 2.2.1",
-         "median_tokens": 82900, "median_cost_usd": 0.062, "total_cost_usd": 1.64,
-         "median_turns": 6, "correct": 24, "of": 24},
-        {"key": "gitnexus", "label": "GitNexus", "version": "1.6.12",
-         "median_tokens": 164192, "median_cost_usd": 0.085, "total_cost_usd": 2.13,
-         "median_turns": 6, "correct": 24, "of": 24}
+        {
+          "key": "grep_and_read",
+          "label": "Grep and Read",
+          "version": "built-in tools",
+          "median_tokens": 62450,
+          "median_cost_usd": 0.057,
+          "total_cost_usd": 1.58,
+          "median_turns": 5,
+          "correct": 24,
+          "of": 24
+        },
+        {
+          "key": "nexus_mcp",
+          "label": "Nexus-MCP",
+          "version": "2.2.0 with the C++ parser fixes of 2.2.1",
+          "median_tokens": 82900,
+          "median_cost_usd": 0.062,
+          "total_cost_usd": 1.64,
+          "median_turns": 6,
+          "correct": 24,
+          "of": 24
+        },
+        {
+          "key": "gitnexus",
+          "label": "GitNexus",
+          "version": "1.6.12",
+          "median_tokens": 164192,
+          "median_cost_usd": 0.085,
+          "total_cost_usd": 2.13,
+          "median_turns": 6,
+          "correct": 24,
+          "of": 24
+        }
       ],
       "per_task": [
-        {"task": "cr-concept-weakptr-invalidate", "category": "conceptual",
-         "tokens": {"grep_and_read": 50057, "nexus_mcp": 82568, "gitnexus": 110006},
-         "cost_usd": {"grep_and_read": 0.077, "nexus_mcp": 0.069, "gitnexus": 0.088}},
-        {"task": "cr-impact-atexit-registercallback", "category": "impact",
-         "tokens": {"grep_and_read": 58666, "nexus_mcp": 72676, "gitnexus": 212910},
-         "cost_usd": {"grep_and_read": 0.040, "nexus_mcp": 0.046, "gitnexus": 0.090}},
-        {"task": "cr-impact-histogram-bucket-ranges", "category": "impact",
-         "tokens": {"grep_and_read": 256305, "nexus_mcp": 267985, "gitnexus": 374064},
-         "cost_usd": {"grep_and_read": 0.164, "nexus_mcp": 0.175, "gitnexus": 0.173}},
-        {"task": "cr-concept-json-reader-backend", "category": "conceptual",
-         "tokens": {"grep_and_read": 56211, "nexus_mcp": 109361, "gitnexus": 180053},
-         "cost_usd": {"grep_and_read": 0.037, "nexus_mcp": 0.055, "gitnexus": 0.076}},
-        {"task": "cr-needle-json-max-depth", "category": "needle",
-         "tokens": {"grep_and_read": 66234, "nexus_mcp": 49847, "gitnexus": 97562},
-         "cost_usd": {"grep_and_read": 0.029, "nexus_mcp": 0.022, "gitnexus": 0.028}},
-        {"task": "cr-needle-utf8-to-utf16", "category": "needle",
-         "tokens": {"grep_and_read": 52976, "nexus_mcp": 32710, "gitnexus": 103939},
-         "cost_usd": {"grep_and_read": 0.028, "nexus_mcp": 0.018, "gitnexus": 0.045}},
-        {"task": "cr-arch-task-scheduling", "category": "architecture",
-         "tokens": {"grep_and_read": 132197, "nexus_mcp": 111439, "gitnexus": 191516},
-         "cost_usd": {"grep_and_read": 0.083, "nexus_mcp": 0.090, "gitnexus": 0.099}},
-        {"task": "cr-concept-timer-hierarchy", "category": "conceptual",
-         "tokens": {"grep_and_read": 71500, "nexus_mcp": 83231, "gitnexus": 148332},
-         "cost_usd": {"grep_and_read": 0.074, "nexus_mcp": 0.082, "gitnexus": 0.082}}
+        {
+          "task": "cr-concept-weakptr-invalidate",
+          "category": "conceptual",
+          "tokens": {
+            "grep_and_read": 50057,
+            "nexus_mcp": 82568,
+            "gitnexus": 110006
+          },
+          "cost_usd": {
+            "grep_and_read": 0.077,
+            "nexus_mcp": 0.069,
+            "gitnexus": 0.088
+          }
+        },
+        {
+          "task": "cr-impact-atexit-registercallback",
+          "category": "impact",
+          "tokens": {
+            "grep_and_read": 58666,
+            "nexus_mcp": 72676,
+            "gitnexus": 212910
+          },
+          "cost_usd": {
+            "grep_and_read": 0.04,
+            "nexus_mcp": 0.046,
+            "gitnexus": 0.09
+          }
+        },
+        {
+          "task": "cr-impact-histogram-bucket-ranges",
+          "category": "impact",
+          "tokens": {
+            "grep_and_read": 256305,
+            "nexus_mcp": 267985,
+            "gitnexus": 374064
+          },
+          "cost_usd": {
+            "grep_and_read": 0.164,
+            "nexus_mcp": 0.175,
+            "gitnexus": 0.173
+          }
+        },
+        {
+          "task": "cr-concept-json-reader-backend",
+          "category": "conceptual",
+          "tokens": {
+            "grep_and_read": 56211,
+            "nexus_mcp": 109361,
+            "gitnexus": 180053
+          },
+          "cost_usd": {
+            "grep_and_read": 0.037,
+            "nexus_mcp": 0.055,
+            "gitnexus": 0.076
+          }
+        },
+        {
+          "task": "cr-needle-json-max-depth",
+          "category": "needle",
+          "tokens": {
+            "grep_and_read": 66234,
+            "nexus_mcp": 49847,
+            "gitnexus": 97562
+          },
+          "cost_usd": {
+            "grep_and_read": 0.029,
+            "nexus_mcp": 0.022,
+            "gitnexus": 0.028
+          }
+        },
+        {
+          "task": "cr-needle-utf8-to-utf16",
+          "category": "needle",
+          "tokens": {
+            "grep_and_read": 52976,
+            "nexus_mcp": 32710,
+            "gitnexus": 103939
+          },
+          "cost_usd": {
+            "grep_and_read": 0.028,
+            "nexus_mcp": 0.018,
+            "gitnexus": 0.045
+          }
+        },
+        {
+          "task": "cr-arch-task-scheduling",
+          "category": "architecture",
+          "tokens": {
+            "grep_and_read": 132197,
+            "nexus_mcp": 111439,
+            "gitnexus": 191516
+          },
+          "cost_usd": {
+            "grep_and_read": 0.083,
+            "nexus_mcp": 0.09,
+            "gitnexus": 0.099
+          }
+        },
+        {
+          "task": "cr-concept-timer-hierarchy",
+          "category": "conceptual",
+          "tokens": {
+            "grep_and_read": 71500,
+            "nexus_mcp": 83231,
+            "gitnexus": 148332
+          },
+          "cost_usd": {
+            "grep_and_read": 0.074,
+            "nexus_mcp": 0.082,
+            "gitnexus": 0.082
+          }
+        }
       ],
       "notes": [
         "All three conditions answered all 24 runs correctly.",
@@ -139,6 +300,258 @@
         "GitNexus sends about 17.9k tokens of tool schema on each turn (17 tools); Nexus-MCP sends about 2.3k (8 tools).",
         "The GitNexus condition gets its MCP server and the CLAUDE.md block that gitnexus analyze writes; its on-demand skills are not given."
       ]
+    }
+  ],
+  "languages": [
+    {
+      "language": "TypeScript",
+      "project": "vitejs/vite",
+      "url": "https://github.com/vitejs/vite",
+      "pin": "483512809bbdb399d66be59af0f5aeb01ccb7181",
+      "files": 429,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.2.2",
+        "date": "2026-11-05",
+        "index_seconds": 362.6,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.433,
+            "median_tokens": 16519.5
+          },
+          "nexus": {
+            "hit_at_1": 0.833,
+            "median_tokens": 1321.5
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.47,
+        "graph": {
+          "fn_nodes": 1689,
+          "calls_per_fn": 1.4
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 71166,
+            "cost_usd": 0.062,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 57268,
+            "cost_usd": 0.048,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      },
+      "after": {
+        "nexus_version": "2.4.0",
+        "date": "2026-11-06",
+        "index_seconds": 137.2,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.433,
+            "median_tokens": 16519.5
+          },
+          "nexus": {
+            "hit_at_1": 0.833,
+            "median_tokens": 1285.5
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.47,
+        "graph": {
+          "fn_nodes": 1689,
+          "calls_per_fn": 1.4
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 69790,
+            "cost_usd": 0.059,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 52411,
+            "cost_usd": 0.046,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
+    },
+    {
+      "language": "JavaScript",
+      "project": "webpack/webpack",
+      "url": "https://github.com/webpack/webpack",
+      "pin": "f6366b0bc2afbf1f5494f33e81f2bd0588b802cc",
+      "files": 822,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.4.0",
+        "date": "2026-11-06",
+        "index_seconds": 530.3,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.367,
+            "median_tokens": 25634.0
+          },
+          "nexus": {
+            "hit_at_1": 0.667,
+            "median_tokens": 1251.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.2,
+        "graph": {
+          "fn_nodes": 5030,
+          "calls_per_fn": 1.38
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 100320,
+            "cost_usd": 0.077,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 74638,
+            "cost_usd": 0.068,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
+    },
+    {
+      "language": "Java",
+      "project": "apache/commons-lang",
+      "url": "https://github.com/apache/commons-lang",
+      "pin": "e547d704b21a1b10a2dae0158f7288d7afa4d064",
+      "files": 264,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.2.2",
+        "date": "2026-11-05",
+        "index_seconds": 633.3,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.233,
+            "median_tokens": 48175.5
+          },
+          "nexus": {
+            "hit_at_1": 0.867,
+            "median_tokens": 1277.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.73,
+        "graph": {
+          "fn_nodes": 4177,
+          "calls_per_fn": 0.75
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 58755,
+            "cost_usd": 0.047,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 34601,
+            "cost_usd": 0.023,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      },
+      "after": {
+        "nexus_version": "2.4.0 pre-release (11cfccc)",
+        "date": "2026-11-06",
+        "index_seconds": 265.5,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.233,
+            "median_tokens": 48175.5
+          },
+          "nexus": {
+            "hit_at_1": 0.867,
+            "median_tokens": 1241.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.73,
+        "graph": {
+          "fn_nodes": 4177,
+          "calls_per_fn": 0.75
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 50448,
+            "cost_usd": 0.044,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 32862,
+            "cost_usd": 0.022,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
+    },
+    {
+      "language": "C++",
+      "project": "chromium/chromium",
+      "url": "https://chromium.googlesource.com/chromium/src",
+      "pin": "d8ebdd25980e38badccc265758aa508e6592000e",
+      "files": 3641,
+      "model": "sonnet",
+      "effort": "medium",
+      "isolation": "reduced",
+      "before": {
+        "nexus_version": "2.2.2",
+        "date": "2026-11-05",
+        "index_seconds": 4373.5,
+        "quick_tier": {
+          "grep": {
+            "hit_at_1": 0.367,
+            "median_tokens": 16096.5
+          },
+          "nexus": {
+            "hit_at_1": 0.833,
+            "median_tokens": 953.0
+          },
+          "verdict": "Strong fit"
+        },
+        "retrieval_hit_at_1": 0.4,
+        "graph": {
+          "fn_nodes": 0,
+          "calls_per_fn": 0
+        },
+        "live": {
+          "baseline": {
+            "median_tokens": 70495,
+            "cost_usd": 0.065,
+            "correct": 6,
+            "of": 6
+          },
+          "nexus": {
+            "median_tokens": 60622,
+            "cost_usd": 0.055,
+            "correct": 6,
+            "of": 6
+          }
+        }
+      }
     }
   ]
 }

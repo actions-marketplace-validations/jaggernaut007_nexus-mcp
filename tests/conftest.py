@@ -34,8 +34,12 @@ def clean_state(monkeypatch):
     Session restore is off by default in tests: a stray `.nexus` directory in the
     working directory must not attach a real index to a test that expects none.
     Tests of the restore itself switch it back on.
+
+    The optional tools (status, analyze, memory) are on in tests, because many tests
+    call them. tests/test_tool_contract.py checks the default surface without them.
     """
     monkeypatch.setenv("NEXUS_AUTO_RESTORE", "false")
+    monkeypatch.setenv("NEXUS_EXTRA_TOOLS", "all")
     # server.main() now ends the process (lifecycle.finish -> os._exit). Record the
     # exit code instead, so a test of main() does not end pytest.
     from nexus_mcp import lifecycle

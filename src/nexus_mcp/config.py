@@ -8,6 +8,11 @@ from typing import Optional
 
 logger = logging.getLogger(__name__)
 
+# Tools that the server does not show unless NEXUS_EXTRA_TOOLS names them. In the live
+# benchmark agents almost never called them, but their descriptions cost about 750 tokens
+# on each turn.
+OPTIONAL_TOOLS = ("status", "analyze", "memory")
+
 
 @dataclass
 class Settings:
@@ -43,6 +48,10 @@ class Settings:
     warm_start: bool = True  # load the index and the embedding model while the server starts
     auto_watch_enabled: bool = True
     staleness_check_interval_s: float = 15.0
+
+    # Tools that are off by default, because each tool description costs tokens on every
+    # turn. "all" or a comma-separated list of names from OPTIONAL_TOOLS turns them on.
+    extra_tools: str = ""
 
     # Lifecycle: when the server stops by itself (see lifecycle.py)
     idle_timeout_s: float = 10800.0  # 3 hours with no tool call; 0 turns it off
@@ -90,6 +99,7 @@ class Settings:
             "NEXUS_WARM_START": ("warm_start", _bool),
             "NEXUS_AUTO_WATCH": ("auto_watch_enabled", _bool),
             "NEXUS_STALENESS_CHECK_INTERVAL": ("staleness_check_interval_s", float),
+            "NEXUS_EXTRA_TOOLS": ("extra_tools", str),
             "NEXUS_IDLE_TIMEOUT": ("idle_timeout_s", float),
             "NEXUS_EXIT_ON_PARENT_EXIT": ("exit_on_parent_exit", _bool),
             "NEXUS_SHUTDOWN_TIMEOUT": ("shutdown_timeout_s", float),
@@ -116,6 +126,32 @@ class Settings:
                         "Invalid value for %s=%r: %s — using default %r",
                         env_key, value, e, getattr(self, attr),
                     )
+
+    def enabled_optional_tools(self) -> set[str]:
+        """Return the optional tools that NEXUS_EXTRA_TOOLS turns on."""
+        wanted = {n.strip().lower() for n in self.extra_tools.split(",") if n.strip()}
+        if "all" in wanted:
+            return set(OPTIONAL_TOOLS)
+        unknown = wanted - set(OPTIONAL_TOOLS)
+        if unknown:
+            logger.warning("NEXUS_EXTRA_TOOLS: unknown tools %s", sorted(unknown))
+        return wanted & set(OPTIONAL_TOOLS)
+
+    def has_stored_memories(self) -> bool:
+        """True when the `memories` table of this storage folder holds at least one row.
+
+        A user of 2.2.x who stored memories keeps the `memory` tool after the upgrade,
+        though it is off by default. A folder with no table costs no LanceDB import.
+        """
+        if not (self.lancedb_path / "memories.lance").exists():
+            return False
+        try:
+            import lancedb
+
+            return lancedb.connect(str(self.lancedb_path)).open_table("memories").count_rows() > 0
+        except Exception as e:  # noqa: BLE001 - a broken table must not stop the server
+            logger.warning("Could not read the memories table: %s", e)
+            return False
 
     @property
     def storage_path(self) -> Path:

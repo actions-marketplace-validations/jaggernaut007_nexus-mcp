@@ -178,6 +178,22 @@ def test_index_of_an_older_chunk_format_is_rebuilt(codebase, tmp_path):
     assert second.incremental_index(codebase).total_files == 2  # a full index ran
 
 
+def test_index_of_chunk_format_7_is_rebuilt(codebase, tmp_path):
+    """Format 7 indexes (2.2.x) have no class `bases` and miss the new language symbols."""
+    from nexus_mcp.indexing.pipeline import CHUNK_FORMAT
+
+    assert CHUNK_FORMAT >= 8
+    pipeline = _pipeline(tmp_path, "bge-small-en")
+    pipeline.index(codebase)
+    data = json.loads(pipeline._metadata_path.read_text())
+    data["chunk_format"] = 7
+    pipeline._metadata_path.write_text(json.dumps(data))
+
+    second = _pipeline(tmp_path, "bge-small-en")
+    assert second._validate_index() is False
+    assert second.incremental_index(codebase).total_files == 2  # a full index ran
+
+
 def test_legacy_index_with_the_wrong_vector_width_is_rebuilt(codebase, tmp_path):
     """A 2.0.3 index has no model key. Opening it with a model of another width must
     rebuild, not fail on the first add (the Docker default moved from 768 to 384)."""

@@ -71,7 +71,7 @@
       "author": {
         "@id": "https://jaggernaut007.github.io/nexus-mcp/#author"
       },
-      "softwareVersion": "2.3.0",
+      "softwareVersion": "2.4.1",
       "keywords": "MCP server, Model Context Protocol, AI coding agent, Claude Code, code search, semantic memory, code intelligence, local-first",
       "sameAs": [
         "https://github.com/jaggernaut007/Nexus-MCP",
@@ -152,7 +152,7 @@
           "name": "Which programming languages does Nexus-MCP support?",
           "acceptedAnswer": {
             "@type": "Answer",
-            "text": "Symbol extraction and search cover more than 25 languages through tree-sitter. Structural data for the map and graph tools is available for Python, JavaScript, TypeScript, Go, Java and Rust."
+            "text": "Search covers more than 25 languages through tree-sitter. The benchmarks page gives measured token savings and accuracy for TypeScript, JavaScript, Java and C++, each on a pinned public project."
           }
         },
         {
@@ -212,7 +212,7 @@
     <section class="hero" id="top">
       <div class="wrap hero-grid">
         <div class="hero-copy">
-          <p class="eyebrow"><span class="dot"></span> Local MCP server · <a href="https://github.com/jaggernaut007/Nexus-MCP/releases/tag/v2.3.0" rel="noopener">v2.3.0</a> · Python 3.10–3.12</p>
+          <p class="eyebrow"><span class="dot"></span> Local MCP server · <a href="https://github.com/jaggernaut007/Nexus-MCP/releases/tag/v2.4.1" rel="noopener">v2.4.1</a> · Python 3.10–3.12</p>
           <h1>Your agent forgets.<br><em>Your codebase shouldn't.</em></h1>
           <p class="lede">
             Nexus-MCP gives AI coding agents the context they lose between sessions.
@@ -457,6 +457,10 @@
             <tr><td>Chromium base/, 3,638 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">17,998 → 950</span></td></tr>
             <tr><td>pallets/click, 91 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">24,774 → 1,301</span></td></tr>
             <tr><td>Nexus-MCP source, 59 files: tokens to the right file (<code>eval</code>, no LLM)</td><td><span class="pill">5,385 → 1,234</span></td></tr>
+            <tr><td>TypeScript, vitejs/<wbr>vite: right file first, Nexus-MCP 2.2.2 → 2.4.0 (<code>eval</code>, no LLM)</td><td><span class="pill">83%</span></td></tr>
+            <tr><td>JavaScript, webpack/<wbr>webpack: right file first with Nexus-MCP (<code>eval</code>, no LLM)</td><td><span class="pill">67%</span></td></tr>
+            <tr><td>Java, apache/<wbr>commons-lang: right file first, Nexus-MCP 2.2.2 → 2.4.0 pre-release (11cfccc) (<code>eval</code>, no LLM)</td><td><span class="pill">87%</span></td></tr>
+            <tr><td>C++, chromium/<wbr>chromium: right file first with Nexus-MCP (<code>eval</code>, no LLM)</td><td><span class="pill">83%</span></td></tr>
             <!-- results:end -->
           </tbody>
         </table>
@@ -474,7 +478,7 @@
           <div class="tool"><code>analyze</code><p>Complexity, code smells and dependency metrics for a path.</p></div>
           <div class="tool"><code>search</code><p>Hybrid semantic + keyword search. Top results carry their code.</p></div>
           <div class="tool"><code>find_symbol</code><p>The code of one or more names, with callers and callees.</p></div>
-          <div class="tool"><code>graph</code><p>Callers, callees, change impact and every text reference.</p></div>
+          <div class="tool"><code>graph</code><p>Callers, callees, change impact and text references.</p></div>
           <div class="tool"><code>index</code><p>Incremental, multi-folder indexing with an auto-watch.</p></div>
           <div class="tool"><code>status</code><p>Index counts, memory use and a staleness flag.</p></div>
         </div>
@@ -641,7 +645,7 @@
           </details>
           <details>
             <summary>Which programming languages does Nexus-MCP support?</summary>
-            <p>Symbol extraction and search cover more than 25 languages through tree-sitter. Structural data for the map and graph tools is available for Python, JavaScript, TypeScript, Go, Java and Rust.</p>
+            <p>Search covers more than 25 languages through tree-sitter. The <a href="benchmarks.html">benchmarks page</a> gives measured token savings and accuracy for TypeScript, JavaScript, Java and C++, each on a pinned public project.</p>
           </details>
           <details>
             <summary>Will the code index go stale?</summary>

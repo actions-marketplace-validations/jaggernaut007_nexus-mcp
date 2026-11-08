@@ -259,13 +259,25 @@ class TestGraphDetail:
 
     def test_transitive_compact_names_every_symbol_once(self, tmp_path):
         # `impacted_files` names every symbol, so the compact result has no second list.
-        n = 90
+        n = core_api.MAX_GRAPH_SOURCE_FILES
         _graph_with_callers(tmp_path, n)
         result = core_api.graph("target", direction="callers", transitive=True)
         assert result["total_impacted"] == n
         assert "impacted_symbols" not in result
-        assert len(result["impacted_files"]) == n  # the blast radius is complete
+        assert len(result["impacted_files"]) == n  # below the cap the blast radius is complete
+        assert "impacted_not_listed" not in result
         assert result["impacted_files"]["src/caller_007.py"] == ["caller_007"]
+
+    def test_transitive_compact_counts_the_files_past_the_cap(self, tmp_path):
+        # Requirement changed (2026-11-08): a complete list was 55k tokens on Home Assistant,
+        # above the MCP result limit of Claude Code. The total and the counts stay complete.
+        n = core_api.MAX_GRAPH_SOURCE_FILES + 30
+        _graph_with_callers(tmp_path, n)
+        result = core_api.graph("target", direction="callers", transitive=True)
+        assert result["total_impacted"] == n
+        assert len(result["impacted_files"]) == core_api.MAX_GRAPH_SOURCE_FILES
+        assert result["impacted_not_listed"]["files"] == 30
+        assert result["impacted_not_listed"]["by_folder"] == {"src": 30}
 
     def test_transitive_full_lists_every_symbol_below_the_cap(self, tmp_path):
         n = core_api.MAX_FULL_NODES

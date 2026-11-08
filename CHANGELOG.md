@@ -4,6 +4,291 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+## [2.4.1] - 2026-11-08
+
+### Added
+
+- **Parser gaps closed for C, C++, C#, PHP and Rust.** Each language had at least one of
+  these gaps: no tree-sitter symbols, no graph nodes, no CALLS edges.
+  - Tree-sitter symbols for Rust, PHP and C#. A Rust `impl` block gives its methods the
+    type as parent. Doc comments (`///`, `/** */`, C# XML) fill the docstring.
+  - ast-grep function and class nodes for C, C++, C# and PHP. C and C++ names come from the
+    declarator, as in the tree-sitter parser; an out-of-line `Widget::Paint` is a method of
+    `Widget`.
+  - CALLS edges for C, C++, C# and PHP, precision first (ADR-019, amendment of 2026-11-05).
+    Includes and `use` lines count as imports; `std::` calls and library method names
+    (`push_back`, `Add`, `map`) get no edge.
+
+- **A per-language results table, ready for data.** `results.json` is schema v2: it can hold
+  an optional `languages` list, with a `before` run and an optional `after` run for each
+  language. `publish_results.py` writes the table to the README, the site results rows,
+  `llms.txt`, the benchmarks page and the CSV. A cell shows "before → after" when both runs
+  exist. On a phone the table scrolls in its own box. Schema v1 files still work. The
+  table holds TypeScript (Vite), JavaScript (webpack), Java (commons-lang) and C++
+  (Chromium `base/`). The CSV has new columns for the language rows.
+  North star: no change (output only).
+
+- **`Class.method` names and subclass overrides in `graph` (issue #31).** On Django,
+  `graph("Field.validate")` gave no callers and `find_symbol("Field.validate")` gave "not
+  found", so the agent ran 5 to 8 greps on each impact task.
+  - The parser records the base classes of each class in Python, JavaScript and TypeScript.
+  - `find_symbol` and `graph` accept `Class.method` and `Class::method`.
+  - For a method of one class, `graph` also lists the `overrides` in subclasses.
+  - `references` gives only a count (`non_code`) for files that are not code. On Django the
+    word `validate` had 100+ `.po` files, which used the line budget before the code.
+  - Bases are names, so two classes with one name merge. Treat the overrides as a lower
+    bound.
+
+  Live benchmark on Django, `claude -p`, Sonnet, medium effort, reduced isolation, 6 tasks ×
+  3 reps, 2.4.0 → this change (Grep and Read in brackets):
+  - Median of the 18 runs: 52,410 (46,570) → 52,280 (46,523) tokens.
+  - Sum of the 18 runs: 1,496,136 (1,283,308) → 1,459,415 (1,225,952) tokens; fresh tokens
+    217,904 (164,843) → 149,809 (168,238); cost $1.357 ($1.101) → $1.043 ($1.106).
+  - Correct answers: 15 (16) → 16 (16) of 18.
+  - The impact task on `Field.validate`: median 102,845 → 33,242 tokens, 12 → 2 turns. It
+    is the only Django task where Nexus-MCP uses fewer tokens than Grep.
+  - The median of the 6 task medians (the summary table value) goes from 54,038 (47,846) to
+    43,210 (52,202). This value moves with one task, so do not read it as a win.
+  - Nexus-MCP costs less than Grep on Django and has 11% fewer fresh tokens. Its tokens are
+    still 12% higher by median and 19% higher by sum: each turn adds about 5k tokens of
+    fixed text, read again from the cache. The `SQLCompiler.as_sql` task still takes 22
+    turns. Django is not a win.
+
+  Accuracy gate: the quick tier, retrieval hit@1 (Flask 0.59, Vite 0.47, webpack 0.20) and
+  the graph counts do not change on Flask, Vite and webpack. Run logs are in
+  `benchmarks/runs/languages-py-fix`.
+
+- **`graph` names the file of the symbol itself (`defined_in`).** On Django the impact
+  task on `Field.validate` got the overrides in 2 turns, but in 2 of 6 runs the answer
+  left out `fields/__init__.py`, where `Field.validate` is, and the scorer marked it
+  wrong. A name with more than 5 definitions gets no `defined_in`.
+- **Less repeated text on each turn.** The skill body now holds only what the server
+  instructions and the tool descriptions do not say. The `index`, `search` and
+  `find_symbol` descriptions lose sentences that another text already says. Fixed text
+  (skill, instructions and 5 tool schemas, estimated as characters / 4): about 1,420 →
+  1,240 tokens on each turn.
+- **`graph` references of a method rank by its class.** For a method of one class, the
+  files that name the class or a subclass come first. A `def` line of another method with
+  the same name only adds to a `definitions` count. On Django `SQLCompiler.as_sql` listed
+  `contrib/gis` first, and 91 of 283 lines were other `as_sql` definitions.
+
+  Live benchmark on Django, same settings as above (Grep and Read in brackets). Grep-side
+  numbers move a lot between runs, so compare each Nexus-MCP number with its own Grep run.
+  - Reference ranking (`f1e9d56`): sum of the 18 runs 1,283,949 (1,589,581) tokens, median
+    47,943 (46,699), fresh 145,769 (173,909), cost $0.972 ($1.215), correct 16 (17) of 18.
+    Nexus-MCP uses fewer tokens on 2 of 6 tasks.
+  - With `defined_in` and the shorter fixed text (`45aec40`): sum 855,938 (1,346,905)
+    tokens, median 32,938 (46,642), fresh 129,072 (176,969), cost $0.789 ($1.178),
+    correct 16 (17) of 18, median turns 2 (4.5). Nexus-MCP uses fewer tokens on 4 of 6
+    tasks: 36% fewer by sum, 29% fewer by median, 33% lower cost.
+  - The `SQLCompiler.as_sql` impact task: median 197,972 → 77,526 tokens (Grep 201,082).
+  - Answer score (facts and files, 0 to 1): Nexus-MCP 0.819, Grep 0.833. The two Nexus-MCP
+    answers marked wrong name the right classes and facts. One does not name
+    `fields/__init__.py`, and one does not name `core/validators.py` as a path. A Grep
+    answer on the second task has the same miss.
+
+  Live benchmark on Home Assistant (about 26,000 Python files), `45aec40`, same settings:
+  - Sum of the 18 runs 1,179,981 (1,821,765) tokens, median 50,500 (56,948), fresh 149,395
+    (174,706), cost $0.934 ($1.241), median turns 3 (5.5). Nexus-MCP uses fewer tokens on 4
+    of 6 tasks: 35% fewer by sum, 11% fewer by median, 25% lower cost.
+  - The startup architecture task: median 97,495 (394,235) tokens.
+  - Correct answers: 15 (18) of 18. Answer score 0.861 (0.931). The accuracy gate fails.
+  - The 3 misses are the 3 Nexus-MCP runs of the `async_setup_component` impact task. Each
+    answer names the right callers in `bootstrap.py`, but not `homeassistant/setup.py`,
+    where the function is. The task also costs more: median 123,553 (58,012) tokens.
+    `graph` gives 4,979 callers in 222,303 characters, about 55k tokens. Claude Code does
+    not give the agent an MCP result above 25k tokens (its default limit) in full, so the
+    agent greps again.
+  - Run logs are in `benchmarks/runs/languages-refs-fix` and `languages-defs-fix`.
+
+- **`graph` results have a size cap.** A symbol with thousands of callers gave a result
+  above the 25k-token MCP limit of Claude Code.
+  - `graph` lists at most 60 source files and 10 test files of callers (or of impacted
+    files with `transitive=true`). `callers_not_listed` or `impacted_not_listed` gives the
+    rest as counts: files, test files, symbols and the 10 largest folders.
+  - `references` lists at most 20 files in `more_files` and in `test_files`.
+    `more_files_not_listed` and `test_files_not_listed` count the rest (files and lines).
+  - Measured on the Home Assistant index (characters of the JSON result, about 4 per
+    token): `graph("async_setup_component")` 222,303 → 6,220; with `transitive=true`
+    → 10,506. After the cap, `async_fire` gives 14,165 and `Entity.async_write_ha_state`
+    gives 8,131.
+    `defined_in` stays in each result.
+  - Live A/B of `cf1bb7a` (`benchmarks/runs/languages-graph-cap`), Sonnet at medium effort,
+    6 tasks × 3 reps, on the defs-fix indexes. The cap changes only the output.
+    - Home Assistant, the `async_setup_component` task: the `graph` result fell to about
+      1,555 tokens, and the median of the task fell from 123,553 to 72,656 tokens (Grep
+      58,977). All 3 runs now have every fact (before: 0 of 3 correct). 1 of 3 is
+      correct: 2 answers write `setup.py` with no folder, which the scorer does not
+      accept. 1 Grep run has the same miss.
+    - Home Assistant, all tasks, Nexus against Grep: sum 1,046,718 / 2,350,456; median
+      51,774 / 48,726; fresh 168,565 / 210,805; cost $0.972 / $1.491; correct 15 / 17 of
+      18; fact score 0.889 / 0.833; combined 0.861 / 0.880; tasks with fewer tokens 3 of 6.
+      The gate still fails by 2 runs. Each Nexus miss has all the facts and leaves out a
+      file path.
+    - Django, Nexus against Grep: sum 884,896 / 1,276,331; median 32,924 / 46,538; fresh
+      113,262 / 168,863; cost $0.728 / $1.134; correct 16 / 16 of 18; combined 0.847 /
+      0.833; tasks with fewer tokens 4 of 6. The `SQLCompiler.as_sql` task fell from
+      77,526 to 33,573 tokens (Grep 199,128).
+
+### Fixed
+
+- **Code review of this branch (triple-agent audit, 2026-11-08).**
+  - `graph` references dropped the `function save` line of a subclass override for a
+    method in PHP, Go, Java, C#, C, C++ or Rust. Only Python, JavaScript and TypeScript
+    record base classes, so only those languages get an `overrides` list. The other
+    languages now keep those lines.
+  - The 60-file cap of `graph` kept the first files by name. For `transitive=True` a far
+    caller in `a/` could push out a direct caller in `z/`. The cap now keeps the files in
+    the order of the walk, nearest first.
+  - The `truncated` note of a full `graph` result said that `detail="compact"` names all
+    callers. The compact list has a cap, so the note now says so.
+  - `scripts/archive_runs.py` accepted a run label that ends in a newline.
+  - North star: not measured. The references fix does not touch Python, JavaScript or
+    TypeScript. The cap change affects only a result with more than 60 source files. No
+    paid rerun was made.
+
+- **Security review of this branch.**
+  - Without ripgrep, `graph` references used plain `grep`, which also read git-ignored and
+    hidden files, such as a `local_settings.py`. In a git repo the fallback is now
+    `git grep`, which skips ignored files. Plain `grep` drops hidden paths.
+  - `scripts/archive_runs.py` refuses more credential shapes: GitHub, AWS and Hugging Face
+    tokens, private keys, and `NAME=value` secret lines. It also refuses any file that
+    holds the live token value from the environment or the Keychain. It writes the home
+    folder as `~`. The run logs already committed were rewritten in the same way.
+  - The archive script and `install_nexus.sh` refuse a run label with `/` or `..`.
+  - A corpus checkout loses `CLAUDE.md`, `.claude` and `.mcp.json` at every depth, not
+    only at the top.
+- **Code review of this branch.**
+  - The published C++ "calls per function" counted the Java, Python and Rust files of
+    Chromium `base/`. A corpus now counts only the graph rows of its own language. The
+    C++ entry (2.2.2) changes from 5,745 function nodes and 1.39 calls per function to 0
+    and 0: 2.2.2 had no C++ graph nodes. TypeScript changes from 1,721 and 1.38 to 1,689
+    and 1.40.
+  - `references` lists templates, `.vue`, `.toml`, `.yaml` and other config files again,
+    after the code. Only translations, prose, maps and lock files are a count.
+  - `def` lines of other methods are left out only for a method of one class. The pattern
+    also knows PHP, Rust and Go heads.
+  - `overrides.subclasses` counted a class twice when a stub file (`.pyi`) defined the
+    method too.
+  - A C call to a function with the name of a struct gets its edge.
+  - `search` drops a one-line result next to its body only in C and C++ files: a one-line
+    JavaScript `init` is a definition of its own.
+  - `publish_results.py` no longer stops on a language with no file count.
+  - `install_nexus.sh` deletes the index folders of a label when it installs a new commit.
+- **`run_languages` live tier on Home Assistant.** The task file names the repo
+  `home-assistant-core`, and the clone folder is `home-assistant`, so the runner did not
+  find the repo. The live tier now passes the clone folder of the corpus to the runner.
+- **C# and Dart files stopped the whole index.** The ast-grep ids `c_sharp` and `dart` do not
+  exist. ast-grep-py then raises a `BaseException` panic that `except Exception` does not
+  catch. C# now uses `csharp`; Dart has no id and is skipped.
+- **C++ keyword as a function name.** `FMT_BEGIN_NAMESPACE namespace detail {` gave a
+  function named `namespace` (8 in fmt). Such a declarator now gives no symbol.
+- `find_symbol` puts a constructor after the class of the same name.
+
+### Changed
+
+- **The server instructions ask for full file paths in an answer.** In the graph-cap live
+  run on Home Assistant, 3 Nexus answers had every fact but named a file by its bare name
+  (`setup.py` for `homeassistant/setup.py`) or not at all. A bare name can fit many files,
+  and a reader cannot open it. The results already give the full path. The new rule tells
+  the agent to copy that path for each file, function or class that it names. It applies
+  in every project, and it adds about 60 tokens to the instructions.
+  - Live A/B of `195090c` on Home Assistant and Django (`benchmarks/runs/languages-v2.4.1`),
+    Sonnet at medium effort, 6 tasks × 3 reps, on copies of the defs-fix indexes.
+    `195090c` differs from the 2.4.1 commit only in the version string, so the runs are
+    filed as 2.4.1. Each record keeps `nexus_ref` 195090c and has a `nexus_version_note`.
+  - Home Assistant, Nexus against Grep: sum 880,904 / 1,730,618; median 42,396 / 65,990;
+    fresh 152,801 / 187,939; cost $0.870 / $1.273; correct 18 / 17 of 18; fact score
+    0.917 / 0.889; combined 0.949 / 0.917; tasks with fewer tokens 5 of 6. The gate passes.
+    Before (graph-cap run, `cf1bb7a`): Nexus correct 15 of 18, sum 1,046,718, cost $0.972.
+    The `async_setup_component` task went from 1 to 3 of 3 correct, with a median of
+    53,219 tokens (before 72,656; Grep 76,403).
+  - Django, Nexus against Grep: sum 1,008,351 / 1,372,604; median 32,788 / 46,588; fresh
+    131,646 / 170,208; cost $0.841 / $1.151; correct 17 / 16 of 18; combined 0.882 /
+    0.819; tasks with fewer tokens 2 of 6. The gate passes. Before (graph-cap run): Nexus
+    correct 16 of 18, sum 884,896, cost $0.728.
+  - Open item: on Django the `SQLCompiler.as_sql` task rose from a median of 33,573 to
+    133,787 tokens (Grep 209,738). All 3 runs made 2 to 7 `graph` calls and walked the
+    transitive chain by hand, with longer answers. 1 of 3 runs before the rule did the same,
+    so part of the rise is run-to-run noise. The rule can also push the agent to look up a
+    path for each function it names.
+  - Both repos together, Nexus: sum 1,931,614 → 1,889,255 tokens; correct 31 → 35 of 36.
+    Grep's totals change much from run to run (Home Assistant sum 2,350,456 in the
+    graph-cap run), so the token gaps are less certain than the accuracy results.
+
+- **5 tools by default.** The server shows `index`, `search`, `find_symbol`, `graph` and
+  `map`. Set `NEXUS_EXTRA_TOOLS` to `status`, `analyze`, `memory` (comma-separated) or `all`
+  to show the others. Agents almost never called these three in the live benchmark, and
+  their descriptions cost about 750 tokens on each turn. The server instructions and the
+  skill no longer name them when they are hidden. **Upgrade note:** `memory` stays on
+  when the storage folder already holds memories, so memories of 2.2.x stay reachable.
+  The names in `NEXUS_EXTRA_TOOLS` are not case-sensitive.
+- **The index format is 8.** An index of 2.2.x is rebuilt once at the first start. Without
+  the rebuild, unchanged files keep no class `bases` (so `graph` shows no `overrides`) and
+  no symbols or graph nodes for Rust, PHP, C# and C/C++.
+- **Error, warning and exception classes rank after other source.** Their messages repeat
+  the words of a feature, so on webpack `*Warning.js` files ranked above the plugin that
+  does the work. A query that names an error keeps them in place. Retrieval hit@1, before
+  → after: `shop_repo` 0.50 → 0.62; `nexus_mcp` 0.71, Flask 0.68, Vite 0.47 and webpack
+  0.27 do not change.
+- **Less fixed text on every turn.** The tool descriptions, the parameter descriptions, the
+  server instructions and the skill body are shorter. They were 3.6k tokens above the Grep
+  condition on each turn, and tool results were the same size in both conditions, so this
+  text explained most of the token gap. No tool, parameter or enum changed.
+
+  Token measure (north star), first-turn context of `claude -p` on Redis, Sonnet, medium
+  effort, no tool call: Grep 12,480; Nexus-MCP 16,105 before and 15,322 after. The gap to
+  Grep falls from 3.6k to 2.8k tokens on each turn.
+
+  Live benchmark, Nexus-MCP only, 6 tasks × 3 reps, same model and effort as the 2.2.2 run
+  (Grep numbers are from the 2.2.2 run). Median tokens per task, 2.2.2 → this branch (Grep):
+  Vite 57,342 → 60,920 (77,004); commons-lang 34,602 → 32,848 (56,271); Redis 70,567 →
+  48,020 (42,290); Prometheus 57,716 → 52,196 (52,662). Correct answers: 71 of 72 → 72 of
+  72. The Redis change includes the new C function nodes and the Vite change is inside the
+  run-to-run noise, so read the four rows as one result: the mean of the four medians falls
+  from 55.1k to 48.5k (Grep 57.1k) and accuracy does not fall.
+
+### Measured
+
+`nexus-mcp-ci eval` quick tier, 30 questions, seed 7, default model, on pinned public repos.
+Before is release 2.2.2 (`0430f01`); after is this branch. hit@1 / hit@3 of Nexus-MCP:
+
+| Language | Repo (commit) | Before | After |
+|---|---|---|---|
+| C | redis/hiredis (5bb7f03) | 0.733 / 0.933 | 0.733 / 0.933 |
+| C++ | fmtlib/fmt (4ed3535) | 0.933 / 1.000 | 0.933 / 1.000 |
+| C# | jbogard/MediatR (62010ba) | crash (`c_sharp` panic), no index | 0.833 / 0.967 |
+| PHP | Seldaek/monolog (3bed304) | "No source code was indexed" | 0.933 / 1.000 |
+| Rust | BurntSushi/ripgrep (91f5d22) | 1.000 / 1.000 on 26 questions, Bash only (16 chunks) | 0.900 / 1.000 on 30 questions (3,417 chunks) |
+
+The Rust "before" covered only the Bash scripts of the repo. The drop from 1.000 to 0.900 is
+a harder question set (Rust symbols are now in it), not a loss on the same questions.
+C and C++ do not change: both already had symbols; this work adds graph nodes and edges.
+
+Retrieval gate (`python -m evals.retrieval.run --candidates bge-small-en`, hybrid hit@1;
+only the `nexus_mcp` and `shop_repo` suites run here, the others need local clones):
+`nexus_mcp` 0.62 → 0.71, `shop_repo` 0.50 → 0.62. It does not fall. The `nexus_mcp` source
+is larger after this change, and the suites have 24 and 8 queries, so read the rise as noise
+around "no loss". `pytest` (1366 passed) and `ruff check .` are green.
+
+Token measure (north star): the change adds no tokens per query. Median tokens of the
+quick tier did not change on hiredis (755.5) or fmt (868.0).
+
+Live benchmark of 2.4.0 against 2.2.2 (`0430f01`), `claude -p`, Sonnet, medium effort,
+reduced isolation, 6 tasks × 3 reps per project. Median tokens per task, Nexus-MCP / Grep
+and Read, and correct answers:
+
+| Project | 2.2.2 | 2.4.0 | Correct (Nexus-MCP / Grep), 2.2.2 → 2.4.0 |
+|---|---|---|---|
+| Django (Python) | 69,144 / 59,562 | 54,038 / 47,846 | 6 / 5 → 5 / 5 of 6 |
+| Vite (TypeScript) | 57,268 / 71,166 | 52,411 / 69,790 | 6 / 6 → 6 / 6 of 6 |
+| webpack (JavaScript) | no run | 74,638 / 100,320 | 6 / 6 of 6 |
+
+Nexus-MCP uses 25% fewer tokens than Grep on Vite and 26% fewer on webpack. On Django it
+uses 22% fewer tokens than 2.2.2, but 13% more than Grep. The Grep side of Django also fell
+by 12k tokens between the two runs, so part of the change is run-to-run noise. The three
+projects cost $7.24 in all. Run logs are in `benchmarks/runs/languages-v2.4.0`.
+
 ## [2.3.0] - 2026-11-06
 
 ### Added

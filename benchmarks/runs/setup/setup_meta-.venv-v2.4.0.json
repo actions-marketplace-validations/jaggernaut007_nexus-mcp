@@ -1,0 +1,70 @@
+{
+  "flask": {
+    "index_seconds": 128.4,
+    "peak_rss_mb": 1032,
+    "embedding_model": "default",
+    "result": {
+      "total_files": 83,
+      "total_symbols": 1632,
+      "total_chunks": 1632,
+      "parse_errors": 0,
+      "graph_nodes": 1705,
+      "graph_relationships": 2387,
+      "time_seconds": 126.64034986495972,
+      "files_added": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
+  },
+  "vite": {
+    "index_seconds": 137.4,
+    "peak_rss_mb": 950,
+    "embedding_model": "default",
+    "result": {
+      "total_files": 429,
+      "total_symbols": 1868,
+      "total_chunks": 1868,
+      "parse_errors": 0,
+      "graph_nodes": 2199,
+      "graph_relationships": 4139,
+      "time_seconds": 136.11183905601501,
+      "files_added": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
+  },
+  "webpack": {
+    "index_seconds": 540.1,
+    "peak_rss_mb": 1181,
+    "embedding_model": "default",
+    "result": {
+      "total_files": 822,
+      "total_symbols": 8687,
+      "total_chunks": 8687,
+      "parse_errors": 0,
+      "graph_nodes": 6813,
+      "graph_relationships": 12938,
+      "time_seconds": 539.0050060749054,
+      "files_added": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
+  },
+  "django": {
+    "index_seconds": 3064.5,
+    "peak_rss_mb": 1369,
+    "embedding_model": "default",
+    "result": {
+      "total_files": 3036,
+      "total_symbols": 46052,
+      "total_chunks": 46052,
+      "parse_errors": 0,
+      "graph_nodes": 46893,
+      "graph_relationships": 71366,
+      "time_seconds": 3063.6063969135284,
+      "files_added": 0,
+      "files_modified": 0,
+      "files_deleted": 0
+    }
+  }
+}

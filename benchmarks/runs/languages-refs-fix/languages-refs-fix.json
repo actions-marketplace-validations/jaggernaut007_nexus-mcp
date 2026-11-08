@@ -1,0 +1,50 @@
+{
+  "label": "refs-fix",
+  "rows": {
+    "django": {
+      "name": "django",
+      "language": "Python",
+      "repo": "django/django",
+      "url": "https://github.com/django/django.git",
+      "pin": "318a316a4c86a65bede68144f9546a6056d91379",
+      "label": "refs-fix",
+      "nexus_version": "2.4.0",
+      "nexus_ref": "f1e9d56a8e7cc6c4abae082531b002fb4ca4d33e",
+      "index": "~/dev/nexus-mcp/.claude/worktrees/lang-bench/benchmarks/indexes/.venv-refs-fix/django",
+      "index_meta": null,
+      "live": {
+        "model": "sonnet",
+        "effort": "medium",
+        "reps": 3,
+        "isolation": [
+          "reduced"
+        ],
+        "errors": 0,
+        "conditions": {
+          "baseline": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.0,
+            "wasted_read_ratio_iqr": 0.375,
+            "total_tokens": 52708.5,
+            "fresh_tokens": 7369.0,
+            "total_cost_usd": 0.050723000000000004,
+            "num_turns": 5.5,
+            "wall_seconds": 19.585
+          },
+          "nexus": {
+            "n_tasks": 6,
+            "tasks_correct": 6,
+            "wasted_read_ratio": 0.3333333333333333,
+            "wasted_read_ratio_iqr": 0.7261904761904762,
+            "total_tokens": 42972.5,
+            "fresh_tokens": 7400.0,
+            "total_cost_usd": 0.041564699999999996,
+            "num_turns": 2.5,
+            "wall_seconds": 23.43
+          }
+        }
+      }
+    }
+  }
+}

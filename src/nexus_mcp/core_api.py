@@ -17,7 +17,7 @@ import re
 import resource
 import sys
 import threading
-from pathlib import Path
+from pathlib import Path, PurePosixPath
 from typing import Any, Callable, List, Optional
 
 from nexus_mcp import __version__
@@ -376,6 +376,28 @@ def _serialize_node_compact(
     }
 
 
+MAX_DEFINED_IN = 5  # a bare name with more definitions than this gets no `defined_in`
+
+
+def _defined_in(state, matches: List[UniversalNode]) -> Optional[dict[str, list[str]]]:
+    """Where the asked symbol itself is defined, as `file -> ["Class.method:line"]`.
+
+    An impact answer must name the file of the symbol, not only its callers and overrides.
+    On Django `graph("Field.validate")` gave the overrides, and the agent left out
+    `fields/__init__.py` in 2 of 6 runs. None for a name with many definitions: the
+    callers and references already cover it.
+    """
+    if not matches or len(matches) > MAX_DEFINED_IN:
+        return None
+    grouped: dict[str, list[str]] = {}
+    for node in matches:
+        short = _serialize_node_compact(node, state.codebase_path)
+        owner = (node.metadata or {}).get("parent_class")
+        label = f"{owner}.{node.name}" if owner else node.name
+        grouped.setdefault(short["file"], []).append(f"{label}:{short['start_line']}")
+    return grouped
+
+
 def _group_by_file(
     nodes: List[UniversalNode], codebase_path: Optional[Path] = None
 ) -> dict[str, list[str]]:
@@ -386,11 +408,62 @@ def _group_by_file(
     file keeps its first few symbols and a count of the rest: in the benchmark one file
     held 40 test functions that call one symbol, and an agent needs the file, not the 40.
     """
+    return _collapse_test_symbols(_group_names(nodes, codebase_path))
+
+
+def _group_names(
+    nodes: List[UniversalNode], codebase_path: Optional[Path] = None
+) -> dict[str, list[str]]:
+    """Symbols as `file -> ["name:line", ...]`, in the order given, with no file cut."""
     grouped: dict[str, list[str]] = {}
     for node in nodes:
         short = _serialize_node_compact(node, codebase_path)
         grouped.setdefault(short["file"], []).append(f"{short['name']}:{short['start_line']}")
-    return _collapse_test_symbols(grouped)
+    return grouped
+
+
+# Languages whose class nodes carry base classes (`AstGrepParser._class_bases`), so that
+# `graph` can list the overrides of a method. Keep the two in step.
+_LANGUAGES_WITH_BASES = frozenset({"python", "javascript", "typescript", "tsx"})
+
+MAX_GRAPH_SOURCE_FILES = 60  # source files of callers listed by `graph`; the rest are counts
+MAX_GRAPH_TEST_FILES = 10  # test files of callers listed by `graph`; the rest are counts
+MAX_OMITTED_DIRS = 10  # folders named in the count of the files that are not listed
+
+
+def _cap_files(
+    grouped: dict[str, list[str]],
+) -> tuple[dict[str, list[str]], Optional[dict[str, Any]]]:
+    """Keep the first source and test files of a `graph` result. Count the rest by folder.
+
+    On Home Assistant `graph("async_setup_component")` named 4,979 callers in about 3,000
+    files, mostly tests: 222,303 characters, about 55k tokens. Claude Code does not give
+    the agent an MCP result above 25k tokens in full, so the agent grepped again and lost
+    `defined_in`. The files are kept in the order given: a transitive walk gives the
+    nearest callers first, and a direct caller must not lose its place to a far one.
+    Returns the listed files (test symbols collapsed) and the count of the rest, or None
+    when every file is listed.
+    """
+    from collections import Counter
+
+    from nexus_mcp.engines.fusion import is_test_path
+
+    ordered = list(grouped)
+    source = [f for f in ordered if not is_test_path(f)]
+    tests = [f for f in ordered if is_test_path(f)]
+    kept = source[:MAX_GRAPH_SOURCE_FILES] + tests[:MAX_GRAPH_TEST_FILES]
+    dropped = source[MAX_GRAPH_SOURCE_FILES:] + tests[MAX_GRAPH_TEST_FILES:]
+    listed = _collapse_test_symbols({f: grouped[f] for f in kept})
+    if not dropped:
+        return listed, None
+    dirs = Counter("/".join(PurePosixPath(f).parts[:-1][:2]) or "." for f in dropped)
+    omitted: dict[str, Any] = {
+        "files": len(dropped),
+        "test_files": len(dropped) - max(0, len(source) - MAX_GRAPH_SOURCE_FILES),
+        "symbols": sum(len(grouped[f]) for f in dropped),
+        "by_folder": dict(dirs.most_common(MAX_OMITTED_DIRS)),
+    }
+    return listed, omitted
 
 
 def _collapse_test_symbols(grouped: dict[str, list[str]]) -> dict[str, list[str]]:
@@ -438,8 +511,107 @@ def _serialize_relationship(rel: UniversalRelationship) -> dict[str, Any]:
 
 
 def _resolve_symbol(graph, name: str, exact: bool = True) -> List[UniversalNode]:
-    """Find nodes by name in the graph."""
-    return graph.find_nodes_by_name(name, exact=exact)
+    """Find nodes by name in the graph.
+
+    A method is in the graph by its bare name, with its class in ``parent_class``. So a
+    name with no node of its own, such as `Field.validate` or `SQLCompiler::as_sql`, gives
+    the methods of that name whose class has the name of the part before it.
+    """
+    nodes = graph.find_nodes_by_name(name, exact=exact)
+    if nodes or not exact:
+        return nodes
+    return _qualified_methods(graph, name)
+
+
+def _qualified_methods(graph, name: str) -> List[UniversalNode]:
+    """The methods that a `Class.method` or `Class::method` name points at, or []."""
+    parts = [p for p in re.split(r"\.|::", name) if p]
+    if len(parts) < 2:
+        return []
+    owner, method = parts[-2], parts[-1]
+    return [
+        n for n in graph.find_nodes_by_name(method, exact=True)
+        if n.node_type == NodeType.FUNCTION and (n.metadata or {}).get("parent_class") == owner
+    ]
+
+
+def _subclasses(graph, class_name: str) -> List[UniversalNode]:
+    """Every class that inherits from ``class_name``, directly or through other classes.
+
+    Bases are names, as the parser records them (`metadata["bases"]`), so two classes of the
+    same name in different modules are one class here. The answer is a lower bound: a base
+    given by an expression (`extends mix(A)`) is not seen.
+    """
+    children: dict[str, list[UniversalNode]] = {}
+    for node in graph.get_nodes_by_type(NodeType.CLASS):
+        for base in (node.metadata or {}).get("bases", ()):
+            children.setdefault(base, []).append(node)
+    found: dict[str, UniversalNode] = {}
+    todo = [class_name]
+    seen_names = {class_name}
+    while todo:
+        for child in children.get(todo.pop(), ()):
+            if child.id in found:
+                continue
+            found[child.id] = child
+            if child.name not in seen_names:
+                seen_names.add(child.name)
+                todo.append(child.name)
+    return list(found.values())
+
+
+def _overrides(state, methods: List[UniversalNode]) -> Optional[dict[str, Any]]:
+    """The methods of subclasses that override one of ``methods``, by file.
+
+    The answer to "which subclasses override X.m and must change with it". Each entry is
+    `Class.method:line`. Returns None when no method has a class, or no subclass overrides it.
+    """
+    graph = state.graph_engine
+    by_file: dict[str, list[str]] = {}
+    seen: set[str] = set()
+    subclass_ids: set[str] = set()
+    family: dict[str, list[UniversalNode]] = {}  # one closure per owner name
+    for method in methods:
+        owner = (method.metadata or {}).get("parent_class")
+        if not owner:
+            continue
+        if owner not in family:
+            family[owner] = _subclasses(graph, owner)
+        subclasses = family[owner]
+        # Matches in `fields.py` and `fields.pyi` share one owner: count each class once.
+        subclass_ids.update(c.id for c in subclasses)
+        places = {(c.name, c.location.file_path) for c in subclasses}
+        for node in graph.find_nodes_by_name(method.name, exact=True):
+            cls = (node.metadata or {}).get("parent_class")
+            if node.id in seen or (cls, node.location.file_path) not in places:
+                continue
+            seen.add(node.id)
+            short = _serialize_node_compact(node, state.codebase_path)
+            by_file.setdefault(short["file"], []).append(
+                f"{cls}.{node.name}:{node.location.start_line}"
+            )
+    if not by_file:
+        return None
+    return {
+        "total": len(seen),
+        "subclasses": len(subclass_ids),
+        "files": _collapse_test_symbols(by_file),
+    }
+
+
+def _add_overrides(result: dict[str, Any], state, matches: List[UniversalNode]) -> None:
+    """Add the subclass overrides of the matched methods to a `graph` callers result.
+
+    Only when every match is a method of one class (`Field.validate`, or a bare name with
+    one owner). A bare name such as `validate` with many owners would list the overrides of
+    unrelated classes.
+    """
+    owners = {(n.metadata or {}).get("parent_class") for n in matches}
+    if len(owners) != 1 or None in owners:
+        return
+    overrides = _overrides(state, matches)
+    if overrides:
+        result["overrides"] = overrides
 
 
 def _filter_location_list(items: list, filter_path: str) -> list:
@@ -641,6 +813,8 @@ FULL_SNIPPET_CHARS = 2000
 # after test files move down (see `fusion.demote_test_files`). Fusion gets 2 x `limit`.
 SEARCH_OVERFETCH = 4
 MAX_REFERENCE_LINES = 60  # source lines with their text; test files are counts only
+# Files that can hold a C or C++ prototype (a one-line declaration of a function).
+_C_FAMILY_SUFFIXES = frozenset({".c", ".h", ".cc", ".cpp", ".cxx", ".hh", ".hpp", ".hxx"})
 MAX_REFERENCE_LINES_PER_FILE = 8
 MAX_TEST_SYMBOLS_PER_FILE = 3  # a test file with more callers shows a count of the rest
 # Fields that help ranking or debugging but not an agent's answer. `signature` and
@@ -741,6 +915,31 @@ def _compact_search_result(r: dict[str, Any]) -> dict[str, Any]:
         and v is not None
         and not (isinstance(v, (str, list, dict)) and not v)
     }
+
+
+def _drop_declarations_of_defined_names(results: list[dict]) -> list[dict]:
+    """Drop a one-line declaration whose name has a body elsewhere in the results.
+
+    A C or C++ prototype (`removeExpire(redisDb *db, robj *key)` in `server.h`) is a chunk of
+    its own. Next to the definition it repeats the signature and takes a result slot. Only
+    C and C++ files have such prototypes: a one-line `init` in `a.js` is a definition of
+    its own and stays.
+    """
+
+    def one_line(r: dict) -> bool:
+        return r.get("line_start") is not None and r.get("line_start") == r.get("line_end")
+
+    def c_family(r: dict) -> bool:
+        if r.get("language") in ("c", "cpp"):
+            return True
+        path = str(r.get("filepath") or r.get("file_path") or "")
+        return PurePosixPath(path).suffix.lower() in _C_FAMILY_SUFFIXES
+
+    defined = {r.get("symbol_name") for r in results if r.get("symbol_name") and not one_line(r)}
+    return [
+        r for r in results
+        if not (one_line(r) and c_family(r) and r.get("symbol_name") in defined)
+    ]
 
 
 def search(
@@ -859,7 +1058,7 @@ def search(
                 engines_used.append("exact_name")
         except Exception as e:  # noqa: BLE001 - an addition, never a failure
             logger.debug("Exact name lookup failed: %s", e)
-    results = results[:limit]
+    results = _drop_declarations_of_defined_names(results)[:limit]
 
     roots = _index_roots(state)
     if not symbol_type and (live_grep or (mode == "hybrid" and len(results) < limit)):
@@ -965,11 +1164,8 @@ def search(
             response["warning"] = search_warning
         if len(results) > COMPACT_TOP_RESULTS:
             response["hint"] = (
-                f"The first {COMPACT_TOP_RESULTS} results hold the whole symbol unless "
-                "marked (truncated); answer from them without a file read. The others "
-                "show the signature only. For the whole code of other symbols call "
-                "find_symbol with their names (several names in one call), not a "
-                "file read or a grep."
+                f"The first {COMPACT_TOP_RESULTS} hold the whole code; the others the "
+                "signature only. Get more code with one find_symbol call, not a read or grep."
             )
         return response
 
@@ -1223,14 +1419,20 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
     stale_code = 0
     outlined = False
     budget = SYMBOL_CODE_BUDGET
+    seen_places: set[tuple] = set()  # (file, start, end) of each symbol already in the result
     roots = _index_roots(state)
     for name in _split_symbol_names(symbol_name) or [symbol_name]:
         nodes = _resolve_symbol(state.graph_engine, name, exact=exact)
         # Functions and classes first, then tests, then the node of a whole file (the graph
-        # has one for each file, named like it: `main` is also `main.py`).
+        # has one for each file, named like it: `main` is also `main.py`). A C++ or C#
+        # constructor has the name of its class, so it comes after the class.
         nodes = sorted(
             nodes,
-            key=lambda n: (n.node_type == NodeType.MODULE, is_test_path(n.location.file_path)),
+            key=lambda n: (
+                n.node_type == NodeType.MODULE,
+                is_test_path(n.location.file_path),
+                n.node_type == NodeType.FUNCTION and n.metadata.get("parent_class") == n.name,
+            ),
         )
         if len(nodes) > MAX_MATCHES_PER_NAME:
             more_matches[name] = len(nodes) - MAX_MATCHES_PER_NAME
@@ -1256,6 +1458,10 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
         if not found:
             not_found.append(name)
             continue
+        # Names of one call can match the same symbol (`Exec, exec` with exact=False): send
+        # each symbol once. A repeat cost tokens on every later turn and told the agent nothing.
+        found = [(e, p) for e, p in found if p not in seen_places]
+        seen_places.update(p for _, p in found)
         for i, (entry, place) in enumerate(found):
             wants_code = (
                 i < MAX_SYMBOL_MATCHES_WITH_CODE
@@ -1328,23 +1534,26 @@ def _graph_immediate(
                 seen.add(related.id)
                 related_nodes.append(related)
 
-    result = {
-        "symbol": symbol_name,
-        "direction": direction,
-        "total": len(related_nodes),
-        direction: (
-            _group_by_file(related_nodes, state.codebase_path)
-            if detail == "compact"
-            else [_serialize_node(n, state.codebase_path) for n in related_nodes[:MAX_FULL_NODES]]
-        ),
-    }
+    result: dict[str, Any] = {"symbol": symbol_name}
+    defined_in = _defined_in(state, matches)
+    if defined_in:
+        result["defined_in"] = defined_in
+    omitted = None
+    if detail == "compact":
+        listed, omitted = _cap_files(_group_names(related_nodes, state.codebase_path))
+    else:
+        listed = [_serialize_node(n, state.codebase_path) for n in related_nodes[:MAX_FULL_NODES]]
+    result |= {"direction": direction, "total": len(related_nodes), direction: listed}
+    if omitted:
+        result[f"{direction}_not_listed"] = omitted
     if detail != "compact" and len(related_nodes) > MAX_FULL_NODES:
         result["truncated"] = (
             f"The first {MAX_FULL_NODES} of {len(related_nodes)} are shown. "
-            'detail="compact" names all of them.'
+            'detail="compact" lists them by file, with a count of the files past its cap.'
         )
     if direction == "callers":
-        _add_references(result, state, symbol_name)
+        _add_overrides(result, state, matches)
+        _add_references(result, state, symbol_name, matches)
     return result
 
 
@@ -1377,20 +1586,51 @@ def _merge_references(found: list[tuple[Path, dict[str, Any]]]) -> dict[str, Any
         merged["total_files"] += refs.get("total_files", 0)
         merged["total_lines"] += refs.get("total_lines", 0)
         merged["truncated"] = merged["truncated"] or refs.get("truncated", False)
+        if refs.get("definitions"):
+            merged["definitions"] = merged.get("definitions", 0) + refs["definitions"]
+        if refs.get("non_code"):
+            nc = merged.setdefault("non_code", {"files": 0, "lines": 0})
+            nc["files"] += refs["non_code"]["files"]
+            nc["lines"] += refs["non_code"]["lines"]
         for key in ("files", "more_files", "test_files"):
             for path, value in refs.get(key, {}).items():
                 merged.setdefault(key, {})[f"{root.name}/{path}"] = value
+        for key in ("more_files_not_listed", "test_files_not_listed"):
+            if refs.get(key):
+                rest = merged.setdefault(key, {"files": 0, "lines": 0})
+                rest["files"] += refs[key]["files"]
+                rest["lines"] += refs[key]["lines"]
     return merged
 
 
-def _add_references(result: dict[str, Any], state, symbol_name: str) -> None:
+def _class_family(state, matches: List[UniversalNode]) -> List[str]:
+    """The class of the matched methods and its subclasses, when all matches share a class."""
+    owners = {(n.metadata or {}).get("parent_class") for n in matches}
+    if len(owners) != 1 or None in owners:
+        return []
+    owner = owners.pop()
+    return [owner] + sorted({c.name for c in _subclasses(state.graph_engine, owner)} - {owner})
+
+
+def _add_references(
+    result: dict[str, Any],
+    state,
+    symbol_name: str,
+    matches: Optional[List[UniversalNode]] = None,
+) -> None:
     """Add every whole-word text use of the symbol name to a `graph` callers result.
 
     Call edges are a lower bound. In the benchmark traces the agent ran its own grep
     after `graph` in 5 of 6 impact tasks to check them; this list makes that unnecessary.
+
+    When all graph ``matches`` are methods of one class, `def` lines of other methods with
+    the same name only add to a count, and files that name the class or a subclass come
+    first. On Django `SQLCompiler.as_sql` listed `contrib/gis` first and
+    the agent then ran 22 turns of grep and reads (issue #31).
     """
     from nexus_mcp.engines.live_grep import LiveGrepEngine
 
+    related = _class_family(state, matches) if matches else []
     roots = _index_roots(state)
     # Each root of a multi-root index gets a share of the line budget, and its paths get
     # the root's folder name in front, so that `src/a.py` of two roots stays apart.
@@ -1402,6 +1642,12 @@ def _add_references(result: dict[str, Any], state, symbol_name: str) -> None:
                 symbol_name,
                 max_lines=max_lines if len(roots) > 1 else MAX_REFERENCE_LINES,
                 max_lines_per_file=MAX_REFERENCE_LINES_PER_FILE,
+                related_names=related,
+                # Only for a method of one class whose overrides are listed apart. For a
+                # bare name of several classes, or a language without recorded base
+                # classes, the `def` lines are the only list of them.
+                skip_definitions=bool(related)
+                and all(m.language in _LANGUAGES_WITH_BASES for m in matches),
             )
         except Exception as e:  # noqa: BLE001 - references are an addition, never a failure
             logger.warning("Reference search failed: %s", e)
@@ -1440,8 +1686,11 @@ def _graph_transitive_impact(
                 short = _serialize_node_compact(caller, state.codebase_path)
                 by_file.setdefault(short["file"], []).append(short["name"])
 
-    result: dict[str, Any] = {
-        "symbol": symbol_name,
+    result: dict[str, Any] = {"symbol": symbol_name}
+    defined_in = _defined_in(state, matches)
+    if defined_in:
+        result["defined_in"] = defined_in
+    result |= {
         "direction": "callers",
         "transitive": True,
         "max_depth": max_depth,
@@ -1453,14 +1702,17 @@ def _graph_transitive_impact(
     # per-symbol list out. A 46,000-character result was measured on a widely used symbol.
     if compact:
         del result["impacted_symbols"]
-        result["impacted_files"] = _collapse_test_symbols(by_file)
+        result["impacted_files"], omitted = _cap_files(by_file)
+        if omitted:
+            result["impacted_not_listed"] = omitted
     elif len(all_impacted) > MAX_FULL_NODES:
         result["impacted_symbols"] = all_impacted[:MAX_FULL_NODES]
         result["truncated"] = (
             f"impacted_symbols shows the first {MAX_FULL_NODES} of {len(all_impacted)}. "
             "impacted_files names all of them."
         )
-    _add_references(result, state, symbol_name)
+    _add_overrides(result, state, matches)
+    _add_references(result, state, symbol_name, matches)
     return result
 
 
