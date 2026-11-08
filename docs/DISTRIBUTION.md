@@ -15,9 +15,9 @@ run `uvx --python 3.12 nexus-mcp-ci setup`.
 | VS Code and Cursor buttons | VS Code, Cursor | links in the README and the site | the repository itself |
 | Docker image (GHCR) | container users | `docker/Dockerfile.stdio` | `publish.yml` on a release |
 | Glama | Glama users | `glama.json`, `Dockerfile` | Glama rebuilds from the repository |
-| GitHub Action | CI | `action.yml`, [GITHUB-ACTION.md](GITHUB-ACTION.md) | owner: tick "Publish to Marketplace" |
-| Cline marketplace | Cline | `llms-install.md`, `site/logo-400.png` | owner: open an issue (see below) |
-| Docker MCP Catalog | Docker Desktop users | `docker/Dockerfile.stdio` | owner: pull request (see below) |
+| GitHub Action | CI | `action.yml`, [GITHUB-ACTION.md](GITHUB-ACTION.md) | done: listed on the GitHub Marketplace (2026-11-08) |
+| Cline marketplace | Cline | `llms-install.md`, `site/logo-400.png` | done: issue submitted, in review (see [SUBMISSIONS.md](SUBMISSIONS.md)) |
+| Docker MCP Catalog | Docker Desktop users | `docker/Dockerfile.stdio` | done: pull request submitted, in review (see [SUBMISSIONS.md](SUBMISSIONS.md)) |
 | Context7 | docs lookup | `context7.json` | done: the repository is listed |
 
 Smithery is not a channel any more. On 31 October 2026 it shut down its CLI, API and accounts, and
@@ -33,6 +33,10 @@ release, and pushes `ghcr.io/jaggernaut007/nexus-mcp:<version>` and `:latest`.
 ## Owner steps
 
 Nothing below runs by itself. Each one needs your account.
+
+Status on 2026-11-08: steps 1 to 4 are done. The social preview is set, the Action is listed on the
+GitHub Marketplace, and the Cline issue and the Docker pull request wait for review (see
+[SUBMISSIONS.md](SUBMISSIONS.md)). The steps stay here for the next time.
 
 1. **GitHub social preview.** Upload `site/social-preview.png` (1280x640) under the repository
    Settings, "Social preview". GitHub has no API for it.
