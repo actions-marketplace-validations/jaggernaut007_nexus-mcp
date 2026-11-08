@@ -17,10 +17,9 @@
 
 Also update by hand:
 
-- the version in `site/index.html` (the `softwareVersion` JSON-LD, and the hero eyebrow and its
-  release link);
-- the "New in vX.Y.Z" note above "The 8 Tools" in `README.md` (the PyPI page shows this README);
-- a new section in `CHANGELOG.md`.
+- the version in `site/index.html` (the `softwareVersion` JSON-LD);
+- a new section in `CHANGELOG.md`. The README has no version notes since 2.4.6; the PyPI page
+  shows the README, and the `description` in `pyproject.toml` is the PyPI summary line.
 
 Do not change `version` in `benchmarks/published/results.json` unless the live benchmark ran
 again. It names the version that the benchmark measured.
