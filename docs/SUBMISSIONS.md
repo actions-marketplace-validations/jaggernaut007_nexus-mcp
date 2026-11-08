@@ -14,7 +14,7 @@ GitHub release. Every `uvx` route runs `uvx --python 3.12 nexus-mcp-ci==2.4.2`. 
 | GHCR image `ghcr.io/jaggernaut007/nexus-mcp` | tags `2.4.2`, `2.4.1`, `2.3.0` and `latest`, public |
 | Claude Desktop extension (`nexus-mcp.mcpb`) | attached to the GitHub release |
 | Glama, awesome-mcp-servers (`punkpeye`), Context7 | listed |
-| Cline marketplace | to do: the first test (2026-11-08) failed on Python 3.14, fixed in 2.4.2; test again |
+| Cline marketplace | ready to submit: the install test with Cline passed on 2.4.5 (2026-11-08), after fixes in 2.4.2 to 2.4.5 |
 | Docker MCP Catalog | entry in `docker/mcp-registry/`, pull request to `docker/mcp-registry` |
 | Cursor Marketplace | submitted 2026-11-08, in review |
 | Anthropic plugin directory | refused 2026-11-08: local MCP servers only from a Verified organization (see below) |
