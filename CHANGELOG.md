@@ -20,6 +20,12 @@ All notable changes to this project will be documented in this file.
   checklist). The technology table moved to `docs/ARCHITECTURE.md`.
 - North-star gate: not applicable. No code of the server changed, so token use and hit@1 do
   not change.
+- One tagline everywhere: "Your coding agent reads less code to find the right file." It is in
+  the PyPI description, `server.json`, `glama.json`, `context7.json`, the Gemini, Claude
+  Desktop, Claude Code and Cursor manifests, `CITATION.cff`, `llms.txt` and
+  `docs/SUBMISSIONS.md`. The old "27% to 49% fewer tokens" claim (a sum of 18 runs) is
+  replaced by the published medians. New `site/og.png` and `site/social-preview.png`.
+  Registry and PyPI texts change at the next release.
 
 ## [2.4.5] - 2026-11-08
 

@@ -22,17 +22,20 @@ GitHub release. Every `uvx` route runs `uvx --python 3.12 nexus-mcp-ci==2.4.5`. 
 | mcpservers.org | listed 2026-11-08: `https://mcpservers.org/servers/glama-ai-mcp-servers-jaggernaut007-nexus-mcp` |
 | mcp.so | skipped: a listing costs money |
 
-## One-line blurb
+## Tagline
 
-Local code search and call graph for AI coding agents, in 10 languages. Runs on your machine,
-needs no API key, and makes no network call of its own. MIT license.
+Your coding agent reads less code to find the right file.
+
+## One-line blurb (100 characters or less, as in `server.json`)
+
+Local code search for coding agents: find the right file with far fewer tokens.
 
 ## Short description (about 300 characters)
 
-Nexus-MCP is a local MCP server that gives an AI coding agent hybrid code search, a static call
-graph and the code of any symbol. The agent reads fewer files, so it uses fewer tokens. Call
-graphs for 10 languages. It runs on your machine. No API key and no telemetry. Install with one
-command: `uvx --python 3.12 nexus-mcp-ci setup`.
+Nexus-MCP is a local MCP server for coding agents. Hybrid code search and a call graph for 10
+languages give the agent the right code in one call, so it reads less: 95% fewer tokens to reach
+the right file (median of 10 open-source repos). No API key, no telemetry, MIT. Install:
+`uvx --python 3.12 nexus-mcp-ci setup`.
 
 ## What it does (for a longer form)
 
@@ -49,27 +52,23 @@ command: `uvx --python 3.12 nexus-mcp-ci setup`.
 - **Fresh index:** a file watcher reindexes after each edit. A new session attaches the last
   index by itself.
 
-## Results to quote (2.4.1)
+## Results to quote
 
-Live benchmark: Claude Code (`claude -p`), Claude Sonnet at medium effort, 6 tasks × 3 runs per
-project. Nexus-MCP is compared with the built-in Grep and Read tools. Source: `CHANGELOG.md`,
-section 2.4.1.
+Quote only the numbers of the README results block. It is generated from
+`benchmarks/published/results.json` (one row per repo, the latest run), so every listing says
+the same thing. Do not quote a sum of runs: the published numbers are medians per task.
 
-| Project | Tokens, sum of 18 runs | Cost | Correct answers |
-|---|---|---|---|
-| Home Assistant (about 26,000 Python files) | 49% fewer | 32% lower | 18 of 18 (Grep 17) |
-| Django | 27% fewer | 27% lower | 17 of 18 (Grep 16) |
-
-Release 2.4.0, median tokens per task: 25% fewer than Grep on Vite (TypeScript) and 26% fewer
-on webpack (JavaScript), with 6 of 6 correct on both.
+- 95% fewer tokens to reach the right file, median of 10 open-source repos in 10 languages
+  (offline check, no LLM).
+- About 9× faster search than Grep and Read, median.
+- Live Claude Code runs on 11 repos: cost per task lower on 8 of 11, with 64 of 66 tasks
+  correct against 61 of 66.
 
 Give these limits with the numbers:
-- The Grep totals change much from run to run, so the token gaps are less certain than the
-  accuracy results.
-- On Django, Nexus-MCP used fewer tokens on 2 of the 6 tasks. The win comes from the large
-  impact tasks.
-- The README results table is older (version 2.1.0). Do not mix its numbers with the numbers
-  above.
+- C (redis) and Rust (tokio) used more tokens per task than Grep and Read, on the older 2.2.2
+  build. Say so when you quote a live number.
+- The same code can vary by about 20% in cost with 3 runs per task.
+- Benchmarks page: https://jaggernaut007.github.io/nexus-mcp/benchmarks.html
 
 ## Links to give
 

@@ -1,7 +1,7 @@
 {
   "$schema": "https://context7.com/schema/context7.json",
   "projectTitle": "Nexus-MCP",
-  "description": "Local code-intelligence MCP server: hybrid code search, static call graph and project memory for AI coding agents.",
+  "description": "Local MCP server for coding agents: hybrid code search and a call graph, so the agent finds the right file with far fewer tokens.",
   "folders": ["docs", "plugin/skills"],
   "excludeFolders": ["docs/research", "docs/adr", "tests", "benchmarks/repos", "evals/fixtures"],
   "excludeFiles": ["CHANGELOG.md", "todo.md", "PROGRESS.md"],

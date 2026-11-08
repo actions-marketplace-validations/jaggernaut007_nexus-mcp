@@ -1,6 +1,6 @@
 # Nexus-MCP
 
-> Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
+> Your coding agent reads less code to find the right file. Local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and an opt-in project memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
 
 This file contains the complete project documentation for Nexus-MCP, concatenated for LLM consumption.
 
@@ -1255,7 +1255,7 @@ GPU/MPS auto-detection (`NEXUS_EMBEDDING_DEVICE=auto`) tries CUDA first, then Ap
 
 # Architecture
 
-Nexus-MCP is a unified Model Context Protocol (MCP) server that combines vector search, full-text search, code graph analysis, and semantic memory into a single process. It is designed to run locally with a small memory footprint (see docs/MEMORY.md for measured numbers).
+Nexus-MCP is a local Model Context Protocol (MCP) server that lets a coding agent read less code to find the right file. It combines vector search, full-text search, code graph analysis and an opt-in semantic memory in a single process. It is designed to run locally with a small memory footprint (see docs/MEMORY.md for measured numbers).
 
 Nexus-MCP consolidates two predecessor projects into a single server ([ADR-001](adr/ADR-001-single-mcp-consolidation.md)):
 - **CodeGrok MCP** (by rdondeti / Ravitez Dondeti, MIT license) — Contributed the symbol extraction pipeline, embedding service, parallel indexing, core data models, and memory retrieval system.

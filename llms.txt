@@ -1,6 +1,6 @@
 # Nexus-MCP
 
-> Unified, local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and persistent semantic memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
+> Your coding agent reads less code to find the right file. Local-first MCP server combining hybrid search (vector + BM25), a static code graph with call edges, and an opt-in project memory in a single process. Designed for AI coding agents via the Model Context Protocol. About 90MB RAM idle and 460MB with the embedding model loaded, no API keys, no cloud dependencies. Open source under the MIT license.
 
 Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexes codebases into three engines (vector embeddings, BM25 keyword index, rustworkx code graph) and fuses the vector and BM25 results via Reciprocal Rank Fusion. Measured on 12 open-source repos in 10 languages against an agent with only Grep and Read: the agent reaches the right file with far fewer tokens and faster search, and in live Claude Code runs the cost per task is lower on most repos at the same accuracy. C and Rust used more tokens on the older 2.2.2 build. The Benchmarks section below has every number; the benchmarks page has the method. Search, symbols and the call graph cover Python, TypeScript, JavaScript, Go, Java, Rust, C, C++, C# and PHP; search covers 25+ languages.
 

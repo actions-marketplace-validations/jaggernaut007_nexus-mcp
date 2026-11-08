@@ -1,7 +1,7 @@
 # Nexus-MCP Project Information
 
 ## Overview
-Nexus-MCP is a unified code intelligence MCP (Model Context Protocol) server that consolidates two existing servers:
+Nexus-MCP is a local MCP (Model Context Protocol) server that lets a coding agent read less code to find the right file. It consolidates two earlier servers:
 - **CodeGrok** — semantic vector search + memory layer
 - **code-graph-mcp** — structural AST analysis + call graphs
 - **Live Grep** — 100% coverage fallback via ripgrep/grep

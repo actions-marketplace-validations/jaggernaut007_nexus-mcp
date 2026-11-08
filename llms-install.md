@@ -1,7 +1,7 @@
 # Install Nexus-MCP (instructions for an AI agent)
 
-Nexus-MCP is a local code-intelligence MCP server. It gives you search, symbol lookup and a
-call graph. The server name in the client config is `nexus-mcp`. The PyPI package is
+Nexus-MCP is a local MCP server that lets you read less code to find the right file. It gives
+you search, symbol lookup and a call graph. The server name in the client config is `nexus-mcp`. The PyPI package is
 `nexus-mcp-ci`. Install it for the client that you run in. Follow these steps.
 
 1. Check whether the tools already work. If you can call a `search` tool of the `nexus-mcp`

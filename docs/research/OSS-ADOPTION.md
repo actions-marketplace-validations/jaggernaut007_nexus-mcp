@@ -82,8 +82,9 @@ These need the owner's accounts or judgement. They are not done.
    from 2.2.2. A win or an honest loss on the current build removes the "not there yet" line.
 2. **Record a 20-second demo** (a GIF or a short video): one question in Claude Code, with and
    without Nexus-MCP, and the token count at the end. Put it under the README install block.
-3. **Replace `site/og.png`** and the GitHub social preview. Both still carry the old memory
-   tagline. Use the hero trace and "95% fewer tokens to the right file".
+3. **Upload the GitHub social preview.** `site/social-preview.png` (1280x640) has the new
+   tagline since 2026-11-08 (`site/og.png` too). GitHub has no API for it: upload it under
+   Settings, General, Social preview.
 4. **Show HN** when the C and Rust rerun is in. Title idea: "Show HN: Nexus-MCP, a local MCP
    server that cuts coding-agent tokens (benchmarks on 12 repos)". Stay in the comments.
 5. **A technical post** on how the benchmark works and where Nexus-MCP loses. Post it to the
