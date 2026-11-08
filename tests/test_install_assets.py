@@ -10,7 +10,6 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parent.parent
-TOOLS = {"index", "status", "search", "find_symbol", "graph", "analyze", "map", "memory"}
 
 
 def _version() -> str:
@@ -32,17 +31,24 @@ def test_mcpb_manifest_declares_a_uv_server_with_an_existing_entry_point():
     assert (ROOT / "mcpb" / "pyproject.toml").is_file()
 
 
-def test_mcpb_manifest_lists_exactly_the_server_tools():
-    manifest = json.loads((ROOT / "mcpb" / "manifest.json").read_text())
-    assert {tool["name"] for tool in manifest["tools"]} == TOOLS
-
-
 def test_mcpb_manifest_asks_for_no_secret_and_sets_no_licence_key():
     # Requirement changed on 2026-11-06: the project is MIT and has no licence key.
     manifest = json.loads((ROOT / "mcpb" / "manifest.json").read_text())
     assert "user_config" not in manifest
     assert manifest["license"] == "MIT"
     assert "NEXUS_LICENSE_KEY" not in manifest["server"]["mcp_config"]["env"]
+
+
+def test_mcpb_manifest_lists_the_tools_that_the_server_shows_by_default(monkeypatch):
+    # The manifest listed all 8 tools after 2.4.0 hid 3 of them by default.
+    import asyncio
+
+    import nexus_mcp.server as server_module
+
+    monkeypatch.delenv("NEXUS_EXTRA_TOOLS", raising=False)
+    shown = {t.name for t in asyncio.run(server_module.create_server().list_tools())}
+    manifest = json.loads((ROOT / "mcpb" / "manifest.json").read_text())
+    assert {t["name"] for t in manifest["tools"]} == shown
 
 
 def test_mcpb_entry_point_starts_the_server():
