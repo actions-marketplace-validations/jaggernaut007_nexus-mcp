@@ -273,8 +273,39 @@ def test_check_fails_when_a_generated_number_is_edited(tmp_path, monkeypatch):
     assert publish.main(["--check"]) == 1
 
 
+def _comparison():
+    """A sample tool comparison with a Grep and Read row. The numbers are not measured."""
+    conds = [
+        {"key": "grep_and_read", "label": "Grep and Read", "version": "built-in tools",
+         "median_tokens": 62450, "median_cost_usd": 0.057, "total_cost_usd": 1.58,
+         "median_turns": 5, "correct": 24, "of": 24},
+        {"key": "nexus_mcp", "label": "Nexus-MCP", "version": "2.2.0",
+         "median_tokens": 82900, "median_cost_usd": 0.062, "total_cost_usd": 1.64,
+         "median_turns": 6, "correct": 24, "of": 24},
+        {"key": "gitnexus", "label": "GitNexus", "version": "1.6.12",
+         "median_tokens": 164192, "median_cost_usd": 0.085, "total_cost_usd": 2.13,
+         "median_turns": 6, "correct": 24, "of": 24},
+    ]  # fmt: skip
+    return {
+        "id": "sample-tools", "title": "Nexus-MCP and GitNexus",
+        "project": "<sample> C++ repo", "url": "https://example.com/sample",
+        "language": "C++", "files": 4243, "commit": "d8ebdd2", "date": "2026-11-04",
+        "tasks": 8, "runs_per_task": 3, "agent": "Claude Code sample",
+        "aggregate": "the median over tasks of each task's median of 3 runs",
+        "task_suite": "benchmarks/tasks/sample.yaml",
+        "fairness": ["<sample> Same agent, model and prompt in each condition."],
+        "conditions": conds,
+        "per_task": [
+            {"task": "cr-needle-sample", "category": "needle",
+             "tokens": {c["key"]: 1000 for c in conds},
+             "cost_usd": {c["key"]: 0.01 for c in conds}}
+        ],
+        "notes": ["<sample> All conditions answered every run correctly."],
+    }
+
+
 def test_comparison_md_has_one_row_per_condition():
-    comp = DATA["comparisons"][0]
+    comp = _comparison()
     lines = publish.comparison_md(comp)
     rows = [line for line in lines if line.startswith("| ") and "Condition" not in line]
     assert len(rows) == len(comp["conditions"])
@@ -282,7 +313,7 @@ def test_comparison_md_has_one_row_per_condition():
 
 
 def test_comparison_html_has_every_task_and_escapes_text():
-    comp = dict(DATA["comparisons"][0], title="A <b> test")
+    comp = dict(_comparison(), title="A <b> test")
     page = publish.comparison_html(comp)
     for task in comp["per_task"]:
         assert task["task"] in page
@@ -299,7 +330,7 @@ def _with_tool_called(comp):
 
 
 def test_comparison_md_tool_called_column_when_recorded():
-    comp = _with_tool_called(DATA["comparisons"][0])
+    comp = _with_tool_called(_comparison())
     text = "\n".join(publish.comparison_md(comp))
     assert "| Tool called |" in text
     assert "| 8 of 24 |" in text
@@ -307,7 +338,7 @@ def test_comparison_md_tool_called_column_when_recorded():
 
 
 def test_comparison_md_no_tool_called_column_when_absent():
-    comp = dict(DATA["comparisons"][0])
+    comp = dict(_comparison())
     comp["conditions"] = [
         {k: v for k, v in c.items() if k != "tool_called"} for c in comp["conditions"]
     ]
@@ -315,13 +346,13 @@ def test_comparison_md_no_tool_called_column_when_absent():
 
 
 def test_comparison_html_tool_called_column_when_recorded():
-    page = publish.comparison_html(_with_tool_called(DATA["comparisons"][0]))
+    page = publish.comparison_html(_with_tool_called(_comparison()))
     assert "<th>Tool called</th>" in page
     assert "<td>8 of 24</td>" in page
 
 
 def test_comparison_html_lists_every_fairness_rule():
-    comp = DATA["comparisons"][0]
+    comp = _comparison()
     page = publish.comparison_html(comp)
     assert "How the comparison was kept fair" in page
     for rule in comp["fairness"]:

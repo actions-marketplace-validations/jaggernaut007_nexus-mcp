@@ -35,6 +35,10 @@ All notable changes to this project will be documented in this file.
   `corpus` for a tool that writes into the repo).
 - `scripts/publish_results.py`: a comparison can record `tool_called` per condition, shown as
   a "Tool called" column. `benchmarks/latest_published.py` skips `competitors-*` run folders.
+- **Removed the Chromium `base/` head-to-head with GitNexus (2026-11-04) from the published
+  data.** It is gone from the benchmarks page, `site/benchmarks.json` and `llms.txt`. The Django
+  and Home Assistant comparison replaces it. The Chromium repo row, its offline check and
+  `benchmarks/tasks/chromium-base.yaml` stay, and so do the old `CHANGELOG` entries.
 
 ## [2.4.6] - 2026-11-08
 
