@@ -594,3 +594,37 @@ def test_main_task_ids_not_in_the_suite_is_an_error(tmp_path):
     suite_path.write_text("repo:\n  name: django\n  pin: abc\ntasks:\n  - id: t1\n    prompt: a\n")
     with pytest.raises(SystemExit):
         runner.main(["--tasks", str(suite_path), "--task-ids", "nope"])
+
+
+class TestConditionRepoDir:
+    def test_condition_repo_dir_plain_condition_uses_shared_repo(self, tmp_path):
+        from benchmarks.runner import condition_repo_dir
+
+        assert condition_repo_dir("baseline", tmp_path, tmp_path) == tmp_path
+
+    def test_condition_repo_dir_ext_without_marker_uses_shared_repo(self, tmp_path):
+        from benchmarks.runner import condition_repo_dir
+
+        (tmp_path / "tools" / "tool").mkdir(parents=True)
+        assert condition_repo_dir("ext:tool", tmp_path, tmp_path / "tools") == tmp_path
+
+    def test_condition_repo_dir_ext_with_marker_uses_own_copy(self, tmp_path):
+        from benchmarks.runner import condition_repo_dir
+
+        copy = tmp_path / "copy"
+        copy.mkdir()
+        tool = tmp_path / "tools" / "tool"
+        tool.mkdir(parents=True)
+        (tool / "corpus").write_text(f"{copy}\n")
+        assert condition_repo_dir("ext:tool", tmp_path, tmp_path / "tools") == copy
+
+    def test_condition_repo_dir_missing_copy_raises(self, tmp_path):
+        import pytest
+
+        from benchmarks.runner import condition_repo_dir
+
+        tool = tmp_path / "tools" / "tool"
+        tool.mkdir(parents=True)
+        (tool / "corpus").write_text(str(tmp_path / "nope"))
+        with pytest.raises(SystemExit):
+            condition_repo_dir("ext:tool", tmp_path, tmp_path / "tools")
