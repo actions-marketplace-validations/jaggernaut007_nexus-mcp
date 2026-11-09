@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Benchmarks
+
+- **Head to head with four other code tools on Django and Home Assistant.** Nexus-MCP,
+  GitNexus 1.6.12, codebase-memory-mcp 0.12.1, Serena 2.1.0 and Graphify 0.9.104. Claude Code
+  2.1.319, `claude-sonnet-5-5`, medium effort, 3 runs per task. Published under
+  `comparisons` in `benchmarks/published/results.json` (benchmarks page and `llms.txt`); run
+  records in `benchmarks/runs/competitors-2026-11-09/`. Medians per task, tokens and cost:
+
+  | Tool | Django (Nexus-MCP 2.4.6, 12 tasks) | Home Assistant (Nexus-MCP 2.4.1, 6 tasks) |
+  |---|---|---|
+  | Nexus-MCP | 21,660, $0.037, called 32 of 36 | 18,826, $0.020, called 18 of 18 |
+  | GitNexus | 59,224, $0.029, called 8 of 36 | 64,503, $0.030, called 7 of 18 |
+  | codebase-memory-mcp | 46,220, $0.033, called 2 of 36 | 44,532, $0.019, called 0 of 18 |
+  | Serena | 33,552, $0.028, called 9 of 36 | 39,482, $0.021, called 0 of 18 |
+  | Graphify | 24,168, $0.026, called 3 of 36 | 20,101, $0.018, called 0 of 18 |
+
+  - All five answered every run correctly.
+  - Nexus-MCP used the fewest tokens on 8 of 12 Django tasks and 4 of 6 Home Assistant
+    tasks. It cost the least on 1 and 0 tasks: it sends more uncached tokens per run.
+  - The agent rarely called the other four tools, so their rows mostly measure Read, Grep
+    and Glob.
+  - Grep and Read in the same session cost less than every tool (median $0.025 on Django,
+    $0.018 on Home Assistant). This is not a north-star win.
+  - The Grep and Read side is far cheaper than in the 2.4.1 runs of the same tasks (Home
+    Assistant: 96,145 tokens and $0.071 per task then; 16,113 and $0.017 now, means). The
+    agent and model changed in between, so the per-repo table needs a rerun.
+- `benchmarks/conditions.py`: an `ext:<name>` condition runs another MCP tool from
+  `benchmarks/tools/private/<name>/` (`mcp.json`, optional `instructions.md`, optional
+  `corpus` for a tool that writes into the repo).
+- `scripts/publish_results.py`: a comparison can record `tool_called` per condition, shown as
+  a "Tool called" column. `benchmarks/latest_published.py` skips `competitors-*` run folders.
+
 ## [2.4.6] - 2026-11-08
 
 A docs and listing release. The MCP tools and their behaviour do not change. The PyPI page,

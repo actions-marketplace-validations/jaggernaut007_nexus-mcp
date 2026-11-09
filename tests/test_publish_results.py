@@ -289,6 +289,37 @@ def test_comparison_html_has_every_task_and_escapes_text():
     assert "A &lt;b&gt; test" in page and "<b>" not in page
 
 
+def _with_tool_called(comp):
+    """A copy of a comparison where each tool condition records how often it was called."""
+    conds = [
+        dict(c, tool_called=c["of"] // 3) if c["key"] != "grep_and_read" else dict(c)
+        for c in comp["conditions"]
+    ]
+    return dict(comp, conditions=conds)
+
+
+def test_comparison_md_tool_called_column_when_recorded():
+    comp = _with_tool_called(DATA["comparisons"][0])
+    text = "\n".join(publish.comparison_md(comp))
+    assert "| Tool called |" in text
+    assert "| 8 of 24 |" in text
+    assert "| – |" in text  # Grep and Read has no tool server
+
+
+def test_comparison_md_no_tool_called_column_when_absent():
+    comp = dict(DATA["comparisons"][0])
+    comp["conditions"] = [
+        {k: v for k, v in c.items() if k != "tool_called"} for c in comp["conditions"]
+    ]
+    assert "Tool called" not in "\n".join(publish.comparison_md(comp))
+
+
+def test_comparison_html_tool_called_column_when_recorded():
+    page = publish.comparison_html(_with_tool_called(DATA["comparisons"][0]))
+    assert "<th>Tool called</th>" in page
+    assert "<td>8 of 24</td>" in page
+
+
 def test_comparison_html_lists_every_fairness_rule():
     comp = DATA["comparisons"][0]
     page = publish.comparison_html(comp)

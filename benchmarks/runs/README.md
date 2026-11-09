@@ -17,6 +17,7 @@ numbers only from `benchmarks/published/results.json`.
 | `languages-defs-fix` | `defined_in` and the shorter fixed text (`45aec40`): the Django and Home Assistant live A/B. The first Home Assistant live tier stopped on a repo path bug; the console log holds the rerun on the same index |
 | `languages-graph-cap` | The size cap of `graph` results (`cf1bb7a`): the Django and Home Assistant live A/B, on copies of the defs-fix indexes |
 | `languages-v2.4.1` | 2.4.1: the full-path rule in the server instructions, built from `195090c` (the 2.4.1 code before the version bump). The Home Assistant and Django live A/B, on copies of the defs-fix indexes. The records say `nexus_version` 2.4.1, with a note, and keep `nexus_ref` 195090c |
+| `competitors-2026-11-09` | Nexus-MCP against GitNexus 1.6.12, codebase-memory-mcp 0.12.1, Serena 2.1.0 and Graphify 0.9.104, with a Grep and Read row in the same session. Django (12 tasks, Nexus-MCP 2.4.6) and Home Assistant (6 tasks, Nexus-MCP 2.4.1 on the `languages-v2.4.1` index), 3 runs each. The tool rows use the `ext:<name>` condition. `*-index-times.txt` holds the index build time of each tool (the first Serena build on Django stopped on a prompt and was run again) |
 | `setup` | One file per pinned install: version, commit and install time |
 
 Each folder has:
