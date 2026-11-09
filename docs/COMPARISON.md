@@ -1,10 +1,17 @@
 # Comparison with other code-intelligence tools
 
-This page lists features only, from each project's own documentation. It makes no performance
-claim about another tool. To compare on your own code, run `uvx --python 3.12 nexus-mcp-ci eval`.
-The one measured head-to-head (Nexus-MCP and GitNexus on Chromium `base/`) is on the
-[benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html), with the result
-that Grep and Read cost less than both on that C++ code.
+This page lists features only, from each project's own documentation. To compare on your own
+code, run `uvx --python 3.12 nexus-mcp-ci eval`.
+
+The measured head-to-heads are on the
+[benchmarks page](https://jaggernaut007.github.io/nexus-mcp/benchmarks.html):
+
+- **Django and Home Assistant (2026-11-09):** Nexus-MCP, GitNexus, codebase-memory-mcp, Serena
+  and Graphify. All five answered every run correctly. Nexus-MCP used the fewest tokens on most
+  tasks, but it cost the least on few of them. The agent rarely called the other four tools, so
+  their rows mostly measure Read, Grep and Glob. Grep and Read alone cost less than every tool.
+- **Chromium `base/` (2026-11-04):** Nexus-MCP and GitNexus. Grep and Read cost less than both
+  on that C++ code.
 
 ## Code-intelligence MCP servers
 

@@ -76,3 +76,4 @@ evals/.claude-eval/
 # Private query suites and task files (a private project's names stay local)
 evals/retrieval/queries.local.yaml
 benchmarks/tasks/private/
+benchmarks/tools/private/

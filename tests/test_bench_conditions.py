@@ -11,6 +11,9 @@ from benchmarks.conditions import (
     build_argv,
     build_env,
     build_run,
+    expand_conditions,
+    ext_allowed_tools,
+    ext_tool_dir,
     has_api_key,
     load_skill_body,
     strip_frontmatter,
@@ -249,3 +252,59 @@ class TestEffortAndPinnedConfig:
         assert server["env"]["NEXUS_AUTO_WATCH"] == "false"
         path = write_pinned_mcp_config(tmp_path / "cfg" / "x.json", nexus_bin, storage)
         assert json.loads(path.read_text())["mcpServers"]["nexus-mcp"]["command"] == str(nexus_bin)
+
+
+class TestExternalTool:
+    @staticmethod
+    def _tool(tmp_path, instructions=None):
+        folder = tmp_path / "othertool"
+        folder.mkdir()
+        (folder / "mcp.json").write_text(
+            '{"mcpServers": {"other": {"command": "other-mcp", "args": []}}}'
+        )
+        if instructions is not None:
+            (folder / "instructions.md").write_text(instructions)
+        return folder
+
+    def test_build_argv_ext_uses_tool_config_and_allowlist(self, tmp_path):
+        folder = self._tool(tmp_path)
+        argv = build_argv("ext:othertool", "q?", "sonnet", 1.0, ext_tools_dir=tmp_path)
+        assert argv[argv.index("--mcp-config") + 1] == str(folder / "mcp.json")
+        assert "--strict-mcp-config" in argv
+        allowed = argv[argv.index("--allowedTools") + 1]
+        assert "mcp__other__*" in allowed
+        assert "nexus" not in allowed
+        assert "--append-system-prompt" not in argv
+        assert argv[-1] == "q?"
+
+    def test_build_argv_ext_appends_instructions(self, tmp_path):
+        self._tool(tmp_path, instructions="---\nname: x\n---\n\nUse other tools.")
+        argv = build_argv("ext:othertool", "q?", "sonnet", 1.0, ext_tools_dir=tmp_path)
+        assert argv[argv.index("--append-system-prompt") + 1] == "Use other tools."
+
+    def test_build_argv_ext_missing_config_raises(self, tmp_path):
+        with pytest.raises(ValueError):
+            build_argv("ext:missing", "q?", "sonnet", 1.0, ext_tools_dir=tmp_path)
+
+    @pytest.mark.parametrize("name", ["ext:", "ext:../x", "ext:.hidden", "ext:a/b"])
+    def test_ext_tool_dir_bad_name_raises(self, name, tmp_path):
+        with pytest.raises(ValueError):
+            ext_tool_dir(name, tmp_path)
+
+    def test_ext_allowed_tools_empty_servers_raises(self, tmp_path):
+        path = tmp_path / "mcp.json"
+        path.write_text('{"mcpServers": {}}')
+        with pytest.raises(ValueError):
+            ext_allowed_tools(path)
+
+    def test_expand_conditions_ext_takes_no_model(self):
+        assert expand_conditions(["ext:other", "nexus"], ["bge-small-en"]) == [
+            "ext:other", "nexus@bge-small-en",
+        ]
+
+    def test_build_argv_ext_passes_the_effort_flag(self, tmp_path):
+        self._tool(tmp_path)
+        argv = build_argv(
+            "ext:othertool", "q?", "sonnet", 1.0, effort="medium", ext_tools_dir=tmp_path
+        )
+        assert argv[argv.index("--effort") + 1] == "medium"

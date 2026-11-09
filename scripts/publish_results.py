@@ -473,6 +473,7 @@ def llms_block(data: Dict) -> str:
         conds = "; ".join(
             f"{c['label']} {c['version']}: {c['median_tokens']} tokens, "
             f"${c['median_cost_usd']:.3f}, {c['correct']} of {c['of']} correct"
+            + (f", tool called in {c['tool_called']} of {c['of']} runs" if "tool_called" in c else "")
             for c in comp["conditions"]
         )
         lines.append(
@@ -543,15 +544,29 @@ def comparison_md(comp: Dict) -> List[str]:
         f"{comp['title']} on {name} ({comp['language']}, {comp['files']:,} files): "
         f"{comp['tasks']} tasks, {comp['runs_per_task']} runs each, {comp['date']}.",
         "",
-        "| Condition | Version | Tokens (median) | Cost per task (median) | Correct |",
-        "|---|---|---:|---:|---:|",
     ]
+    called = any("tool_called" in c for c in comp["conditions"])
+    head = "| Condition | Version | Tokens (median) | Cost per task (median) | Correct |"
+    rule = "|---|---|---:|---:|---:|"
+    if called:
+        head, rule = head + " Tool called |", rule + "---:|"
+    lines += [head, rule]
     for c in comp["conditions"]:
-        lines.append(
+        row = (
             f"| {c['label']} | {c['version']} | {c['median_tokens']:,} | "
             f"${c['median_cost_usd']:.3f} | {c['correct']} of {c['of']} |"
         )
+        if called:
+            row += f" {tool_called_text(c)} |"
+        lines.append(row)
     return lines
+
+
+def tool_called_text(cond: Dict) -> str:
+    """How many runs called the tool's own MCP server. A dash for built-in tools."""
+    if "tool_called" not in cond:
+        return "–"
+    return f"{cond['tool_called']} of {cond['of']}"
 
 
 def load_community() -> List[Dict]:
@@ -600,6 +615,7 @@ def community_html(entries: List[Dict]) -> str:
 def comparison_html(comp: Dict) -> str:
     """A head-to-head comparison section: totals per condition, then each task."""
     conds = comp["conditions"]
+    called = any("tool_called" in c for c in conds)
     name = html.escape(comp["project"])
     if comp.get("url"):
         name = f'<a href="{html.escape(comp["url"])}">{name}</a>'
@@ -607,9 +623,12 @@ def comparison_html(comp: Dict) -> str:
         f"<tr><td>{html.escape(c['label'])}</td><td>{html.escape(c['version'])}</td>"
         f"<td>{c['median_tokens']:,}</td><td>${c['median_cost_usd']:.3f}</td>"
         f"<td>${c['total_cost_usd']:.2f}</td><td>{c['median_turns']:g}</td>"
-        f"<td>{c['correct']} of {c['of']}</td></tr>"
+        f"<td>{c['correct']} of {c['of']}</td>"
+        + (f"<td>{tool_called_text(c)}</td>" if called else "")
+        + "</tr>"
         for c in conds
     )
+    called_head = "<th>Tool called</th>" if called else ""
     heads = "".join(f"<th>{html.escape(c['label'])}</th>" for c in conds)
     tasks = "".join(
         f"<tr><td><code>{html.escape(t['task'])}</code></td><td>{html.escape(t['category'])}</td>"
@@ -623,7 +642,7 @@ def comparison_html(comp: Dict) -> str:
     fairness = "".join(f"<li>{html.escape(n)}</li>" for n in comp.get("fairness", []))
     return f"""<section class="page-section"><h2>Head to head: {html.escape(comp["title"])}</h2>
 <p>{name} ({html.escape(comp["language"])}, {comp["files"]:,} files, commit <code>{html.escape(comp["commit"])}</code>): {comp["tasks"]} tasks, {comp["runs_per_task"]} runs each, {html.escape(comp["agent"])}, {html.escape(comp["date"])}. Each total is {html.escape(comp["aggregate"])}.</p>
-<div class="table-scroll" tabindex="0"><table class="plain"><thead><tr><th>Condition</th><th>Version</th><th>Tokens (median)</th><th>Cost per task (median)</th><th>Cost of all runs</th><th>Turns</th><th>Correct</th></tr></thead><tbody>{summary}</tbody></table></div>
+<div class="table-scroll" tabindex="0"><table class="plain"><thead><tr><th>Condition</th><th>Version</th><th>Tokens (median)</th><th>Cost per task (median)</th><th>Cost of all runs</th><th>Turns</th><th>Correct</th>{called_head}</tr></thead><tbody>{summary}</tbody></table></div>
 <div class="table-scroll" tabindex="0"><table class="plain"><thead><tr><th>Task</th><th>Category</th>{heads}</tr></thead><tbody>{tasks}</tbody></table></div>
 <ul>{notes}</ul>
 <h3>How the comparison was kept fair</h3>

@@ -282,6 +282,24 @@ WARM_UP_BUDGET_USD = 0.25
 WARM_UP_TIMEOUT_S = 120
 
 
+def condition_repo_dir(condition: str, repo_dir: Path, tools_dir: Optional[Path] = None) -> Path:
+    """Folder that a condition uses as its corpus.
+
+    A tool that writes files into the repo (Serena, Graphify) needs its own copy of the
+    corpus. Its tool folder holds a `corpus` file with the absolute path of that copy.
+    Other conditions use the shared `repo_dir`.
+    """
+    if not cond.is_ext(condition):
+        return repo_dir
+    marker = cond.ext_tool_dir(condition, tools_dir) / "corpus"
+    if not marker.is_file():
+        return repo_dir
+    corpus = Path(marker.read_text().strip())
+    if not corpus.is_dir():
+        raise SystemExit(f"Corpus {corpus} named in {marker} does not exist")
+    return corpus
+
+
 def warm_up(
     condition: str,
     repo_dir: Path,
@@ -298,6 +316,7 @@ def warm_up(
     not, so the cost of a task depended on its place in the batch. The call is not
     recorded. A failure here is not an error: the run that follows shows the fault.
     """
+    repo_dir = condition_repo_dir(condition, repo_dir)
     built = cond.build_run(
         condition, WARM_UP_PROMPT, model, WARM_UP_BUDGET_USD, config_dir,
         mcp_config_path=mcp_config_for(condition, repo_dir, pinned), effort=effort,
@@ -337,6 +356,7 @@ def run_once(
     max_budget = task.get("max_budget_usd", 1.00)
     timeout_s = task.get("timeout_s", 600)
     prompt = task["prompt"].strip() + PROMPT_SUFFIX
+    repo_dir = condition_repo_dir(condition, repo_dir)
 
     base, embedding_model = cond.split_condition(condition)
     built = cond.build_run(
@@ -460,9 +480,18 @@ def run_suite(
     if pinned is not None and any(cond.split_condition(n)[1] for n in condition_names):
         raise SystemExit("--nexus-venv measures one install; do not combine it with "
                          "--embedding-models")
-    if pinned is not None and any(n != "baseline" for n in condition_names):
+    for name in condition_names:
+        if cond.is_ext(name):
+            ext_config = cond.ext_tool_dir(name) / "mcp.json"
+            if not ext_config.is_file():
+                raise SystemExit(f"{name} needs an MCP config at {ext_config}")
+    if pinned is not None and any(
+        n != "baseline" and not cond.is_ext(n) for n in condition_names
+    ):
         ensure_pinned_index(pinned, repo_dir)
     for name in condition_names:
+        if cond.is_ext(name):
+            continue
         embedding_model = cond.split_condition(name)[1]
         if embedding_model and not storage_dir_for(repo_dir, embedding_model).exists():
             raise SystemExit(

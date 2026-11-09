@@ -265,6 +265,523 @@
         "GitNexus sends about 17.9k tokens of tool schema on each turn (17 tools); Nexus-MCP sends about 2.3k (8 tools).",
         "The GitNexus condition gets its MCP server and the CLAUDE.md block that gitnexus analyze writes; its on-demand skills are not given."
       ]
+    },
+    {
+      "id": "django-318a316-tools",
+      "title": "Nexus-MCP and four other code tools",
+      "project": "django/django",
+      "url": "https://github.com/django/django/tree/318a316a4c86a65bede68144f9546a6056d91379",
+      "language": "Python",
+      "files": 7067,
+      "commit": "318a316",
+      "date": "2026-11-09",
+      "tasks": 12,
+      "runs_per_task": 3,
+      "agent": "Claude Code 2.1.319, Claude Sonnet 5.5 (claude-sonnet-5-5), medium effort, headless (claude -p)",
+      "aggregate": "the median over tasks of each task's median of 3 runs",
+      "task_suite": "benchmarks/tasks/django.yaml",
+      "notes": [
+        "All five conditions answered all 36 runs correctly.",
+        "Nexus-MCP used the fewest tokens of the five tools on 8 of 12 tasks. It cost the least on 1 of 12: it sends more uncached tokens per run (6.4k on average, against 4.3k to 4.9k), and uncached tokens set most of the cost.",
+        "Nexus-MCP was called in 32 of 36 runs, GitNexus in 8, Serena in 9, Graphify in 3 and codebase-memory-mcp in 2.",
+        "Tool called: the number of runs in which the agent called that tool's own MCP server. Each server started and listed its tools in every run. In the other runs the agent used Read, Grep and Glob, so a row with few calls mostly measures the built-in tools.",
+        "Grep and Read is not in this table, because the table compares tools with each other. In the same session it cost less than every tool: median 16,138 tokens and $0.025 per task. Its 36 runs are in benchmarks/runs/competitors-2026-11-09/.",
+        "Serena runs with --agent-interface=tools (one tool per operation); its default is a 2-tool REPL. GitNexus gets the CLAUDE.md block that gitnexus analyze writes. The other tools have no always-loaded block and get the instructions of their MCP server."
+      ],
+      "fairness": [
+        "Same agent, model, prompt, budget and timeout in each condition.",
+        "Read, Grep and Glob in each condition; a tool server is added to them, not in place of them.",
+        "Each tool gets what its real user always has loaded: its MCP server and its always-loaded instructions.",
+        "Indexes built before the runs; a warm-up call so that each run starts with a warm prompt cache.",
+        "Isolated config folder and --strict-mcp-config for each run.",
+        "Pinned repo commit and tool versions; ground truth checked with grep against the commit.",
+        "The same mechanical scoring (file recall and required facts) for each condition; every task is published."
+      ],
+      "conditions": [
+        {
+          "key": "nexus_mcp",
+          "label": "Nexus-MCP",
+          "version": "2.4.6",
+          "median_tokens": 21660,
+          "median_cost_usd": 0.037,
+          "total_cost_usd": 1.27,
+          "median_turns": 2.0,
+          "correct": 36,
+          "of": 36,
+          "tool_called": 32
+        },
+        {
+          "key": "gitnexus",
+          "label": "GitNexus",
+          "version": "1.6.12",
+          "median_tokens": 59224,
+          "median_cost_usd": 0.029,
+          "total_cost_usd": 1.16,
+          "median_turns": 2.5,
+          "correct": 36,
+          "of": 36,
+          "tool_called": 8
+        },
+        {
+          "key": "codebase_memory_mcp",
+          "label": "codebase-memory-mcp",
+          "version": "0.12.1",
+          "median_tokens": 46220,
+          "median_cost_usd": 0.033,
+          "total_cost_usd": 1.18,
+          "median_turns": 3.0,
+          "correct": 36,
+          "of": 36,
+          "tool_called": 2
+        },
+        {
+          "key": "serena",
+          "label": "Serena",
+          "version": "2.1.0",
+          "median_tokens": 33552,
+          "median_cost_usd": 0.028,
+          "total_cost_usd": 1.15,
+          "median_turns": 3.0,
+          "correct": 36,
+          "of": 36,
+          "tool_called": 9
+        },
+        {
+          "key": "graphify",
+          "label": "Graphify",
+          "version": "0.9.104",
+          "median_tokens": 24168,
+          "median_cost_usd": 0.026,
+          "total_cost_usd": 1.07,
+          "median_turns": 3.0,
+          "correct": 36,
+          "of": 36,
+          "tool_called": 3
+        }
+      ],
+      "per_task": [
+        {
+          "task": "dj-arch-orm-layers",
+          "category": "architecture",
+          "tokens": {
+            "nexus_mcp": 24208,
+            "gitnexus": 30776,
+            "codebase_memory_mcp": 32339,
+            "serena": 17186,
+            "graphify": 10697
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.055,
+            "gitnexus": 0.029,
+            "codebase_memory_mcp": 0.035,
+            "serena": 0.028,
+            "graphify": 0.026
+          }
+        },
+        {
+          "task": "dj-arch-request-to-query",
+          "category": "architecture",
+          "tokens": {
+            "nexus_mcp": 21805,
+            "gitnexus": 59484,
+            "codebase_memory_mcp": 16177,
+            "serena": 32589,
+            "graphify": 19581
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.039,
+            "gitnexus": 0.028,
+            "codebase_memory_mcp": 0.022,
+            "serena": 0.028,
+            "graphify": 0.027
+          }
+        },
+        {
+          "task": "dj-arch-validators-vs-fields",
+          "category": "architecture",
+          "tokens": {
+            "nexus_mcp": 36967,
+            "gitnexus": 93489,
+            "codebase_memory_mcp": 51958,
+            "serena": 52064,
+            "graphify": 33298
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.051,
+            "gitnexus": 0.049,
+            "codebase_memory_mcp": 0.05,
+            "serena": 0.045,
+            "graphify": 0.043
+          }
+        },
+        {
+          "task": "dj-concept-field-validation",
+          "category": "conceptual",
+          "tokens": {
+            "nexus_mcp": 16482,
+            "gitnexus": 58899,
+            "codebase_memory_mcp": 44712,
+            "serena": 31556,
+            "graphify": 18503
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.01,
+            "gitnexus": 0.02,
+            "codebase_memory_mcp": 0.017,
+            "serena": 0.017,
+            "graphify": 0.015
+          }
+        },
+        {
+          "task": "dj-concept-middleware-chain",
+          "category": "conceptual",
+          "tokens": {
+            "nexus_mcp": 20656,
+            "gitnexus": 121594,
+            "codebase_memory_mcp": 64971,
+            "serena": 48094,
+            "graphify": 28755
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.033,
+            "gitnexus": 0.042,
+            "codebase_memory_mcp": 0.039,
+            "serena": 0.028,
+            "graphify": 0.025
+          }
+        },
+        {
+          "task": "dj-concept-signal-dispatch",
+          "category": "conceptual",
+          "tokens": {
+            "nexus_mcp": 21514,
+            "gitnexus": 58965,
+            "codebase_memory_mcp": 47728,
+            "serena": 48345,
+            "graphify": 29446
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.036,
+            "gitnexus": 0.022,
+            "codebase_memory_mcp": 0.03,
+            "serena": 0.029,
+            "graphify": 0.028
+          }
+        },
+        {
+          "task": "dj-impact-field-validate",
+          "category": "impact",
+          "tokens": {
+            "nexus_mcp": 33019,
+            "gitnexus": 60285,
+            "codebase_memory_mcp": 50705,
+            "serena": 51644,
+            "graphify": 31537
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.04,
+            "gitnexus": 0.031,
+            "codebase_memory_mcp": 0.038,
+            "serena": 0.042,
+            "graphify": 0.036
+          }
+        },
+        {
+          "task": "dj-impact-sqlcompiler-as-sql",
+          "category": "impact",
+          "tokens": {
+            "nexus_mcp": 43051,
+            "gitnexus": 100203,
+            "codebase_memory_mcp": 85179,
+            "serena": 105407,
+            "graphify": 64885
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.077,
+            "gitnexus": 0.075,
+            "codebase_memory_mcp": 0.08,
+            "serena": 0.09,
+            "graphify": 0.089
+          }
+        },
+        {
+          "task": "dj-impact-urls-resolver",
+          "category": "impact",
+          "tokens": {
+            "nexus_mcp": 22338,
+            "gitnexus": 95486,
+            "codebase_memory_mcp": 54551,
+            "serena": 34516,
+            "graphify": 33324
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.04,
+            "gitnexus": 0.048,
+            "codebase_memory_mcp": 0.049,
+            "serena": 0.033,
+            "graphify": 0.037
+          }
+        },
+        {
+          "task": "dj-needle-charfield-class",
+          "category": "needle",
+          "tokens": {
+            "nexus_mcp": 17151,
+            "gitnexus": 57440,
+            "codebase_memory_mcp": 29333,
+            "serena": 30176,
+            "graphify": 17273
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.013,
+            "gitnexus": 0.012,
+            "codebase_memory_mcp": 0.01,
+            "serena": 0.01,
+            "graphify": 0.009
+          }
+        },
+        {
+          "task": "dj-needle-max-length-validator-code",
+          "category": "needle",
+          "tokens": {
+            "nexus_mcp": 16401,
+            "gitnexus": 57593,
+            "codebase_memory_mcp": 29426,
+            "serena": 30235,
+            "graphify": 17434
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.01,
+            "gitnexus": 0.013,
+            "codebase_memory_mcp": 0.01,
+            "serena": 0.01,
+            "graphify": 0.009
+          }
+        },
+        {
+          "task": "dj-needle-signal-send-robust",
+          "category": "needle",
+          "tokens": {
+            "nexus_mcp": 17409,
+            "gitnexus": 58511,
+            "codebase_memory_mcp": 30238,
+            "serena": 31045,
+            "graphify": 18234
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.015,
+            "gitnexus": 0.018,
+            "codebase_memory_mcp": 0.015,
+            "serena": 0.014,
+            "graphify": 0.013
+          }
+        }
+      ]
+    },
+    {
+      "id": "home-assistant-5b0d396-tools",
+      "title": "Nexus-MCP and four other code tools",
+      "project": "home-assistant/core",
+      "url": "https://github.com/home-assistant/core/tree/5b0d396bd84113aabf694d23cdbddbdaf574ca78",
+      "language": "Python",
+      "files": 26347,
+      "commit": "5b0d396",
+      "date": "2026-11-09",
+      "tasks": 6,
+      "runs_per_task": 3,
+      "agent": "Claude Code 2.1.319, Claude Sonnet 5.5 (claude-sonnet-5-5), medium effort, headless (claude -p)",
+      "aggregate": "the median over tasks of each task's median of 3 runs",
+      "task_suite": "benchmarks/tasks/home-assistant.yaml",
+      "notes": [
+        "All five conditions answered all 18 runs correctly.",
+        "Nexus-MCP used the fewest tokens of the five tools on 4 of 6 tasks. It cost the least on none of them.",
+        "Nexus-MCP was called in 18 of 18 runs and GitNexus in 7. Serena, Graphify and codebase-memory-mcp were not called in any run, so their rows measure Read, Grep and Glob.",
+        "Tool called: the number of runs in which the agent called that tool's own MCP server. Each server started and listed its tools in every run. In the other runs the agent used Read, Grep and Glob, so a row with few calls mostly measures the built-in tools.",
+        "Grep and Read is not in this table, because the table compares tools with each other. In the same session it cost less than every tool: median 15,270 tokens and $0.018 per task. Its 18 runs are in benchmarks/runs/competitors-2026-11-09/.",
+        "The Nexus-MCP index was built by commit 195090c, which differs from the 2.4.1 tag only in the version string.",
+        "Serena runs with --agent-interface=tools (one tool per operation); its default is a 2-tool REPL. GitNexus gets the CLAUDE.md block that gitnexus analyze writes. The other tools have no always-loaded block and get the instructions of their MCP server."
+      ],
+      "fairness": [
+        "Same agent, model, prompt, budget and timeout in each condition.",
+        "Read, Grep and Glob in each condition; a tool server is added to them, not in place of them.",
+        "Each tool gets what its real user always has loaded: its MCP server and its always-loaded instructions.",
+        "Indexes built before the runs; a warm-up call so that each run starts with a warm prompt cache.",
+        "Isolated config folder and --strict-mcp-config for each run.",
+        "Pinned repo commit and tool versions; ground truth checked with grep against the commit.",
+        "The same mechanical scoring (file recall and required facts) for each condition; every task is published."
+      ],
+      "conditions": [
+        {
+          "key": "nexus_mcp",
+          "label": "Nexus-MCP",
+          "version": "2.4.1",
+          "median_tokens": 18826,
+          "median_cost_usd": 0.02,
+          "total_cost_usd": 0.46,
+          "median_turns": 2.0,
+          "correct": 18,
+          "of": 18,
+          "tool_called": 18
+        },
+        {
+          "key": "gitnexus",
+          "label": "GitNexus",
+          "version": "1.6.12",
+          "median_tokens": 64503,
+          "median_cost_usd": 0.03,
+          "total_cost_usd": 0.62,
+          "median_turns": 3.0,
+          "correct": 18,
+          "of": 18,
+          "tool_called": 7
+        },
+        {
+          "key": "codebase_memory_mcp",
+          "label": "codebase-memory-mcp",
+          "version": "0.12.1",
+          "median_tokens": 44532,
+          "median_cost_usd": 0.019,
+          "total_cost_usd": 0.42,
+          "median_turns": 3.0,
+          "correct": 18,
+          "of": 18,
+          "tool_called": 0
+        },
+        {
+          "key": "serena",
+          "label": "Serena",
+          "version": "2.1.0",
+          "median_tokens": 39482,
+          "median_cost_usd": 0.021,
+          "total_cost_usd": 0.39,
+          "median_turns": 3.0,
+          "correct": 18,
+          "of": 18,
+          "tool_called": 0
+        },
+        {
+          "key": "graphify",
+          "label": "Graphify",
+          "version": "0.9.104",
+          "median_tokens": 20101,
+          "median_cost_usd": 0.018,
+          "total_cost_usd": 0.36,
+          "median_turns": 2.5,
+          "correct": 18,
+          "of": 18,
+          "tool_called": 0
+        }
+      ],
+      "per_task": [
+        {
+          "task": "ha-arch-startup-flow",
+          "category": "architecture",
+          "tokens": {
+            "nexus_mcp": 27108,
+            "gitnexus": 61293,
+            "codebase_memory_mcp": 32315,
+            "serena": 33652,
+            "graphify": 20705
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.065,
+            "gitnexus": 0.04,
+            "codebase_memory_mcp": 0.037,
+            "serena": 0.035,
+            "graphify": 0.037
+          }
+        },
+        {
+          "task": "ha-concept-event-bus",
+          "category": "conceptual",
+          "tokens": {
+            "nexus_mcp": 18673,
+            "gitnexus": 57648,
+            "codebase_memory_mcp": 29393,
+            "serena": 30349,
+            "graphify": 17471
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.017,
+            "gitnexus": 0.011,
+            "codebase_memory_mcp": 0.008,
+            "serena": 0.009,
+            "graphify": 0.006
+          }
+        },
+        {
+          "task": "ha-concept-service-call",
+          "category": "conceptual",
+          "tokens": {
+            "nexus_mcp": 18736,
+            "gitnexus": 87517,
+            "codebase_memory_mcp": 45047,
+            "serena": 47142,
+            "graphify": 27704
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.018,
+            "gitnexus": 0.021,
+            "codebase_memory_mcp": 0.016,
+            "serena": 0.02,
+            "graphify": 0.017
+          }
+        },
+        {
+          "task": "ha-impact-async-setup-component",
+          "category": "impact",
+          "tokens": {
+            "nexus_mcp": 20060,
+            "gitnexus": 67924,
+            "codebase_memory_mcp": 50230,
+            "serena": 32560,
+            "graphify": 30378
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.027,
+            "gitnexus": 0.061,
+            "codebase_memory_mcp": 0.04,
+            "serena": 0.023,
+            "graphify": 0.028
+          }
+        },
+        {
+          "task": "ha-impact-entity-update-state",
+          "category": "impact",
+          "tokens": {
+            "nexus_mcp": 18915,
+            "gitnexus": 67713,
+            "codebase_memory_mcp": 46221,
+            "serena": 47661,
+            "graphify": 19497
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.022,
+            "gitnexus": 0.058,
+            "codebase_memory_mcp": 0.023,
+            "serena": 0.024,
+            "graphify": 0.019
+          }
+        },
+        {
+          "task": "ha-needle-eventbus-fire-line",
+          "category": "needle",
+          "tokens": {
+            "nexus_mcp": 16436,
+            "gitnexus": 61175,
+            "codebase_memory_mcp": 44018,
+            "serena": 45313,
+            "graphify": 17191
+          },
+          "cost_usd": {
+            "nexus_mcp": 0.006,
+            "gitnexus": 0.019,
+            "codebase_memory_mcp": 0.01,
+            "serena": 0.011,
+            "graphify": 0.005
+          }
+        }
+      ]
     }
   ],
   "repos": [

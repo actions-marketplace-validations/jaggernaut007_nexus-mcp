@@ -165,6 +165,19 @@ def test_unlisted_runs_names_a_folder_missing_from_order(tmp_path):
     assert lp.unlisted_runs(tmp_path) == ["languages-new"]
 
 
+def test_unlisted_runs_skips_tool_comparison_folders(tmp_path):
+    (tmp_path / "competitors-2026-11-09").mkdir()
+    (tmp_path / "languages-new").mkdir()
+    assert lp.unlisted_runs(tmp_path) == ["languages-new"]
+
+
+def test_load_runs_never_reads_a_tool_comparison_folder(tmp_path):
+    folder = tmp_path / "competitors-2026-11-09"
+    folder.mkdir()
+    (folder / "django-live.jsonl").write_text(json.dumps({"task_id": "t", "condition": "nexus"}))
+    assert all(rows == {} for rows in lp.load_runs(tmp_path))
+
+
 def test_unlisted_runs_is_empty_for_the_committed_runs():
     assert lp.unlisted_runs() == []
 

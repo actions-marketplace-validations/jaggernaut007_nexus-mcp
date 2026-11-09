@@ -45,6 +45,8 @@ ORDER = [
     "languages-graph-cap",
     "languages-v2.4.1",
 ]
+# Run folders of a tool comparison ("comparisons" in results.json), never of the repo table.
+COMPARISON_RUN_PREFIX = "competitors-"
 # Display order: one row per repo.
 REPOS = [
     "home-assistant", "django", "flask", "vite", "webpack", "commons-lang",
@@ -238,12 +240,22 @@ def build(runs_dir: Optional[Path] = None) -> List[Dict[str, Any]]:
 
 
 def unlisted_runs(runs_dir: Optional[Path] = None) -> List[str]:
-    """Run folders in benchmarks/runs/ that ORDER does not list. Such a run is never read."""
+    """Run folders in benchmarks/runs/ that ORDER does not list. Such a run is never read.
+
+    `setup` and the `competitors-*` folders are not repo runs: a `competitors-*` folder holds
+    the records of a tool comparison, published under "comparisons", not "repos".
+    """
     root = runs_dir or RUNS_DIR
-    skip = {"setup"}
     return sorted(
-        p.name for p in root.iterdir() if p.is_dir() and p.name not in ORDER and p.name not in skip
+        p.name
+        for p in root.iterdir()
+        if p.is_dir() and p.name not in ORDER and not is_non_repo_run(p.name)
     )
+
+
+def is_non_repo_run(name: str) -> bool:
+    """True for a run folder that never feeds the per-repo table."""
+    return name == "setup" or name.startswith(COMPARISON_RUN_PREFIX)
 
 
 def main(argv: Optional[List[str]] = None) -> int:
