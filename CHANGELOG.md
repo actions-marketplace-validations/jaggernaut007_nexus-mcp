@@ -4,6 +4,23 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`index` keeps the index folder out of git.** The index holds code and can be about 1 GB.
+  Before this change, only the docs told the user to add `.nexus/` to `.gitignore`.
+  - When the index folder is in a git work tree and no ignore rule covers it
+    (`git check-ignore`), `index` adds the line `.nexus/` to `.git/info/exclude` of that repo.
+    The tracked `.gitignore` does not change.
+  - In a linked git worktree, the line goes into the exclude file of the common git dir.
+  - A custom `NEXUS_STORAGE_DIR` inside the repo gets a line with its path from the repo
+    root. A folder outside a git repo gets no line.
+  - An index made by an older version gets the line at the next reindex.
+  - A failure of this step does not stop the index run. The server logs a warning.
+  - `NEXUS_GIT_EXCLUDE=false` turns it off.
+  - New module `src/nexus_mcp/indexing/git_exclude.py`.
+  - No tool description, tool schema or tool result changes. The north-star numbers
+    (tokens, cost, hit@1) do not move, so there is no before and after pair to record.
+
 ### Benchmarks
 
 - **Head to head with four other code tools on Django and Home Assistant.** Nexus-MCP,

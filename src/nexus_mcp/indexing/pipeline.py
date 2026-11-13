@@ -20,6 +20,7 @@ from nexus_mcp.engines.vector_engine import LanceDBVectorEngine
 from nexus_mcp.indexing.call_resolver import resolve_calls
 from nexus_mcp.indexing.chunker import create_chunks
 from nexus_mcp.indexing.embedding_service import get_embedding_service, model_dimensions
+from nexus_mcp.indexing.git_exclude import ensure_git_exclude
 from nexus_mcp.indexing.parallel_indexer import parallel_parse_files
 from nexus_mcp.parsing.astgrep_parser import AstGrepParser
 from nexus_mcp.parsing.language_registry import get_supported_extensions
@@ -209,6 +210,24 @@ class IndexingPipeline:
         self._graph_engine = RustworkxCodeGraph()
         self._astgrep = AstGrepParser()
         self._metadata_path = self._settings.storage_path / "index_metadata.json"
+        self._git_exclude_done = False
+
+    def _prepare_storage(self) -> None:
+        """Make the storage folder and keep it out of git."""
+        self._settings.storage_path.mkdir(parents=True, exist_ok=True)
+        self._keep_storage_out_of_git()
+
+    def _keep_storage_out_of_git(self) -> None:
+        """Add the storage folder to `.git/info/exclude`, one time for each pipeline.
+
+        `incremental_index` calls it too: an index made by an older version gets the line
+        at the next reindex. `NEXUS_GIT_EXCLUDE=false` turns it off.
+        """
+        storage = self._settings.storage_path
+        if self._git_exclude_done or not self._settings.git_exclude or not storage.is_dir():
+            return
+        self._git_exclude_done = True
+        ensure_git_exclude(storage)
 
     @property
     def vector_engine(self) -> LanceDBVectorEngine:
@@ -248,8 +267,7 @@ class IndexingPipeline:
         start = time.time()
         codebase_path = Path(codebase_path).resolve()
 
-        # Ensure storage dir exists
-        self._settings.storage_path.mkdir(parents=True, exist_ok=True)
+        self._prepare_storage()
 
         # Step 1: Discover files
         files = discover_files(codebase_path, self._settings)
@@ -429,6 +447,7 @@ class IndexingPipeline:
         """Incrementally re-index only changed/new/deleted files."""
         start = time.time()
         codebase_path = Path(codebase_path).resolve()
+        self._keep_storage_out_of_git()
 
         # Validate existing index integrity
         if not self._validate_index():
@@ -686,8 +705,7 @@ class IndexingPipeline:
         start = time.time()
         resolved_paths = [Path(p).resolve() for p in codebase_paths]
 
-        # Ensure storage dir exists
-        self._settings.storage_path.mkdir(parents=True, exist_ok=True)
+        self._prepare_storage()
 
         # Incremental path: only if a valid index exists for this exact root set
         if self._validate_index():

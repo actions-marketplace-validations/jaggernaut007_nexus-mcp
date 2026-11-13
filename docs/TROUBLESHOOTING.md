@@ -46,8 +46,20 @@ again: `nexus-mcp-ci data clear --index --graph --yes`, then call `index`.
 **Memory use is high.** About 90 MB idle and 460 MB with the model loaded
 ([MEMORY.md](MEMORY.md)). The model unloads after indexing.
 
-**`.nexus/` shows in `git status`.** Add `.nexus/` to `.gitignore`. The index holds code.
-`nexus-mcp-ci data where` warns about this.
+**`.nexus/` shows in `git status`.** The index holds code. Do not commit it. `index` adds
+`.nexus/` to `.git/info/exclude` by itself, so this shows only in these conditions:
+
+- `NEXUS_GIT_EXCLUDE=false` is set. Remove it, or add `.nexus/` to `.gitignore`.
+- A rule such as `!.nexus/` in `.gitignore` cancels the exclude line. Remove that rule.
+- `git` was not on the `PATH` of the server, or the exclude file was read-only. The server
+  log then has the warning "Could not add the index folder". Add `.nexus/` to `.gitignore`.
+- An older version made the index and no reindex ran since the upgrade. Call `index` again.
+
+`nexus-mcp-ci data where` tells you if git ignores the folder.
+
+**`.nexus/` is already in a commit.** An ignore rule does not remove tracked files. Run
+`git rm -r --cached .nexus` and commit. If the commit is pushed, the code snippets stay in
+the history of the remote.
 
 ## The eval
 

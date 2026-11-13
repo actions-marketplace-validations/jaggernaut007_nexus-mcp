@@ -19,6 +19,7 @@ OUT = ROOT / "docs" / "CONFIGURATION.md"
 
 DESCRIPTIONS = {
     "NEXUS_STORAGE_DIR": "Folder for the index, memories and graph. A relative path is in the folder the server starts in, or in the indexed project when that is outside it.",
+    "NEXUS_GIT_EXCLUDE": "Add the index folder to `.git/info/exclude` when it is in a git work tree and no ignore rule covers it. The tracked `.gitignore` does not change.",
     "NEXUS_EMBEDDING_MODEL": "Embedding model key. Only registered models load. Re-index after a change.",
     "NEXUS_EMBEDDING_DEVICE": "`auto`, `cpu`, `cuda` or `mps`.",
     "NEXUS_EMBEDDING_BATCH_SIZE": "Chunks embedded in one batch.",

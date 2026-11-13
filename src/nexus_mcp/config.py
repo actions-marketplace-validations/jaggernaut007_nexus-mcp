@@ -25,6 +25,9 @@ class Settings:
     # clients, such as Cline, start the server in `/`, where `.nexus` cannot be written.
     # It is not an environment variable.
     storage_base: str = ""
+    # Add the index folder to `.git/info/exclude` when it is inside a git work tree and no
+    # ignore rule covers it (see indexing/git_exclude.py). The index holds code.
+    git_exclude: bool = True
 
     # Embedding model
     embedding_model: str = "bge-small-en"
@@ -92,6 +95,7 @@ class Settings:
             return v.lower() in ("true", "1", "yes")
         env_map = {
             "NEXUS_STORAGE_DIR": ("storage_dir", str),
+            "NEXUS_GIT_EXCLUDE": ("git_exclude", _bool),
             "NEXUS_EMBEDDING_MODEL": ("embedding_model", str),
             "NEXUS_EMBEDDING_DEVICE": ("embedding_device", str),
             "NEXUS_EMBEDDING_BATCH_SIZE": ("embedding_batch_size", int),
