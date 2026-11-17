@@ -30,7 +30,7 @@ Start with the group that matches what you want to do.
 - [SUBMISSIONS.md](SUBMISSIONS.md): ready-to-paste text for each marketplace listing
 - [research/OSS-ADOPTION.md](research/OSS-ADOPTION.md): what makes developers adopt a tool, and the growth checklist
 - [GITHUB-ACTION.md](GITHUB-ACTION.md): run Nexus-MCP in a GitHub workflow
-- [adr/](adr/): architecture decision records (ADR-001 to ADR-024)
+- [adr/](adr/): architecture decision records (ADR-001 to ADR-025)
 
 ## Contribute
 

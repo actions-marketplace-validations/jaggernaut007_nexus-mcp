@@ -41,6 +41,9 @@ repo to read the skill content directly.
   - Edges exist for Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP. Python has the best coverage. ADR-019 gives the other languages.
   - A call gets an edge only when exactly one callee fits: in the same file, in an imported file, or with a unique name in the index.
   - A name shared by several definitions gets no edge. Treat results as a lower bound.
+  - Python and JS/TS files have a `<top-level>` node for the calls outside every function. A function that is a bound value (`const f = () => {}`, a class field, a named object member, a default export, an assigned lambda) is a node. An anonymous callback is not: its calls belong to the function that holds it (ADR-019).
+  - A receiver named like an imported module file (`cart.add_item()` after `from cart import Cart`) gets no edge (BACKLOG).
+  - `nexus-mcp-ci check` compares a git diff with these edges (ADR-025); it is also a lower bound.
   - `analyze` complexity is cyclomatic and approximate. Only Python counts `and`/`or`, and only Python functions carry docstrings.
 - **The call graph only sees static edges.** `graph()` is built from
   parsing, not runtime tracing. It will **miss**: dynamic dispatch (Python monkey-patching, Ruby
@@ -79,7 +82,8 @@ src/nexus_mcp/
 ├── lifecycle.py           # Idle timeout, orphan exit, signals; finish() always ends the process
 ├── core/
 │   ├── models.py          # Symbol, ParsedFile, CodebaseIndex, Memory
-│   ├── graph_models.py    # UniversalNode, Relationship
+│   ├── graph_models.py    # UniversalNode, Relationship, MODULE_BODY_NAME
+│   ├── keys.py            # Stable symbol keys: <file>::<type>::<name> (ADR-025)
 │   ├── interfaces.py      # IParser, IEngine
 │   └── exceptions.py      # NexusException hierarchy + Auth/RateLimit errors
 ├── parsing/
@@ -113,9 +117,9 @@ src/nexus_mcp/
 │   └── audit.py           # Audit logging with correlation IDs + field redaction
 └── persistence/
 │   └── store.py               # SQLite graph persistence
-└── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021)
+└── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021), `index`, `check` (ADR-025)
 benchmarks/                # Token-efficiency benchmark harness (ADR-018)
-evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1); docs/EVALS.md
+evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1), impact/ (does `check` name what a change breaks); docs/EVALS.md
 self_test/
 ├── demo_mcp.py            # End-to-end demo exercising the 8 tools and the Python API
 └── README.md              # Usage, sample project, troubleshooting

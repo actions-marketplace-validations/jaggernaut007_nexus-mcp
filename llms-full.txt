@@ -1331,7 +1331,7 @@ The 8-step pipeline transforms source code into searchable indexes:
 
 1. **Discover** — Walk directory tree, filter by extension/size/.gitignore
 2. **Parse symbols** — tree-sitter extracts functions, classes, methods (parallel)
-3. **Parse graph** — ast-grep extracts functions, classes and import relationships as `CONTAINS`/`IMPORTS` edges (sequential). It also records the callee names inside each function. After the last batch, `indexing/call_resolver.py` turns those names into `CALLS` edges. No parser creates `INHERITS` edges yet.
+3. **Parse graph** — ast-grep extracts functions, classes and import relationships as `CONTAINS`/`IMPORTS` edges (sequential). It also records the callee names inside each function. After the last batch, `indexing/call_resolver.py` turns those names into `CALLS` edges, and adds `USES` edges from pytest tests to their fixtures. Python and JS/TS files also get a `<top-level>` node for the calls outside every function (ADR-019). No parser creates `INHERITS` edges yet. `nexus-mcp-ci check` reads the stored graph to compare a git diff with the callers (ADR-025).
 4. **Transfer graph** — Populate rustworkx graph from ast-grep results
 5. **Chunk** — Convert symbols to CodeChunks with deterministic IDs
 6. **Embed** — generates vectors (384-dim bge-small-en, PyTorch; the deprecated 768-dim jina-code still loads, on ONNX Runtime)

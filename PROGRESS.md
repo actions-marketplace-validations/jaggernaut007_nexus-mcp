@@ -14,6 +14,24 @@ Lower token use for an agent, with the same accuracy. Set by the owner on 2026-1
 - Keep a change only when it lowers the measure and passes the gate. Record the two
   numbers, before and after, in `CHANGELOG.md`.
 
+## Context engine, phases 1 and 2 — 2026-11-17 (branch `worktree-context-engine`)
+
+Plan: Python and JS/TS function coverage, then a post-change check. Decisions: ADR-019
+(amended) and ADR-025.
+
+- [x] Phase 1: bound functions, `<top-level>` node, decorators, fixtures `USES` edges, JS/TS
+  import bindings and re-exports, `.tsx` grammar (graph and search parsers agree).
+- [x] Phase 2: `core/keys.py`, `nexus-mcp-ci check` and `index`, `evals/impact` (10 cases).
+  First impact run: recall 0.867, precision 1.000, tests recall 1.000.
+- [x] Fast suite 1,800 passed; `ruff` clean; hit@1 (hybrid) did not fall on `shop_repo`
+  (0.625 to 0.750) or `nexus_mcp` (0.625 to 0.750, corpus differs).
+- [ ] **Owner:** live benchmark run for cost and wall time before and after (Phase 1 changes
+  `graph` results). Not run: it costs money.
+- [ ] Phase 3: boundary edges (`functions.invoke`, routes, `.from('table')` to SQL).
+- [ ] Phase 4: change-context in results, pre-edit hook and skill in `plugin/`.
+- [ ] Phase 5: change-safety benchmark.
+- [ ] Fix the receiver-named-like-a-module gap (BACKLOG).
+
 ## MIT licence and install channels — released in 2.3.0 (2026-11-06)
 
 Decisions: MIT for every new release ([ADR-024](docs/adr/ADR-024-mit-licence.md)), for adoption. A
