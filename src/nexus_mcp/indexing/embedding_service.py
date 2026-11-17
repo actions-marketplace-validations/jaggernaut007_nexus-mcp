@@ -1,10 +1,10 @@
-"""Embedding service, CPU only. See ADR-026.
+"""Embedding service. See ADR-026.
 
 Two backends, chosen by the model name:
 - `OnnxEncoder` (the default): `tokenizers` for the text, `onnxruntime` for the model.
-  It needs no PyTorch.
-- `TorchEncoder` (optional): `sentence-transformers` on the CPU. Install the extra
-  `nexus-mcp-ci[torch]`. It is faster on Apple Silicon.
+  It runs on the CPU only and needs no PyTorch.
+- `TorchEncoder` (optional): `sentence-transformers` on a GPU (CUDA or Apple MPS) when one
+  is present, else the CPU. Install the extra `nexus-mcp-ci[torch]`.
 
 Supported models:
 - bge-small-en        (384d, 512 seq len) int8 ONNX file, 32 MB. The default.
@@ -16,6 +16,8 @@ is stored with the index, so a switch between them rebuilds the index.
 
 import gc
 import logging
+import re
+import sys
 import threading
 from functools import lru_cache
 from typing import Any, Dict, List, Optional
@@ -221,13 +223,53 @@ class OnnxEncoder:
         return result
 
 
+def resolve_torch_device(requested: Optional[str] = None) -> str:
+    """Pick the device for the PyTorch model: a GPU when one is present, else the CPU.
+
+    Args:
+        requested: None, "" or "auto" picks the best device (CUDA, then MPS, then CPU).
+            "cpu", "mps", "cuda" or "cuda:N" asks for that device. A GPU that is not
+            present, or an unknown name, falls back to the CPU with a warning.
+
+    Returns:
+        "cpu", "mps", "cuda" or "cuda:N".
+    """
+    wanted = (requested or "auto").strip().lower()
+    if wanted == "cpu":
+        return "cpu"
+    try:
+        import torch
+    except ImportError:
+        torch = None
+
+    has_cuda = bool(torch and torch.cuda.is_available())
+    mps = getattr(getattr(torch, "backends", None), "mps", None)
+    has_mps = bool(mps and mps.is_available())
+
+    if wanted == "auto":
+        return "cuda" if has_cuda else "mps" if has_mps else "cpu"
+    if (wanted == "cuda" or re.fullmatch(r"cuda:\d+", wanted)) and has_cuda:
+        return wanted
+    if wanted == "mps" and has_mps:
+        return "mps"
+    if wanted in ("cuda", "mps") or wanted.startswith("cuda:"):
+        logger.warning("Embedding device '%s' is not available. Using the CPU.", requested)
+    else:
+        logger.warning(
+            "Unknown embedding device '%s'. Use auto, cpu, cuda or mps. Using the CPU.",
+            requested,
+        )
+    return "cpu"
+
+
 class TorchEncoder:
-    """Optional backend: sentence-transformers on the CPU (fp32 weights).
+    """Optional backend: sentence-transformers (fp32 weights) on a GPU or the CPU.
 
     Raises a `ConfigurationError` that names the extra when PyTorch is not installed.
 
-    It needs the `torch` extra (`pip install 'nexus-mcp-ci[torch]'`). On Apple Silicon it is
-    about 2 times faster than the int8 ONNX file, because PyTorch uses the matrix hardware.
+    It needs the `torch` extra (`pip install 'nexus-mcp-ci[torch]'`). The device comes from
+    `resolve_torch_device`: CUDA, then MPS (Apple Silicon), then the CPU. On Apple Silicon the
+    GPU is about 1.7 times faster than the PyTorch CPU and 2 times faster than the int8 file.
     """
 
     def __init__(
@@ -236,6 +278,7 @@ class TorchEncoder:
         max_seq_length: int,
         cache_dir: Optional[str] = None,
         revision: Optional[str] = None,
+        device: Optional[str] = None,
     ):
         try:
             from sentence_transformers import SentenceTransformer
@@ -247,7 +290,8 @@ class TorchEncoder:
                 "pip install 'nexus-mcp-ci[torch]'. Or use the default model 'bge-small-en'."
             ) from exc
 
-        kwargs: Dict[str, Any] = {"device": "cpu"}
+        self.device = resolve_torch_device(device)
+        kwargs: Dict[str, Any] = {"device": self.device}
         if cache_dir:
             kwargs["cache_folder"] = cache_dir
         if revision:
@@ -285,8 +329,9 @@ class EmbeddingService:
 
         Args:
             model_name: A key of `EMBEDDING_MODELS`.
-            device: Kept for old setups. Embeddings run on the CPU. A value other than
-                None, "", "auto" or "cpu" is ignored with a warning.
+            device: "auto" (None, ""), "cpu", "cuda", "cuda:N" or "mps". It applies to the
+                PyTorch model only. The ONNX model always runs on the CPU, and a GPU
+                value is ignored with a warning.
             batch_size: Texts per call of `embed_batch`. The ONNX model still runs
                 `ONNX_MAX_BATCH` texts in one call.
             max_batch_size: Upper bound for `batch_size`.
@@ -315,13 +360,20 @@ class EmbeddingService:
             )
         self.config = EMBEDDING_MODELS[model_name].copy()
 
-        # Embeddings run on the CPU only. The argument stays so that an old
-        # `NEXUS_EMBEDDING_DEVICE=mps` setup keeps working.
-        if device not in (None, "", "auto", "cpu"):
-            logger.warning(
-                "Embedding device '%s' is not supported since 3.0.0. Using the CPU.", device
-            )
-        self.device = "cpu"
+        # The ONNX model runs on the CPU only. The PyTorch model takes the device setting;
+        # `self.device` shows the requested value until the model loads, then the real one.
+        if self.config["backend"] == "onnx":
+            if device not in (None, "", "auto", "cpu"):
+                logger.warning(
+                    "Embedding device '%s' is ignored: the ONNX model '%s' runs on the CPU. "
+                    "Use the PyTorch model 'bge-small-en-torch' for a GPU.",
+                    device,
+                    model_name,
+                )
+            self.device = "cpu"
+        else:
+            self.device = (device or "auto").strip().lower()
+        self._requested_device = device
         self._lock = threading.Lock()
         self._model: Optional[Any] = None
         self._model_loaded = False
@@ -359,12 +411,15 @@ class EmbeddingService:
 
     def _build_encoder(self) -> Any:
         if self.config["backend"] == "torch":
-            return TorchEncoder(
+            encoder = TorchEncoder(
                 hf_name=self.config["hf_name"],
                 max_seq_length=self.config["max_seq_length"],
                 cache_dir=self.cache_dir,
                 revision=self.config.get("revision"),
+                device=self._requested_device,
             )
+            self.device = encoder.device
+            return encoder
         try:
             return OnnxEncoder(
                 hf_name=self.config["hf_name"],
@@ -472,6 +527,20 @@ class EmbeddingService:
                 self._model_loaded = False
                 self._embed_cached.cache_clear()
                 gc.collect()
+                self._release_gpu_memory()
+
+    def _release_gpu_memory(self) -> None:
+        """Give the GPU memory cache back after an unload. A no-op for the ONNX model."""
+        torch = sys.modules.get("torch")
+        if torch is None or self.config["backend"] != "torch":
+            return
+        try:
+            if self.device.startswith("cuda"):
+                torch.cuda.empty_cache()
+            elif self.device == "mps":
+                torch.mps.empty_cache()
+        except Exception:  # best effort: a failed cache release must not fail an unload
+            logger.debug("Could not release GPU memory", exc_info=True)
 
 
 # Singleton management

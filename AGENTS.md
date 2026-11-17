@@ -8,8 +8,8 @@ Single MCP server consolidating CodeGrok + code-graph-mcp. 8 tools (`index`, `st
 
 ## Stack
 - **LanceDB**: vectors + FTS (replaces ChromaDB)
-- **ONNX Runtime**: runs the embedding model on the CPU (no PyTorch in the default install)
-- **bge-small-en**: default embedding model (384d, int8 ONNX file, 32MB download). `bge-small-en-torch` is the optional PyTorch model (extra `torch`)
+- **ONNX Runtime**: runs the default embedding model on the CPU (no PyTorch in the default install)
+- **bge-small-en**: default embedding model (384d, int8 ONNX file, 32MB download). `bge-small-en-torch` is the optional PyTorch model (extra `torch`), which uses a GPU when present
 - **rustworkx**: in-memory directed graph
 - **tree-sitter + ast-grep**: dual parsing
 

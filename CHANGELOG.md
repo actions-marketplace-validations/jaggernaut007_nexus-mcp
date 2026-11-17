@@ -6,15 +6,17 @@ All notable changes to this project will be documented in this file.
 
 ### Breaking (3.0.0)
 
-- **CPU-only embeddings on ONNX Runtime.** The default model `bge-small-en` is now the int8
+- **The default embedding model runs on the CPU with ONNX Runtime.** The default model `bge-small-en` is now the int8
   ONNX file of `Xenova/bge-small-en-v1.5` (32 MB, pinned to a commit). A native encoder
   (`tokenizers` and `onnxruntime`) runs it. `torch`, `sentence-transformers`, `optimum` and
   the CUDA packages are no longer dependencies. See [ADR-026](docs/adr/ADR-026-cpu-only-onnx-embeddings.md).
-- **PyTorch is an option.** Install `nexus-mcp-ci[torch]` and set
-  `NEXUS_EMBEDDING_MODEL=bge-small-en-torch` (fp32 weights, CPU). It is faster on Apple Silicon.
-  Switching between the two models rebuilds the index.
-- **GPU support is removed.** The `gpu` extra and the device detection (CUDA, MPS) are gone.
-  `NEXUS_EMBEDDING_DEVICE` defaults to `cpu`, and another value is ignored with a warning.
+- **PyTorch is the optional GPU model.** Install `nexus-mcp-ci[torch]` and set
+  `NEXUS_EMBEDDING_MODEL=bge-small-en-torch` (fp32 weights). It uses a GPU when one is present
+  (CUDA, then Apple MPS) and the CPU if not. On Apple Silicon the MPS GPU is about 2 times
+  faster than the default model. Switching between the two models rebuilds the index.
+- **The ONNX model is CPU only.** `NEXUS_EMBEDDING_DEVICE` defaults to `auto`. It applies to
+  `bge-small-en-torch` only. For `bge-small-en` a GPU value is ignored with a warning. The
+  `gpu` extra is removed: `nexus-mcp-ci[torch]` is the GPU install.
 - **`jina-code` is removed**, with `trust_remote_code`, `NEXUS_TRUST_REMOTE_CODE`, the `onnx`
   extra and the code that only they used. `NEXUS_EMBEDDING_MODEL=jina-code` now gives an
   error that tells you to use `bge-small-en`.

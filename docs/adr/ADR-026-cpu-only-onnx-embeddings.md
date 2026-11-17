@@ -1,7 +1,7 @@
-# ADR-026: CPU-Only Embeddings on ONNX Runtime, PyTorch Optional, jina-code Removed
+# ADR-026: Default Embeddings on ONNX Runtime (CPU), PyTorch Optional for a GPU, jina-code Removed
 
 ## Status: Accepted
-## Date: 2026-11-17
+## Date: 2026-11-17 (amended the same day: the PyTorch model keeps GPU support)
 ## Supersedes (in part): ADR-003 (the PyTorch claims), ADR-004 (the `jina-code` parts)
 
 ## Context
@@ -19,8 +19,9 @@ PyTorch was the largest part of the install:
 A GPU helps only one task: the first index of a large repository. A search embeds one short
 query. The model has 33 M parameters, so the CPU needs a few milliseconds for it.
 
-The owner decided on 2026-11-17: ship a CPU-only build, run the default model on ONNX Runtime
-with the int8 file, keep PyTorch as an option, and remove `jina-code`.
+The owner decided on 2026-11-17: the default model runs on ONNX Runtime with the int8 file, on
+the CPU only. PyTorch stays as an option, and it keeps GPU support (CUDA and Apple MPS), so a
+user who wants fast indexing can choose it. `jina-code` is removed.
 
 ## Decision
 
@@ -31,13 +32,23 @@ with the int8 file, keep PyTorch as an option, and remove `jina-code`.
   `optimum`, and so `torch`, `transformers` and the CUDA packages.
 - **PyTorch is an option.** The extra `nexus-mcp-ci[torch]` installs `sentence-transformers`.
   The model name `bge-small-en-torch` selects it (fp32 weights, `BAAI/bge-small-en-v1.5`). It
-  runs on the CPU. It is faster on Apple Silicon (see Measurements).
+  uses a GPU when one is present (see **Device rule**) and the CPU if not. On Apple Silicon the
+  MPS GPU is about 2 times faster than the default model (see Measurements).
 - **The model name is the identity of the index.** `bge-small-en` and `bge-small-en-torch`
   give vectors that differ a little (cosine 0.9936 at the lowest). A switch rebuilds the index
   through the model check that exists already. `CHUNK_FORMAT` is now 9, so an index of an older
   version, which holds fp32 vectors under the name `bge-small-en`, is rebuilt one time.
-- **CPU only.** `NEXUS_EMBEDDING_DEVICE` stays, with the default `cpu`. Another value is
-  ignored with a warning. The `gpu` extra and the device detection are removed.
+- **Device rule.** `NEXUS_EMBEDDING_DEVICE` has the default `auto` and applies to the PyTorch
+  model only.
+  - `bge-small-en` (ONNX) always runs on the CPU. A GPU value is ignored with a warning that
+    names the PyTorch model.
+  - `bge-small-en-torch` with `auto` picks CUDA, then MPS, then the CPU. `cpu`, `cuda`,
+    `cuda:N` and `mps` ask for one device. A GPU that is not present, or an unknown name,
+    falls back to the CPU with a warning. A missing GPU is not an error, so the same
+    setting works on every machine.
+  - An unload gives the GPU memory cache back (`torch.cuda` or `torch.mps` `empty_cache`).
+  - The `gpu` extra is removed. `nexus-mcp-ci[torch]` is the one GPU install. On Linux pip
+    selects the CUDA wheels of PyTorch for it, which is the reason a user installs it.
 - **`jina-code` is removed** with all code that only it used: the registry entry, the
   `deprecated` warning, `trust_remote_code` (the setting, the variable `NEXUS_TRUST_REMOTE_CODE`
   and the gate), the ONNX branch of the `SentenceTransformer` loader, and the `onnx` extra.
@@ -101,9 +112,11 @@ parsing the chunks in the same process.
 
 - The install is smaller and the same on every platform. The default install has no CUDA
   packages and no PyTorch import (a test checks this).
-- On Apple Silicon the first index of a large repository is slower than with PyTorch on the
-  GPU (`docs/BACKLOG.md` says MPS was 2.4 times faster than the CPU). A user who wants speed
-  installs the `torch` extra. The GPU is not supported any more.
+- On Apple Silicon the first index of a large repository is about 2 times slower with the
+  default model than with PyTorch on the MPS GPU. A user who wants speed installs the `torch`
+  extra: the GPU is used with no more setting.
+- The GPU is never used by the default install, and the default install has no way to
+  use it. This is the cost of the small and the same install on every platform.
 - Each existing index rebuilds one time after the upgrade. Stored memories are not
   re-embedded: the memory store compares the vector width only, so memories of 2.x (fp32) and
   new queries (int8) meet with a cosine of 0.993 at the lowest. A switch between `bge-small-en`
@@ -119,7 +132,10 @@ parsing the chunks in the same process.
 - **Keep PyTorch and set the device to `cpu`:** the Linux install keeps the CUDA wheels.
 - **ONNX with the fp32 file:** the vectors equal torch, and no index rebuilds. But it is about
   2 times slower than int8 and its download is 4 times larger.
-- **The ONNX CoreML provider** to get Metal back: it is not reliable for transformer models
-  with dynamic shapes, and the owner wants a CPU-only build.
+- **The ONNX CoreML or CUDA provider** to give the default model a GPU: the CoreML provider is
+  not reliable for transformer models with dynamic shapes, and `onnxruntime-gpu` brings the
+  CUDA libraries that this change removes. The GPU path is PyTorch only.
+- **A CPU-only build with no GPU model:** the first version of this ADR. The owner kept the
+  PyTorch GPU path, because it is optional and costs nothing for the default install.
 - **Keep `jina-code` behind an extra:** it needs `trust_remote_code`, a 612 MiB download, and
   indexes far slower on CPU. ADR-004 deprecated it. The owner wants it removed.

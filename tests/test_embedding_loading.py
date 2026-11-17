@@ -217,17 +217,18 @@ def test_unknown_model_name_lists_the_supported_models():
         es.EmbeddingService(model_name="nope")
 
 
-def test_a_gpu_device_is_ignored_with_a_warning(caplog):
+def test_onnx_model_ignores_a_gpu_device_with_a_warning(caplog):
     with caplog.at_level("WARNING"):
         service = es.EmbeddingService(device="mps")
     assert service.device == "cpu"
-    assert any("not supported since 3.0.0" in r.message for r in caplog.records)
+    assert any("runs on the CPU" in r.message for r in caplog.records)
 
 
-def test_cpu_device_gives_no_warning(caplog):
+def test_onnx_model_takes_cpu_and_auto_without_a_warning(caplog):
     with caplog.at_level("WARNING"):
-        es.EmbeddingService(device="cpu")
-        es.EmbeddingService(device="auto")
+        assert es.EmbeddingService(device="cpu").device == "cpu"
+        assert es.EmbeddingService(device="auto").device == "cpu"
+        assert es.EmbeddingService().device == "cpu"
     assert not caplog.records
 
 
@@ -246,8 +247,25 @@ class _RecordingModel:
         self.max_seq_length = 8192
 
 
+def _fake_torch(cuda=False, mps=False):
+    """A stand-in for the `torch` module: only the calls that device detection makes."""
+    torch = types.ModuleType("torch")
+    torch.cuda = types.SimpleNamespace(is_available=lambda: cuda, empty_cache=MagicMock())
+    torch.backends = types.SimpleNamespace(mps=types.SimpleNamespace(is_available=lambda: mps))
+    torch.mps = types.SimpleNamespace(empty_cache=MagicMock())
+    return torch
+
+
 @pytest.fixture
-def recorder(monkeypatch):
+def no_gpu(monkeypatch):
+    """The PyTorch tests run on a machine without a GPU, whatever the real machine has."""
+    torch = _fake_torch()
+    monkeypatch.setitem(sys.modules, "torch", torch)
+    return torch
+
+
+@pytest.fixture
+def recorder(monkeypatch, no_gpu):
     fake = types.ModuleType("sentence_transformers")
     fake.SentenceTransformer = _RecordingModel
     monkeypatch.setitem(sys.modules, "sentence_transformers", fake)
@@ -284,6 +302,78 @@ def test_torch_model_loads_on_the_cpu_with_the_registry_name(recorder):
         "cache_folder": "/tmp/hf",
         "revision": es.EMBEDDING_MODELS["bge-small-en-torch"]["revision"],
     }
+
+
+@pytest.mark.parametrize(
+    ("cuda", "mps", "requested", "expected"),
+    [
+        (True, True, None, "cuda"),  # CUDA wins over MPS
+        (False, True, "auto", "mps"),
+        (False, False, "auto", "cpu"),
+        (True, True, "cpu", "cpu"),  # an explicit CPU is kept, even with a GPU
+        (False, True, "mps", "mps"),
+        (True, False, "cuda", "cuda"),
+        (True, False, "cuda:1", "cuda:1"),
+        (True, False, " CUDA ", "cuda"),
+    ],
+)
+def test_torch_device_choice(monkeypatch, cuda, mps, requested, expected):
+    monkeypatch.setitem(sys.modules, "torch", _fake_torch(cuda=cuda, mps=mps))
+    assert es.resolve_torch_device(requested) == expected
+
+
+@pytest.mark.parametrize("requested", ["cuda", "cuda:0", "mps"])
+def test_torch_device_not_present_falls_back_to_the_cpu_with_a_warning(
+    no_gpu, caplog, requested
+):
+    with caplog.at_level("WARNING"):
+        assert es.resolve_torch_device(requested) == "cpu"
+    assert any("not available" in r.message for r in caplog.records)
+
+
+def test_torch_device_unknown_name_falls_back_to_the_cpu_with_a_warning(no_gpu, caplog):
+    with caplog.at_level("WARNING"):
+        assert es.resolve_torch_device("tpu") == "cpu"
+    assert any("Unknown embedding device" in r.message for r in caplog.records)
+
+
+def test_torch_device_without_torch_installed_is_the_cpu(monkeypatch):
+    monkeypatch.setitem(sys.modules, "torch", None)  # import raises ImportError
+    assert es.resolve_torch_device("auto") == "cpu"
+
+
+def test_torch_model_loads_on_the_gpu_that_is_present(recorder, monkeypatch):
+    monkeypatch.setitem(sys.modules, "torch", _fake_torch(mps=True))
+    service = es.EmbeddingService("bge-small-en-torch")
+    assert service.device == "auto"  # not resolved until the model loads
+    service._load_model()
+    assert recorder.last_kwargs["device"] == "mps"
+    assert service.device == "mps"
+
+
+def test_torch_model_follows_the_device_setting(recorder, monkeypatch):
+    monkeypatch.setitem(sys.modules, "torch", _fake_torch(cuda=True, mps=True))
+    service = es.EmbeddingService("bge-small-en-torch", device="cpu")
+    service._load_model()
+    assert recorder.last_kwargs["device"] == "cpu"
+
+
+def test_torch_model_unload_releases_the_gpu_cache(recorder, monkeypatch):
+    torch = _fake_torch(mps=True)
+    monkeypatch.setitem(sys.modules, "torch", torch)
+    service = es.EmbeddingService("bge-small-en-torch")
+    service._load_model()
+    service.unload()
+    torch.mps.empty_cache.assert_called_once()
+    torch.cuda.empty_cache.assert_not_called()
+
+
+def test_onnx_model_unload_does_not_touch_the_gpu(onnx_boundary, no_gpu):
+    service = es.EmbeddingService()
+    service._load_model()
+    service.unload()
+    no_gpu.mps.empty_cache.assert_not_called()
+    no_gpu.cuda.empty_cache.assert_not_called()
 
 
 def test_both_shipped_models_are_pinned_to_a_commit():

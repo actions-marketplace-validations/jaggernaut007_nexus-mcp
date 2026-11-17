@@ -20,7 +20,7 @@ OUT = ROOT / "docs" / "CONFIGURATION.md"
 DESCRIPTIONS = {
     "NEXUS_STORAGE_DIR": "Folder for the index, memories and graph. A relative path is in the folder the server starts in, or in the indexed project when that is outside it.",
     "NEXUS_EMBEDDING_MODEL": "`bge-small-en` (int8 ONNX, the default) or `bge-small-en-torch` (fp32 on PyTorch, needs `pip install 'nexus-mcp-ci[torch]'`). The index rebuilds after a change.",
-    "NEXUS_EMBEDDING_DEVICE": "`cpu`. Embeddings run on the CPU only since 3.0.0. Any other value is ignored with a warning.",
+    "NEXUS_EMBEDDING_DEVICE": "`auto`, `cpu`, `cuda` or `mps`. It applies to the PyTorch model (`bge-small-en-torch`): `auto` picks CUDA, then MPS, then the CPU. The default ONNX model runs on the CPU only and ignores a GPU value with a warning.",
     "NEXUS_EMBEDDING_BATCH_SIZE": "Chunks embedded and stored in one step. The ONNX model runs one chunk in each call (`ONNX_MAX_BATCH`), so this value does not change its speed.",
     "NEXUS_MAX_FILE_SIZE_MB": "Skip files larger than this.",
     "NEXUS_MAX_WORKERS": "Parser threads. Empty means the default of the thread pool.",

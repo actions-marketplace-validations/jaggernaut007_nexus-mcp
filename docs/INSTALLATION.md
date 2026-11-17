@@ -50,12 +50,13 @@ pip install nexus-mcp-ci
 With optional extras:
 
 ```bash
-# With PyTorch (the model bge-small-en-torch, faster on Apple Silicon, large install)
+# With PyTorch (the model bge-small-en-torch, uses a GPU when present, large install)
 pip install 'nexus-mcp-ci[torch]'
 ```
 
 The default install has no PyTorch and runs the embedding model on the CPU with ONNX Runtime.
-There is no GPU support since 3.0.0.
+A GPU is used only by the PyTorch model: install the extra and set
+`NEXUS_EMBEDDING_MODEL=bge-small-en-torch`. It picks CUDA, then Apple MPS, then the CPU.
 
 After installing, the `nexus-mcp` command is available globally:
 
@@ -384,7 +385,7 @@ All settings use the `NEXUS_` environment variable prefix:
 |----------|---------|-------------|
 | `NEXUS_STORAGE_DIR` | `.nexus` | Storage directory for indexes and graph DB |
 | `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model: `bge-small-en` (int8 ONNX) or `bge-small-en-torch` (needs the `torch` extra) |
-| `NEXUS_EMBEDDING_DEVICE` | `cpu` | CPU only. Another value is ignored with a warning |
+| `NEXUS_EMBEDDING_DEVICE` | `auto` | PyTorch model only: `auto`, `cpu`, `cuda` or `mps`. The ONNX model is CPU only |
 | `NEXUS_MAX_FILE_SIZE_MB` | `10` | Skip files larger than this |
 | `NEXUS_CHUNK_MAX_CHARS` | `4000` | Max characters per code chunk |
 | `NEXUS_MAX_MEMORY_MB` | `350` | Memory budget in MB |

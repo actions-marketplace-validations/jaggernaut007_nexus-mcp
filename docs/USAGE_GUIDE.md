@@ -227,7 +227,7 @@ Set via environment variables before starting the server:
 # Embedding model selection
 export NEXUS_EMBEDDING_MODEL=bge-small-en       # Default: bge-small-en (384d, int8 ONNX, CPU)
                                                  # bge-small-en-torch needs the `torch` extra
-export NEXUS_EMBEDDING_DEVICE=cpu                # CPU only since 3.0.0
+export NEXUS_EMBEDDING_DEVICE=auto               # PyTorch model only: auto, cpu, cuda, mps. ONNX is CPU only
 
 # Search tuning
 export NEXUS_SEARCH_MODE=hybrid          # hybrid, vector, or bm25
@@ -260,15 +260,15 @@ See [CONFIGURATION.md](CONFIGURATION.md) for every variable.
 
 ### Embedding Models
 
-Nexus-MCP runs one embedding model on the CPU. Only registered model names are accepted; custom model names raise a `ConfigurationError`. `jina-code` was removed in 3.0.0: use `bge-small-en` and re-index.
+Nexus-MCP runs one embedding model at a time. Only registered model names are accepted; custom model names raise a `ConfigurationError`. `jina-code` was removed in 3.0.0: use `bge-small-en` and re-index.
 
 | Model | HuggingFace ID | Dims | Code-specific? | Notes |
 |-------|---------------|------|:-:|---|
 | `bge-small-en` (default) | `Xenova/bge-small-en-v1.5` | 384 | No | int8 ONNX file, 32 MB download, ONNX Runtime on the CPU, no PyTorch |
-| `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 1.2 times faster on Apple Silicon |
+| `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, on a GPU (CUDA or Apple MPS) when present, else the CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 2 times faster than the default on Apple Silicon |
 
-The two models give slightly different vectors, so a switch rebuilds the index. There is no GPU
-support since 3.0.0. See [ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
+The two models give slightly different vectors, so a switch rebuilds the index. The device
+setting `NEXUS_EMBEDDING_DEVICE` applies to the PyTorch model only. See [ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
 
 ## Best Practices
 

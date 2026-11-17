@@ -518,12 +518,13 @@ pip install nexus-mcp-ci
 With optional extras:
 
 ```bash
-# With PyTorch (the model bge-small-en-torch, faster on Apple Silicon, large install)
+# With PyTorch (the model bge-small-en-torch, uses a GPU when present, large install)
 pip install 'nexus-mcp-ci[torch]'
 ```
 
 The default install has no PyTorch and runs the embedding model on the CPU with ONNX Runtime.
-There is no GPU support since 3.0.0.
+A GPU is used only by the PyTorch model: install the extra and set
+`NEXUS_EMBEDDING_MODEL=bge-small-en-torch`. It picks CUDA, then Apple MPS, then the CPU.
 
 After installing, the `nexus-mcp` command is available globally:
 
@@ -852,7 +853,7 @@ All settings use the `NEXUS_` environment variable prefix:
 |----------|---------|-------------|
 | `NEXUS_STORAGE_DIR` | `.nexus` | Storage directory for indexes and graph DB |
 | `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model: `bge-small-en` (int8 ONNX) or `bge-small-en-torch` (needs the `torch` extra) |
-| `NEXUS_EMBEDDING_DEVICE` | `cpu` | CPU only. Another value is ignored with a warning |
+| `NEXUS_EMBEDDING_DEVICE` | `auto` | PyTorch model only: `auto`, `cpu`, `cuda` or `mps`. The ONNX model is CPU only |
 | `NEXUS_MAX_FILE_SIZE_MB` | `10` | Skip files larger than this |
 | `NEXUS_CHUNK_MAX_CHARS` | `4000` | Max characters per code chunk |
 | `NEXUS_MAX_MEMORY_MB` | `350` | Memory budget in MB |
@@ -1171,7 +1172,7 @@ Set via environment variables before starting the server:
 # Embedding model selection
 export NEXUS_EMBEDDING_MODEL=bge-small-en       # Default: bge-small-en (384d, int8 ONNX, CPU)
                                                  # bge-small-en-torch needs the `torch` extra
-export NEXUS_EMBEDDING_DEVICE=cpu                # CPU only since 3.0.0
+export NEXUS_EMBEDDING_DEVICE=auto               # PyTorch model only: auto, cpu, cuda, mps. ONNX is CPU only
 
 # Search tuning
 export NEXUS_SEARCH_MODE=hybrid          # hybrid, vector, or bm25
@@ -1204,15 +1205,15 @@ See [CONFIGURATION.md](CONFIGURATION.md) for every variable.
 
 ### Embedding Models
 
-Nexus-MCP runs one embedding model on the CPU. Only registered model names are accepted; custom model names raise a `ConfigurationError`. `jina-code` was removed in 3.0.0: use `bge-small-en` and re-index.
+Nexus-MCP runs one embedding model at a time. Only registered model names are accepted; custom model names raise a `ConfigurationError`. `jina-code` was removed in 3.0.0: use `bge-small-en` and re-index.
 
 | Model | HuggingFace ID | Dims | Code-specific? | Notes |
 |-------|---------------|------|:-:|---|
 | `bge-small-en` (default) | `Xenova/bge-small-en-v1.5` | 384 | No | int8 ONNX file, 32 MB download, ONNX Runtime on the CPU, no PyTorch |
-| `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 1.2 times faster on Apple Silicon |
+| `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, on a GPU (CUDA or Apple MPS) when present, else the CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 2 times faster than the default on Apple Silicon |
 
-The two models give slightly different vectors, so a switch rebuilds the index. There is no GPU
-support since 3.0.0. See [ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
+The two models give slightly different vectors, so a switch rebuilds the index. The device
+setting `NEXUS_EMBEDDING_DEVICE` applies to the PyTorch model only. See [ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
 
 ## Best Practices
 
@@ -1335,7 +1336,7 @@ The 8-step pipeline transforms source code into searchable indexes:
 3. **Parse graph** — ast-grep extracts functions, classes and import relationships as `CONTAINS`/`IMPORTS` edges (sequential). It also records the callee names inside each function. After the last batch, `indexing/call_resolver.py` turns those names into `CALLS` edges. No parser creates `INHERITS` edges yet.
 4. **Transfer graph** — Populate rustworkx graph from ast-grep results
 5. **Chunk** — Convert symbols to CodeChunks with deterministic IDs
-6. **Embed** — generates vectors (384-dim bge-small-en, int8 ONNX file on ONNX Runtime, CPU only; the optional model `bge-small-en-torch` runs on PyTorch)
+6. **Embed** — generates vectors (384-dim bge-small-en, int8 ONNX file on ONNX Runtime, CPU only; the optional model `bge-small-en-torch` runs on PyTorch, on a GPU when present)
 7. **Store** — Write chunks to LanceDB, rebuild FTS index
 8. **Cleanup** — Unload embedding model, save metadata for incremental reindex
 
@@ -1412,7 +1413,7 @@ Measured: about 90MB idle and 270MB with the model loaded (docs/MEMORY.md). The 
 - One ONNX call runs one chunk (`ONNX_MAX_BATCH = 1`): a call of 32 kept more than 1.3GB in the memory arena, and the int8 vector of a chunk then depends on the batch
 - LanceDB mmap (vectors stay on disk, ~20-50MB overhead)
 - Lazy model loading — embedding model loaded during indexing, unloaded after
-- CPU only (`NEXUS_EMBEDDING_DEVICE=cpu`); GPU support was removed in 3.0.0 ([ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md))
+- The ONNX model runs on the CPU only. The PyTorch model uses a GPU when present (`NEXUS_EMBEDDING_DEVICE=auto`: CUDA, MPS, CPU) ([ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md))
 - One recommended model: bge-small-en (384d). `bge-small-en-torch` is the optional PyTorch variant
 
 ## Thread Safety

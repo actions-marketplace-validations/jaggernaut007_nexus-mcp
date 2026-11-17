@@ -48,8 +48,8 @@
       },
       "NEXUS_EMBEDDING_DEVICE": {
         "type": "string",
-        "description": "Device for embeddings. CPU only since 3.0.0; another value is ignored",
-        "default": "cpu"
+        "description": "Device for the PyTorch model (bge-small-en-torch): auto, cpu, cuda or mps. The default ONNX model is CPU only",
+        "default": "auto"
       },
       "NEXUS_MAX_FILE_SIZE_MB": {
         "type": "string",

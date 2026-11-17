@@ -15,7 +15,7 @@ def clean_settings():
 def test_default_settings():
     s = Settings()
     assert s.embedding_model == "bge-small-en"
-    assert s.embedding_device == "cpu"  # 3.0.0: CPU only (ADR-026); was "auto"
+    assert s.embedding_device == "auto"  # the PyTorch model picks a GPU; ONNX stays on the CPU
     assert s.embedding_batch_size == 32
     assert s.max_memory_mb == 350
     assert s.log_level == "INFO"

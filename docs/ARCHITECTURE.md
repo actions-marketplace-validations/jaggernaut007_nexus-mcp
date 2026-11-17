@@ -80,7 +80,7 @@ The 8-step pipeline transforms source code into searchable indexes:
 3. **Parse graph** — ast-grep extracts functions, classes and import relationships as `CONTAINS`/`IMPORTS` edges (sequential). It also records the callee names inside each function. After the last batch, `indexing/call_resolver.py` turns those names into `CALLS` edges. No parser creates `INHERITS` edges yet.
 4. **Transfer graph** — Populate rustworkx graph from ast-grep results
 5. **Chunk** — Convert symbols to CodeChunks with deterministic IDs
-6. **Embed** — generates vectors (384-dim bge-small-en, int8 ONNX file on ONNX Runtime, CPU only; the optional model `bge-small-en-torch` runs on PyTorch)
+6. **Embed** — generates vectors (384-dim bge-small-en, int8 ONNX file on ONNX Runtime, CPU only; the optional model `bge-small-en-torch` runs on PyTorch, on a GPU when present)
 7. **Store** — Write chunks to LanceDB, rebuild FTS index
 8. **Cleanup** — Unload embedding model, save metadata for incremental reindex
 
@@ -157,7 +157,7 @@ Measured: about 90MB idle and 270MB with the model loaded (docs/MEMORY.md). The 
 - One ONNX call runs one chunk (`ONNX_MAX_BATCH = 1`): a call of 32 kept more than 1.3GB in the memory arena, and the int8 vector of a chunk then depends on the batch
 - LanceDB mmap (vectors stay on disk, ~20-50MB overhead)
 - Lazy model loading — embedding model loaded during indexing, unloaded after
-- CPU only (`NEXUS_EMBEDDING_DEVICE=cpu`); GPU support was removed in 3.0.0 ([ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md))
+- The ONNX model runs on the CPU only. The PyTorch model uses a GPU when present (`NEXUS_EMBEDDING_DEVICE=auto`: CUDA, MPS, CPU) ([ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md))
 - One recommended model: bge-small-en (384d). `bge-small-en-torch` is the optional PyTorch variant
 
 ## Thread Safety

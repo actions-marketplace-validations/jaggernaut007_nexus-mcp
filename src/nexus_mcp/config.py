@@ -28,7 +28,8 @@ class Settings:
 
     # Embedding model
     embedding_model: str = "bge-small-en"  # or "bge-small-en-torch" (the `torch` extra)
-    embedding_device: str = "cpu"  # embeddings run on the CPU only since 3.0.0 (ADR-026)
+    # "auto": the PyTorch model uses a GPU when present; the ONNX model is CPU only (ADR-026)
+    embedding_device: str = "auto"
     embedding_batch_size: int = 32
 
     # Indexing

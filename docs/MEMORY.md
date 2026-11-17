@@ -1,6 +1,6 @@
 # Memory use
 
-Measured on 2026-11-17 with `scripts/measure_memory.py` on an Apple Silicon laptop, CPU only
+Measured on 2026-11-17 with `scripts/measure_memory.py` on an Apple Silicon laptop, default ONNX model on the CPU
 (Nexus-MCP 3.0.0). The project indexed was `src/nexus_mcp` (61 files, 938 chunks). Each phase
 ran in a fresh process, so its peak does not include an earlier phase. The figure is peak
 resident memory (RSS), imports included.
