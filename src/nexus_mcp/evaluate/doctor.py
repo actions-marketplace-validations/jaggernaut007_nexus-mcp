@@ -28,7 +28,7 @@ def checks(which: Callable[[str], str] = shutil.which, run=subprocess.run) -> Li
         (
             "embedding model cached",
             model.exists(),
-            str(model) if model.exists() else "not cached: the first run downloads it (~130MB)",
+            str(model) if model.exists() else "not cached: the first run downloads it (~32MB)",
         )
     )
     for cli, use in (("claude", "--agent claude"), ("codex", "--agent codex (experimental)")):

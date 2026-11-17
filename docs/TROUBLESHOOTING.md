@@ -27,8 +27,8 @@ finds the index out of date.
 ## The embedding model
 
 **The first index is slow or fails with a network error.** The first run downloads
-`BAAI/bge-small-en-v1.5` (about 130 MB) from Hugging Face. Check the network, or copy
-`~/.cache/huggingface/hub/models--BAAI--bge-small-en-v1.5` from another machine.
+`Xenova/bge-small-en-v1.5` (about 32 MB) from Hugging Face. Check the network, or copy
+`~/.cache/huggingface/hub/models--Xenova--bge-small-en-v1.5` from another machine.
 
 **I must work offline.** After one download, set `NEXUS_OFFLINE=1`. If the model is not cached,
 the load fails with a clear error instead of a network call. `nexus-mcp-ci eval doctor` shows
@@ -43,7 +43,7 @@ field means a background reindex is running.
 **The index is corrupt or from another model.** It is rebuilt on the next `index` call. To start
 again: `nexus-mcp-ci data clear --index --graph --yes`, then call `index`.
 
-**Memory use is high.** About 90 MB idle and 460 MB with the model loaded
+**Memory use is high.** About 90 MB idle and 270 MB with the model loaded
 ([MEMORY.md](MEMORY.md)). The model unloads after indexing.
 
 **`.nexus/` shows in `git status`.** Add `.nexus/` to `.gitignore`. The index holds code.

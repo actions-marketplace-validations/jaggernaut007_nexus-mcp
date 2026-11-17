@@ -4,6 +4,7 @@ Fast tests use mocks. Slow integration tests (marked @pytest.mark.slow)
 load real models — run with: pytest -m slow
 """
 
+import importlib.util
 from unittest.mock import MagicMock
 
 import numpy as np
@@ -12,23 +13,17 @@ from hypothesis import given
 from hypothesis import settings as hyp_settings
 from hypothesis import strategies as st
 
-try:
-    # `import optimum` succeeds as a bare namespace package even when the ONNX
-    # extra is missing, so check the module that the ONNX backend really imports.
-    import optimum.onnxruntime  # noqa: F401
-    _has_optimum = True
-except ImportError:
-    _has_optimum = False
-
 from nexus_mcp.config import reset_settings
 from nexus_mcp.indexing.embedding_service import (
     DEFAULT_MODEL,
     EMBEDDING_MODELS,
     EmbeddingService,
-    _detect_device,
     get_embedding_service,
     reset_embedding_service,
 )
+
+# The model `bge-small-en-torch` runs on PyTorch, which only the `torch` extra installs.
+_has_torch = importlib.util.find_spec("sentence_transformers") is not None
 
 
 @pytest.fixture(autouse=True)
@@ -47,11 +42,12 @@ REQUIRED_KEYS = {
     "hf_name",
     "dimensions",
     "max_seq_length",
-    "trust_remote_code",
     "prompt_prefix",
     "query_prefix",
     "backend",
 }
+# An ONNX model also names its file and its pooling.
+ONNX_KEYS = {"onnx_file", "pooling"}
 
 
 # ===========================================================================
@@ -65,6 +61,10 @@ def test_model_config_has_all_required_keys(model_name):
     """Every registered model config contains all required keys."""
     config = EMBEDDING_MODELS[model_name]
     assert REQUIRED_KEYS.issubset(config.keys())
+    assert config["backend"] in ("onnx", "torch")
+    if config["backend"] == "onnx":
+        assert ONNX_KEYS.issubset(config.keys())
+        assert config["pooling"] in ("cls", "mean")
 
 
 @given(model_name=st.sampled_from(sorted(EMBEDDING_MODELS.keys())))
@@ -91,7 +91,7 @@ def test_service_config_matches_registry(model_name):
     svc = EmbeddingService(model_name=model_name)
     assert svc.config["dimensions"] == EMBEDDING_MODELS[model_name]["dimensions"]
     assert svc.config["hf_name"] == EMBEDDING_MODELS[model_name]["hf_name"]
-    assert svc.config["trust_remote_code"] == EMBEDDING_MODELS[model_name]["trust_remote_code"]
+    assert svc.config["backend"] == EMBEDDING_MODELS[model_name]["backend"]
 
 
 @given(model_name=st.sampled_from(sorted(EMBEDDING_MODELS.keys())))
@@ -108,17 +108,18 @@ def test_default_model_is_in_registry():
     assert DEFAULT_MODEL in EMBEDDING_MODELS
 
 
-def test_device_detection_returns_valid_string():
-    """_detect_device must return one of the known device strings."""
-    device = _detect_device()
-    assert device in ("cpu", "cuda", "mps")
+@pytest.mark.parametrize("device", [None, "auto", "cpu", "cuda", "mps"])
+def test_service_device_is_always_cpu(device):
+    """Requirement changed in 3.0.0 (ADR-026): embeddings run on the CPU only, so a
+    GPU device from an old setup is ignored, not an error."""
+    assert EmbeddingService(device=device).device == "cpu"
 
 
 @given(n=st.integers(min_value=1, max_value=50))
 @hyp_settings(deadline=None)
 def test_batch_embed_returns_correct_count(n):
     """embed_batch returns exactly as many vectors as input texts."""
-    svc = EmbeddingService(model_name="jina-code")
+    svc = EmbeddingService(model_name="bge-small-en")
     dims = svc.config["dimensions"]
 
     # Mock the model
@@ -188,17 +189,17 @@ def test_unsupported_model_raises_error():
 # ===========================================================================
 
 
-def _requires_onnx(model_name):
-    """Check if a model requires ONNX backend (and thus optimum)."""
-    return EMBEDDING_MODELS.get(model_name, {}).get("backend") == "onnx"
+def _unavailable(model_name):
+    """True when the model needs PyTorch and the `torch` extra is not installed."""
+    return EMBEDDING_MODELS.get(model_name, {}).get("backend") == "torch" and not _has_torch
 
 
 @pytest.mark.slow
 @pytest.mark.parametrize("model_name", sorted(EMBEDDING_MODELS.keys()))
 def test_model_loads_and_embeds(model_name):
     """Each registered model can load and produce embeddings with correct dimensions."""
-    if _requires_onnx(model_name) and not _has_optimum:
-        pytest.skip("optimum not installed (required for ONNX backend)")
+    if _unavailable(model_name):
+        pytest.skip("sentence-transformers not installed (the `torch` extra)")
     reset_embedding_service()
     try:
         svc = get_embedding_service(model_name)
@@ -212,8 +213,8 @@ def test_model_loads_and_embeds(model_name):
 @pytest.mark.parametrize("model_name", sorted(EMBEDDING_MODELS.keys()))
 def test_normalized_embeddings_unit_length(model_name):
     """When normalize=True (default), embeddings should have approximately unit length."""
-    if _requires_onnx(model_name) and not _has_optimum:
-        pytest.skip("optimum not installed (required for ONNX backend)")
+    if _unavailable(model_name):
+        pytest.skip("sentence-transformers not installed (the `torch` extra)")
     reset_embedding_service()
     try:
         svc = get_embedding_service(model_name)
@@ -228,8 +229,8 @@ def test_normalized_embeddings_unit_length(model_name):
 @pytest.mark.parametrize("model_name", sorted(EMBEDDING_MODELS.keys()))
 def test_batch_matches_individual(model_name):
     """Batch embedding results should closely match individual embeddings."""
-    if _requires_onnx(model_name) and not _has_optimum:
-        pytest.skip("optimum not installed (required for ONNX backend)")
+    if _unavailable(model_name):
+        pytest.skip("sentence-transformers not installed (the `torch` extra)")
     reset_embedding_service()
     try:
         texts = ["hello world", "def foo(): pass", "import os"]
@@ -246,7 +247,6 @@ def test_batch_matches_individual(model_name):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not _has_optimum, reason="optimum not installed (required for ONNX backend)")
 @given(
     text=st.text(
         min_size=1,
@@ -264,7 +264,6 @@ def test_hypothesis_normalized_unit_length(text):
 
 
 @pytest.mark.slow
-@pytest.mark.skipif(not _has_optimum, reason="optimum not installed (required for ONNX backend)")
 @given(
     texts=st.lists(
         st.text(min_size=1, max_size=100, alphabet=st.characters(whitelist_categories=("L", "N"))),

@@ -1,6 +1,6 @@
 # Nexus-MCP
 
-Local MCP server that cuts coding-agent tokens: the agent reads less code to find the right file. Hybrid search + code graph, with an opt-in memory. Memory (measured, docs/MEMORY.md): ~90MB idle, ~460MB with the embedding model loaded, ~500MB while indexing a small project. The old <350MB target is not met once the model is loaded.
+Local MCP server that cuts coding-agent tokens: the agent reads less code to find the right file. Hybrid search + code graph, with an opt-in memory. Memory (measured, docs/MEMORY.md): ~90MB idle, ~120MB after a restore, ~270MB at `search` (model loaded), ~310MB while indexing a small project. The default model meets the old <350MB target (3.0.0, CPU only).
 
 ## North star
 
@@ -98,7 +98,7 @@ src/nexus_mcp/
 ├── memory/
 │   └── memory_store.py    # LanceDB-backed memory with TTL
 ├── indexing/
-│   ├── embedding_service.py   # Embeddings: bge-small-en (jina-code deprecated); GPU/MPS
+│   ├── embedding_service.py   # Embeddings, CPU only: OnnxEncoder (int8 bge-small-en); TorchEncoder (extra `torch`)
 │   ├── parallel_indexer.py    # ThreadPool
 │   ├── call_resolver.py       # CALLS edges from callee names, after the last parse batch (ADR-019)
 │   ├── pipeline.py            # discover → parse → chunk → embed → store + corrupt index detection + multi-folder
@@ -147,8 +147,8 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 ## Key Decisions
 
 - LanceDB replaces ChromaDB (mmap, disk-backed vectors) — [ADR-002](docs/adr/ADR-002-lancedb-over-chromadb.md)
-- ONNX Runtime replaces PyTorch (~50MB vs ~500MB) — [ADR-003](docs/adr/ADR-003-onnx-runtime-over-pytorch.md)
-- bge-small-en default; jina-code deprecated (still loads, warns) — [ADR-004](docs/adr/ADR-004-bge-small-default-model.md)
+- ONNX Runtime replaces PyTorch — [ADR-003](docs/adr/ADR-003-onnx-runtime-over-pytorch.md); made true for the default model by [ADR-026](docs/adr/ADR-026-cpu-only-onnx-embeddings.md)
+- bge-small-en default — [ADR-004](docs/adr/ADR-004-bge-small-default-model.md); int8 ONNX, CPU only, PyTorch optional, jina-code removed in 3.0.0 — [ADR-026](docs/adr/ADR-026-cpu-only-onnx-embeddings.md)
 - Dual parsing: tree-sitter (symbols) + ast-grep (graph) — [ADR-005](docs/adr/ADR-005-dual-parser-strategy.md)
 - rustworkx for graph algorithms (Rust-backed) — [ADR-006](docs/adr/ADR-006-rustworkx-graph-engine.md)
 - LanceDB schema: 12-column PyArrow, flat search — [ADR-007](docs/adr/ADR-007-lancedb-schema-design.md)
@@ -189,11 +189,11 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 11. Permission default is `full` (backward compat); set `NEXUS_PERMISSION_LEVEL=read` for restricted
 12. Audit logging is on by default; set `NEXUS_AUDIT_ENABLED=false` to disable
 13. Rate limiting is off by default (stdio); enable via `NEXUS_RATE_LIMIT_ENABLED=true`
-14. `trust_remote_code` defaults to `true` (needed only by the deprecated jina-code model; the default bge-small-en does not need it); set `NEXUS_TRUST_REMOTE_CODE=false` to disable
+14. No model needs `trust_remote_code`: the setting and `NEXUS_TRUST_REMOTE_CODE` were removed with jina-code in 3.0.0 (an old variable is ignored)
 15. `schemas/` was removed (dead code, never wired into any tool); FastMCP tool signatures + the `validate_*` helpers in core_api.py are the only validation
 16. New exceptions (AuthenticationError, AuthorizationError, RateLimitError) in exceptions.py
-17. Only registered embedding models are supported; custom model names raise ConfigurationError
-18. GPU/MPS auto-detected; set `NEXUS_EMBEDDING_DEVICE=cpu` to force CPU
+17. Only registered embedding models are supported; custom model names raise ConfigurationError (`jina-code` gives a removal message)
+18. Embeddings run on the CPU only. `NEXUS_EMBEDDING_DEVICE` defaults to `cpu`; any other value is ignored with a warning. The model name is the identity of the index: `bge-small-en` and `bge-small-en-torch` differ a little, so a switch rebuilds the index. `ONNX_MAX_BATCH` (1) caps one ONNX call: a batch of 32 peaked above 1.3 GB, and the int8 model quantizes with one scale for each batch, so a chunk's vector changed with its batch. Do not raise it without re-reading ADR-026
 19. Multi-folder indexing processes each folder sequentially; `state.codebase_paths` tracks all roots, `state.codebase_path` is the first root for backward compat
 20. `NEXUS_AUTO_WATCH` (default `true`) starts a debounced file watcher per indexed root after `index()` completes; on change it triggers a background incremental reindex (skipped, not queued, if one is already in flight)
 21. `status()`/`search()` run a throttled staleness check (`NEXUS_STALENESS_CHECK_INTERVAL`, default 15s) and surface `stale`/`staleness_warning`/`warning` fields; a stale result still returns immediately and kicks a background reindex rather than blocking
@@ -201,10 +201,12 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 
 ## Embedding Models
 
-| Model | Key | Dims | Seq Len | Backend | trust_remote_code | Notes |
-|-------|-----|------|---------|---------|-------------------|-------|
-| BGE Small EN v1.5 | `bge-small-en` | 384 | 512 | PyTorch | No | **Default**. Lightweight general-purpose |
-| Jina Embeddings v2 Code | `jina-code` | 768 | 8192 | ONNX | Yes | **Deprecated.** Still loads, with a warning. Removal in a future major release |
+| Model | Key | Dims | Seq Len | Backend | Notes |
+|-------|-----|------|---------|---------|-------|
+| BGE Small EN v1.5, int8 | `bge-small-en` | 384 | 512 | ONNX Runtime, CPU | **Default**. 32 MB file from `Xenova/bge-small-en-v1.5`, pinned commit |
+| BGE Small EN v1.5, fp32 | `bge-small-en-torch` | 384 | 512 | PyTorch, CPU | Optional: `pip install 'nexus-mcp-ci[torch]'`. About 1.2 times faster on Apple Silicon |
+
+`jina-code` was removed in 3.0.0 (ADR-026).
 
 ### Changing the embedding model
 
@@ -218,15 +220,14 @@ NEXUS_EMBEDDING_MODEL=<model> nexus-mcp-ci
 claude mcp add nexus-mcp -e NEXUS_EMBEDDING_MODEL=<model> -- nexus-mcp-ci
 ```
 
-### GPU / MPS acceleration
+### CPU only, and the optional PyTorch model
 
-Device is auto-detected by default (`NEXUS_EMBEDDING_DEVICE=auto`):
-- **CUDA**: Detected via `torch.cuda.is_available()` or onnxruntime CUDAExecutionProvider
-- **MPS** (Apple Silicon): Detected via `torch.backends.mps` or onnxruntime CoreMLExecutionProvider
-- **CPU**: Fallback
+Embeddings run on the CPU. There is no GPU or Metal support since 3.0.0. To use PyTorch (faster
+on Apple Silicon, but a large install):
 
-For CUDA GPU support, install the gpu extra: `pip install nexus-mcp-ci[gpu]`
-
-To force a specific device: `NEXUS_EMBEDDING_DEVICE=cpu` or `NEXUS_EMBEDDING_DEVICE=cuda`
+```bash
+pip install 'nexus-mcp-ci[torch]'
+NEXUS_EMBEDDING_MODEL=bge-small-en-torch nexus-mcp-ci
+```
 
 **Important**: After changing the embedding model, you must re-index your codebase — embeddings from different models are not compatible.

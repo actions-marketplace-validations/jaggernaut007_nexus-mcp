@@ -176,7 +176,7 @@ Details: [docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/
   dispatch, callbacks and reflection do not show, so treat `graph` results as a lower bound.
 - **C and Rust live runs used more tokens** than Grep and Read on the older 2.2.2 build (see
   Results). A rerun on the current build is pending.
-- **Memory:** about 90 MB idle and about 460 MB with the embedding model loaded
+- **Memory:** about 90 MB idle, about 270 MB with the embedding model loaded and about 310 MB while indexing a small project
   ([measurements](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/MEMORY.md)).
 - **Freshness:** edits are picked up after a debounce of a few seconds, not instantly.
 - **Transport:** stdio only.

@@ -8,8 +8,8 @@
 # Install from PyPI
 pip install nexus-mcp-ci
 
-# Optional: with GPU (CUDA) support
-pip install nexus-mcp-ci[gpu]
+# Optional: with PyTorch (the model bge-small-en-torch, faster on Apple Silicon, large install)
+pip install 'nexus-mcp-ci[torch]'
 ```
 
 Or install from source for development:
@@ -225,9 +225,9 @@ Set via environment variables before starting the server:
 
 ```bash
 # Embedding model selection
-export NEXUS_EMBEDDING_MODEL=bge-small-en       # Default: bge-small-en (384d, lightweight)
-                                                 # jina-code (768d) is deprecated
-export NEXUS_EMBEDDING_DEVICE=auto               # auto (CUDA > MPS > CPU), cuda, mps, cpu
+export NEXUS_EMBEDDING_MODEL=bge-small-en       # Default: bge-small-en (384d, int8 ONNX, CPU)
+                                                 # bge-small-en-torch needs the `torch` extra
+export NEXUS_EMBEDDING_DEVICE=cpu                # CPU only since 3.0.0
 
 # Search tuning
 export NEXUS_SEARCH_MODE=hybrid          # hybrid, vector, or bm25
@@ -260,14 +260,15 @@ See [CONFIGURATION.md](CONFIGURATION.md) for every variable.
 
 ### Embedding Models
 
-Nexus-MCP recommends one embedding model, `bge-small-en`. `jina-code` still loads, with a warning, so an existing index keeps working; it is deprecated. Only registered model names are accepted; custom model names raise a `ConfigurationError`.
+Nexus-MCP runs one embedding model on the CPU. Only registered model names are accepted; custom model names raise a `ConfigurationError`. `jina-code` was removed in 3.0.0: use `bge-small-en` and re-index.
 
 | Model | HuggingFace ID | Dims | Code-specific? | Notes |
 |-------|---------------|------|:-:|---|
-| `bge-small-en` (default) | `BAAI/bge-small-en-v1.5` | 384 | No | Smallest download (~50MB), general text, PyTorch backend |
-| `jina-code` (deprecated) | `jinaai/jina-embeddings-v2-base-code` | 768 | Yes | ONNX, needs `trust_remote_code` and a 612 MiB download; slow CPU index. Removal in a future major release |
+| `bge-small-en` (default) | `Xenova/bge-small-en-v1.5` | 384 | No | int8 ONNX file, 32 MB download, ONNX Runtime on the CPU, no PyTorch |
+| `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 1.2 times faster on Apple Silicon |
 
-GPU/MPS auto-detection (`NEXUS_EMBEDDING_DEVICE=auto`) tries CUDA first, then Apple MPS, then falls back to CPU. For explicit GPU support, install with `pip install -e ".[gpu]"`.
+The two models give slightly different vectors, so a switch rebuilds the index. There is no GPU
+support since 3.0.0. See [ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
 
 ## Best Practices
 

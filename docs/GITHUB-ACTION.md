@@ -29,6 +29,6 @@ jobs:
 ## Notes
 
 - The action installs `uv` with `astral-sh/setup-uv`, then runs `uvx`. The first run downloads
-  the packages and the embedding model (about 130 MB). Cache `~/.cache/huggingface` to avoid
+  the packages (about 160 to 190 MB) and the embedding model (about 32 MB). Cache `~/.cache/huggingface` to avoid
   the model download on later runs.
 - The inputs reach the shell as environment variables, not as text in the script.

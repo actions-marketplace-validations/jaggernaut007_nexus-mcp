@@ -86,6 +86,67 @@ def test_clear_evals_removes_saved_results(tmp_path):
     assert not paths.eval_home().exists()
 
 
+def test_model_dir_is_the_cache_folder_of_the_default_model():
+    """The folder comes from the registry. It was hardcoded to the BAAI repo, so after the
+    default moved to the int8 ONNX repo (3.0.0) `data where` and the doctor looked in the
+    wrong place."""
+    from nexus_mcp.indexing.embedding_service import DEFAULT_MODEL, EMBEDDING_MODELS
+
+    hf_name = EMBEDDING_MODELS[DEFAULT_MODEL]["hf_name"]
+    assert paths.model_dir().name == "models--" + hf_name.replace("/", "--")
+    assert paths.model_dir().name == "models--Xenova--bge-small-en-v1.5"
+
+
+def test_model_dirs_cover_every_registered_model():
+    names = {p.name for p in paths.model_dirs()}
+    assert names == {"models--Xenova--bge-small-en-v1.5", "models--BAAI--bge-small-en-v1.5"}
+
+
+def test_clear_models_removes_the_default_and_the_torch_model_folders(tmp_path):
+    for folder in paths.model_dirs():
+        (folder / "snapshots").mkdir(parents=True)
+        (folder / "snapshots" / "weights.bin").write_bytes(b"w" * 10)
+    other = paths.hf_hub_dir() / "models--someone--else"  # another tool's model must stay
+    other.mkdir(parents=True)
+
+    data_cmd.clear(tmp_path, ["models"], yes=True)
+
+    assert not any(folder.exists() for folder in paths.model_dirs())
+    assert other.exists()
+
+
+def test_where_counts_the_torch_model_folder_that_clear_would_delete(tmp_path):
+    """Found by the test audit: `where` showed only the default model, while `clear --models`
+    deletes every registered model folder. Only the torch folder is written here, so a
+    `where` that looks at the default folder alone reports 0 bytes."""
+    torch_folder = next(p for p in paths.model_dirs() if p.name.startswith("models--BAAI"))
+    (torch_folder / "snapshots").mkdir(parents=True)
+    (torch_folder / "snapshots" / "w.bin").write_bytes(b"w" * 1000)
+    row = {r["target"]: r for r in data_cmd.locations(tmp_path)}["models"]
+    assert row["exists"] and row["bytes"] >= 1000 and row["files"] == 1
+
+
+def test_doctor_model_check_follows_the_default_model_folder():
+    """The folder was hardcoded to the BAAI repo, so the doctor looked in the wrong place
+    after the default moved (3.0.0). Only the old folder is cached here: still not cached."""
+    from nexus_mcp.evaluate import doctor
+
+    def model_check():
+        items = doctor.checks(which=lambda cmd: None)
+        return next((ok, detail) for name, ok, detail in items if name == "embedding model cached")
+
+    ok, detail = model_check()
+    assert ok is False and "~32MB" in detail
+
+    old_folder = next(p for p in paths.model_dirs() if p.name.startswith("models--BAAI"))
+    old_folder.mkdir(parents=True)
+    assert model_check()[0] is False
+
+    paths.model_dir().mkdir(parents=True)
+    ok, detail = model_check()
+    assert ok is True and detail == str(paths.model_dir())
+
+
 def test_cli_clear_without_target_exits_2(tmp_path, capsys):
     assert cli.run_data(["clear", str(tmp_path)]) == 2
     assert "Choose what to delete" in capsys.readouterr().err

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "nexus-mcp-ci"
-version = "2.4.6"
+version = "3.0.0"
 description = "Local MCP server for Claude Code, Codex and Cursor: hybrid code search and a call graph, so your coding agent finds the right file with far fewer tokens. Measure it on your repo with `nexus-mcp-ci eval`."
 readme = "README.md"
 license = "MIT"
@@ -39,9 +39,10 @@ classifiers = [
 dependencies = [
     "fastmcp>=3.1,<5",
     "lancedb>=0.4.0",
-    "sentence-transformers>=3.0.0",
-    "optimum>=1.19.0",
     "onnxruntime>=1.17.0,<1.24.0",  # 1.24.0+ dropped Python 3.10 wheels
+    "tokenizers>=0.20.0",
+    "huggingface-hub>=0.24.0",
+    "numpy>=1.26.0",
     "tree-sitter==0.21.3",
     "tree-sitter-languages>=1.10.0",
     "ast-grep-py>=0.28.0",
@@ -70,14 +71,11 @@ dev = [
     "mypy>=1.0.0",
     "tomli>=2.0.0; python_version < '3.11'",
 ]
-gpu = [
-    "sentence-transformers[onnx-gpu]>=3.0.0",
-    "optimum[onnxruntime-gpu]>=1.19.0",
-]
-onnx = [
-    # optimum 2.x moved the ONNX Runtime code into optimum-onnx. Needed to load a model
-    # with the ONNX backend (jina-code, or the candidates in evals/retrieval).
-    "optimum-onnx[onnxruntime]>=0.1.0",
+torch = [
+    # Optional: the model `bge-small-en-torch` (fp32 weights on PyTorch, CPU). About 2 times
+    # faster than the default int8 ONNX model on Apple Silicon. Pulls in PyTorch: on Linux
+    # use the CPU wheel index to avoid the CUDA packages.
+    "sentence-transformers>=3.0.0",
 ]
 bench = [
     "pyyaml>=6.0",

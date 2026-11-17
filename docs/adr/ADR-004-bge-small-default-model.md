@@ -1,6 +1,6 @@
 # ADR-004: bge-small-en as Default Embedding Model (Updated)
 
-**Status:** Accepted (originally bge-small-en, briefly jina-code, reverted to bge-small-en 2026-07-02). Amended 2026-10-05: jina-code is deprecated (see the end of this file).
+**Status:** Accepted (originally bge-small-en, briefly jina-code, reverted to bge-small-en 2026-07-02). Amended 2026-10-05: jina-code is deprecated (see the end of this file). Amended 2026-11-17 by [ADR-026](ADR-026-cpu-only-onnx-embeddings.md): `jina-code` is removed, and `bge-small-en` is now the int8 ONNX file on the CPU.
 **Date:** 2026-03-11 (updated 2026-07-02)
 **Decision makers:** Shreyas Jagannath
 

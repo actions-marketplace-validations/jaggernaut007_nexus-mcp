@@ -33,7 +33,7 @@
       },
       "NEXUS_MAX_MEMORY_MB": {
         "type": "string",
-        "description": "Memory budget in MB (about 90 MB idle, 460 MB with the embedding model loaded)",
+        "description": "Memory budget in MB (about 90 MB idle, 270 MB with the embedding model loaded)",
         "default": "350"
       },
       "NEXUS_CHUNK_MAX_CHARS": {
@@ -48,8 +48,8 @@
       },
       "NEXUS_EMBEDDING_DEVICE": {
         "type": "string",
-        "description": "Device for embeddings: auto, cuda, mps, cpu",
-        "default": "auto"
+        "description": "Device for embeddings. CPU only since 3.0.0; another value is ignored",
+        "default": "cpu"
       },
       "NEXUS_MAX_FILE_SIZE_MB": {
         "type": "string",

@@ -50,9 +50,12 @@ pip install nexus-mcp-ci
 With optional extras:
 
 ```bash
-# With GPU (CUDA) support
-pip install nexus-mcp-ci[gpu]
+# With PyTorch (the model bge-small-en-torch, faster on Apple Silicon, large install)
+pip install 'nexus-mcp-ci[torch]'
 ```
+
+The default install has no PyTorch and runs the embedding model on the CPU with ONNX Runtime.
+There is no GPU support since 3.0.0.
 
 After installing, the `nexus-mcp` command is available globally:
 
@@ -118,8 +121,8 @@ pip install -e .
 # Option 2: With dev dependencies
 pip install -e ".[dev]"
 
-# Option 4: With GPU (CUDA) support
-pip install -e ".[gpu]"
+# Option 4: With PyTorch (the model bge-small-en-torch)
+pip install -e ".[torch]"
 ```
 
 ---
@@ -380,8 +383,8 @@ All settings use the `NEXUS_` environment variable prefix:
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NEXUS_STORAGE_DIR` | `.nexus` | Storage directory for indexes and graph DB |
-| `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model: `bge-small-en` (`jina-code` is deprecated) |
-| `NEXUS_EMBEDDING_DEVICE` | `auto` | Device: `auto` (CUDA > MPS > CPU), `cuda`, `mps`, `cpu` |
+| `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model: `bge-small-en` (int8 ONNX) or `bge-small-en-torch` (needs the `torch` extra) |
+| `NEXUS_EMBEDDING_DEVICE` | `cpu` | CPU only. Another value is ignored with a warning |
 | `NEXUS_MAX_FILE_SIZE_MB` | `10` | Skip files larger than this |
 | `NEXUS_CHUNK_MAX_CHARS` | `4000` | Max characters per code chunk |
 | `NEXUS_MAX_MEMORY_MB` | `350` | Memory budget in MB |
@@ -391,7 +394,6 @@ All settings use the `NEXUS_` environment variable prefix:
 | `NEXUS_PERMISSION_LEVEL` | `full` | Permission level: `full` or `read` |
 | `NEXUS_AUDIT_ENABLED` | `true` | Enable audit logging |
 | `NEXUS_RATE_LIMIT_ENABLED` | `false` | Enable per-tool rate limiting |
-| `NEXUS_TRUST_REMOTE_CODE` | `true` | Allow `trust_remote_code` in models. Only the deprecated `jina-code` needs it; set `false` with `bge-small-en` |
 | `NEXUS_AUTO_WATCH` | `true` | Auto-reindex on file change (debounced watcher started after `index`) |
 | `NEXUS_STALENESS_CHECK_INTERVAL` | `15` | Seconds between `status()`/`search()` staleness checks |
 
@@ -420,27 +422,23 @@ ruff check .
 
 ## Troubleshooting
 
-### ONNX Runtime / Optimum errors during indexing
+### The model needs PyTorch, or the model download fails
 
-If you see `Using the ONNX backend requires installing Optimum and ONNX Runtime`, install the required packages:
-
-```bash
-pip install "sentence-transformers[onnx]" "optimum[onnxruntime]>=1.19.0,<2.0"
-```
-
-**Version compatibility:** Ensure `optimum` and `transformers` versions are compatible. If you see `cannot import name 'FLAX_WEIGHTS_NAME'`, pin compatible versions:
+If you see `This embedding model needs PyTorch`, you set `NEXUS_EMBEDDING_MODEL=bge-small-en-torch`
+without the extra. Install it, or use the default model:
 
 ```bash
-pip install "optimum[onnxruntime]>=1.19.0,<2.0" "transformers>=4.46,<5.0"
+pip install 'nexus-mcp-ci[torch]'
+# or
+NEXUS_EMBEDDING_MODEL=bge-small-en nexus-mcp-ci
 ```
+
+The default model downloads one 32 MB file from the Hugging Face hub on first use. Without a
+network, copy the Hugging Face cache (`~/.cache/huggingface`) to the machine, or set `HF_HOME`.
 
 **MCP server not picking up new packages:** If you installed packages but the MCP server still errors, the server process needs a restart. Reload your VS Code window, restart Claude Code, or restart Claude Desktop.
 
-**Alternative: use a model that doesn't need ONNX:**
-
-```bash
-NEXUS_EMBEDDING_MODEL=bge-small-en nexus-mcp
-```
+**`NEXUS_EMBEDDING_MODEL=jina-code`:** the model was removed in 3.0.0. Use `bge-small-en` and re-index.
 
 ### `ModuleNotFoundError: No module named 'nexus_mcp'`
 

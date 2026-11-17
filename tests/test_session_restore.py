@@ -98,7 +98,7 @@ def test_nothing_to_restore_when_no_index_exists(tmp_path, monkeypatch, restore_
 def test_restore_refuses_an_index_built_by_another_model(
     indexed_storage, monkeypatch, restore_on
 ):
-    monkeypatch.setenv("NEXUS_EMBEDDING_MODEL", "jina-code")
+    monkeypatch.setenv("NEXUS_EMBEDDING_MODEL", "bge-small-en-torch")
     reset_settings()
     assert core_api.restore_session() is False
     assert get_state().is_indexed is False

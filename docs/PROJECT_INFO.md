@@ -6,7 +6,7 @@ Nexus-MCP is a local MCP (Model Context Protocol) server that lets a coding agen
 - **code-graph-mcp** — structural AST analysis + call graphs
 - **Live Grep** — 100% coverage fallback via ripgrep/grep
 
-Into a **single, memory-efficient MCP server** (about 90MB idle and 460MB with the model loaded, see docs/MEMORY.md) with 8 tools for code search, navigation, analysis, and memory.
+Into a **single, memory-efficient MCP server** (about 90MB idle and 270MB with the model loaded, see docs/MEMORY.md) with 8 tools for code search, navigation, analysis, and memory.
 
 ---
 
@@ -67,8 +67,8 @@ Into a **single, memory-efficient MCP server** (about 90MB idle and 460MB with t
 |-------|-----------|-----|
 | MCP Framework | FastMCP ≥2.0 | Standard MCP server framework |
 | Vector + FTS Storage | LanceDB ≥0.4 | Embedded, mmap, vectors + FTS in one DB |
-| Inference | PyTorch (bge-small-en) | The deprecated jina-code runs on ONNX Runtime |
-| Embedding Model | bge-small-en (default) | 384 dims, lightweight; jina-code (768d) is deprecated |
+| Inference | ONNX Runtime, CPU (bge-small-en, int8 file) | No PyTorch in the default install; the optional `torch` extra runs `bge-small-en-torch` |
+| Embedding Model | bge-small-en (default) | 384 dims, lightweight; jina-code was removed in 3.0.0 |
 | Symbol Parsing | tree-sitter 0.21.3 | Extract code symbols for embeddings |
 | Structural Analysis | ast-grep-py ≥0.28 | Build the containment and import graph (plus callee names, resolved into call edges after indexing) |
 | Graph Engine | rustworkx ≥0.15 | In-memory directed graph, Rust-backed |
@@ -129,7 +129,7 @@ Old names (`find_callers`, `find_callees`, `impact`, `overview`, `architecture`,
 
 | Metric | Target | Previous (two MCPs) |
 |--------|--------|--------------------|
-| Total RAM | ~90MB idle, ~460MB with the model loaded | ~1-2GB |
+| Total RAM | ~90MB idle, ~270MB with the model loaded | ~1-2GB |
 | Warm start | <5s | ~13s combined |
 | Incremental reindex (1 file) | <1s | ~2s |
 | Hybrid search | <500ms | ~200ms (vector only) |
@@ -172,7 +172,7 @@ All settings via environment variables with `NEXUS_` prefix:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model (`bge-small-en`; `jina-code` is deprecated) |
+| `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model (`bge-small-en`, or `bge-small-en-torch` with the `torch` extra) |
 | `NEXUS_STORAGE_DIR` | `.nexus` | Per-project storage directory |
 | `NEXUS_MAX_FILE_SIZE_MB` | `10` | Skip files larger than this (MB) |
 | `NEXUS_LOG_FORMAT` | `text` | Logging format (`text` or `json`) |
@@ -201,8 +201,8 @@ All settings via environment variables with `NEXUS_` prefix:
 | Decision | Rationale |
 |----------|-----------|
 | LanceDB over ChromaDB | Embedded, mmap (disk-backed), native FTS, fewer dependencies |
-| ONNX Runtime over PyTorch | 50MB vs 500MB RAM, 2.5x faster CPU inference |
-| bge-small-en default | Lightweight 384d embeddings ([ADR-004](adr/ADR-004-bge-small-default-model.md)); jina-code (768d) is deprecated; GPU/MPS auto-detection |
+| ONNX Runtime over PyTorch | Download of the wheels 336 MB to 157 MB (macOS) and 1,054 MB to 185 MB (Linux); search peak RSS 483 MB to 266 MB. About 1.2 times slower than PyTorch on Apple Silicon ([ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md)) |
+| bge-small-en default | Lightweight 384d embeddings, int8 ONNX file ([ADR-004](adr/ADR-004-bge-small-default-model.md)); CPU only; jina-code removed in 3.0.0 |
 | rustworkx over Neo4j | In-memory graph is sufficient, no DB server dependency |
 | Single MCP over two | Halves memory, eliminates cross-process coordination |
 | Dual parsers (tree-sitter + ast-grep) | Each excels at different task: symbols vs structure |

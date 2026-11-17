@@ -27,8 +27,8 @@ class Settings:
     storage_base: str = ""
 
     # Embedding model
-    embedding_model: str = "bge-small-en"
-    embedding_device: str = "auto"
+    embedding_model: str = "bge-small-en"  # or "bge-small-en-torch" (the `torch` extra)
+    embedding_device: str = "cpu"  # embeddings run on the CPU only since 3.0.0 (ADR-026)
     embedding_batch_size: int = 32
 
     # Indexing
@@ -73,7 +73,6 @@ class Settings:
     log_format: str = "text"  # "text" or "json"
 
     # Security
-    trust_remote_code: bool = True
     auth_mode: str = "none"  # "none", "local", "oauth" (oauth deferred)
     default_permission_level: str = "full"  # "read" or "full"
 
@@ -116,7 +115,6 @@ class Settings:
             "NEXUS_LIFECYCLE_CHECK_INTERVAL": ("lifecycle_check_interval_s", float),
             "NEXUS_LOG_LEVEL": ("log_level", str),
             "NEXUS_LOG_FORMAT": ("log_format", str),
-            "NEXUS_TRUST_REMOTE_CODE": ("trust_remote_code", _bool),
             "NEXUS_AUTH_MODE": ("auth_mode", str),
             "NEXUS_PERMISSION_LEVEL": ("default_permission_level", str),
             "NEXUS_AUDIT_ENABLED": ("audit_enabled", _bool),

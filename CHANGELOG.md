@@ -4,6 +4,55 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Breaking (3.0.0)
+
+- **CPU-only embeddings on ONNX Runtime.** The default model `bge-small-en` is now the int8
+  ONNX file of `Xenova/bge-small-en-v1.5` (32 MB, pinned to a commit). A native encoder
+  (`tokenizers` and `onnxruntime`) runs it. `torch`, `sentence-transformers`, `optimum` and
+  the CUDA packages are no longer dependencies. See [ADR-026](docs/adr/ADR-026-cpu-only-onnx-embeddings.md).
+- **PyTorch is an option.** Install `nexus-mcp-ci[torch]` and set
+  `NEXUS_EMBEDDING_MODEL=bge-small-en-torch` (fp32 weights, CPU). It is faster on Apple Silicon.
+  Switching between the two models rebuilds the index.
+- **GPU support is removed.** The `gpu` extra and the device detection (CUDA, MPS) are gone.
+  `NEXUS_EMBEDDING_DEVICE` defaults to `cpu`, and another value is ignored with a warning.
+- **`jina-code` is removed**, with `trust_remote_code`, `NEXUS_TRUST_REMOTE_CODE`, the `onnx`
+  extra and the code that only they used. `NEXUS_EMBEDDING_MODEL=jina-code` now gives an
+  error that tells you to use `bge-small-en`.
+- **Every existing index rebuilds one time** (chunk format 9). The int8 vectors differ a little
+  from the fp32 vectors of 2.x, and a chunk table must not hold both. Stored memories are not
+  re-embedded (the memory store checks the vector width only); the difference is small (cosine
+  0.993 at the lowest).
+- **Offline and air-gapped setups: upgrade note.** The default model comes from another
+  Hugging Face repo (`Xenova/bge-small-en-v1.5`, 32 MB) than in 2.x (`BAAI/bge-small-en-v1.5`).
+  With `NEXUS_OFFLINE=1`, allow the download once, or copy `~/.cache/huggingface` from a machine
+  that has it. The error now names the model and the way out. The 2.x cache is still used by
+  `bge-small-en-torch`.
+- The ONNX model runs one chunk in each call. With 32 the peak memory of an index was above
+  1.3 GB, and the int8 vector of a chunk changed with the other chunks in its batch (cosine
+  0.9933). The speed on a CPU does not change.
+
+Before and after (north-star gate; Apple Silicon laptop, CPU, 2026-11-17):
+
+| Measure | 2.4.6 (torch fp32) | 3.0.0 (int8 ONNX) |
+|---|---|---|
+| Download size of the wheels, macOS arm64 | 336 MB | 157 MB |
+| Download size of the wheels, Linux x86_64 | 1,054 MB | 185 MB |
+| Model download | 133 MB | 32 MB |
+| Peak RSS, `search` (`docs/MEMORY.md`) | 483 MB | 270 MB |
+| Peak RSS, index of `src/nexus_mcp` (`docs/MEMORY.md`) | 801 MB | 311 MB |
+| Eval run of `src/nexus_mcp`, process peak RSS | 820 MB | 289 MB |
+| Eval run of `src/nexus_mcp`, index time | 92.8 s | 71.1 s |
+| hit@1 `nexus_mcp`, hybrid (24 queries) | 0.79 | 0.79 |
+| hit@1 `shop_repo`, hybrid (8 queries) | 0.62 | 0.62 |
+| hit@1 vector only, `nexus_mcp` / `shop_repo` | 0.58 / 0.75 | 0.54 / 0.75 |
+| hit@5 hybrid, `nexus_mcp` / `shop_repo` | 0.88 / 1.00 | 0.92 / 1.00 |
+| Vector agreement, cosine min / mean | 1 | 0.9934 / 0.9966 |
+
+The `flask` and `jobscout` suites are not run yet, so the accuracy gate is open for them. The
+speed of `torch` on Apple Silicon is higher than ONNX Runtime for the same chunks (24.9 against
+19.8 chunks/s for int8 in the final run; over several runs 18.8 to 26.7 against 16.5 to 22.3, on
+a shared machine). Linux speed is not measured.
+
 ### Benchmarks
 
 - **Head to head with four other code tools on Django and Home Assistant.** Nexus-MCP,

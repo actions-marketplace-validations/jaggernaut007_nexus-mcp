@@ -10,7 +10,7 @@ Follow these steps in order. Do not skip the consent steps.
 
 1. **Say what will happen.** Tell the user in two sentences: the quick check indexes this
    folder in a temporary place, makes no LLM call and sends nothing off the machine. The first
-   run downloads the embedding model once (about 130 MB).
+   run downloads the embedding model once (about 32 MB).
 
 2. **Find a runner.** Use the first that works: `nexus-mcp-ci`, then `uvx --python 3.12 nexus-mcp-ci`, then
    `pipx run nexus-mcp-ci`. `uvx` needs Python 3.10 to 3.12; add `--python 3.12` if the
@@ -33,7 +33,7 @@ Follow these steps in order. Do not skip the consent steps.
    cap is $5). Run `<runner> eval --agent claude` only after a clear yes in this conversation.
 
 6. **Recommend a setup** when the fit is good:
-   `claude mcp add nexus-mcp -- nexus-mcp-ci`, or the plugin. Mention about 460 MB of memory
+   `claude mcp add nexus-mcp -- nexus-mcp-ci`, or the plugin. Mention about 270 MB of memory
    with the model loaded, and that call edges exist for Python, JavaScript, TypeScript, Go,
    Java and Rust only. Offer to add `.nexus/` to `.gitignore`: the index holds code.
 
