@@ -15,6 +15,11 @@ def eval_home() -> Path:
     return Path(os.environ.get("NEXUS_EVAL_HOME") or Path.home() / ".nexus-mcp" / "evals")
 
 
+def links_file() -> Path:
+    """The registry of linked repos (ADR-027). Set ``NEXUS_LINKS_FILE`` to move it."""
+    return Path(os.environ.get("NEXUS_LINKS_FILE") or Path.home() / ".nexus-mcp" / "links.json")
+
+
 def eval_cache() -> Path:
     """Clones of repo URLs given to ``eval``. Set ``NEXUS_EVAL_CACHE`` to move them."""
     return Path(os.environ.get("NEXUS_EVAL_CACHE") or Path.home() / ".cache" / "nexus-mcp" / "eval")

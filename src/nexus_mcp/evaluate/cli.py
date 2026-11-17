@@ -1,4 +1,4 @@
-"""Command line for ``nexus-mcp-ci eval``, ``data`` and ``setup``."""
+"""Command line for ``nexus-mcp-ci``: ``eval``, ``data``, ``setup`` and the link commands."""
 
 import argparse
 import json
@@ -11,7 +11,7 @@ from typing import List, Optional
 from nexus_mcp.evaluate import data_cmd, doctor, paths, report, source, specs, store
 from nexus_mcp.privacy import apply_privacy_defaults
 
-SUBCOMMANDS = ("eval", "data", "setup")
+SUBCOMMANDS = ("eval", "data", "setup", "link", "unlink", "links")
 VERSION_FLAGS = ("--version", "-V")
 
 
@@ -329,4 +329,8 @@ def dispatch(argv: List[str]) -> Optional[int]:
         from nexus_mcp.setup_clients import run_setup
 
         return run_setup(argv[1:])
+    if argv[0] in ("link", "unlink", "links"):
+        from nexus_mcp.evaluate import link_cmd
+
+        return link_cmd.run(argv[0], argv[1:])
     return run_eval(argv[1:]) if argv[0] == "eval" else run_data(argv[1:])

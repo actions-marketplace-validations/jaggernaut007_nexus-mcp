@@ -19,6 +19,9 @@ class SessionState:
     settings: Settings = field(default_factory=get_settings)
     codebase_path: Optional[Path] = None
     codebase_paths: list = field(default_factory=list)
+    # Linked repos of the project, attached read-only (see linked.py, ADR-027). A link that
+    # could not be attached stays in the list, with its `skip_reason`.
+    linked: list = field(default_factory=list)
     started_at: float = field(default_factory=time.time)
 
     # Engine references (populated during indexing)

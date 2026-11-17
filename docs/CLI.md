@@ -74,6 +74,51 @@ options:
   --project PROJECT     Project folder for project-level files (default: .)
 ```
 
+## nexus-mcp-ci link
+
+```text
+usage: nexus-mcp-ci link [-h] [--name NAME] [--refresh] [path]
+
+Link another repo to the project in the working folder. The repo keeps its own index in
+<repo>/.nexus. It is indexed now when it has no index, or one from an older version. Run this from
+the root folder that you index.
+
+positional arguments:
+  path         Folder of the repo to link
+
+options:
+  -h, --help   show this help message and exit
+  --name NAME  Name of the link (default: the folder name)
+  --refresh    Index every linked repo again, for files that changed. Takes no path
+
+See the links: `nexus-mcp-ci links`. Remove one: `nexus-mcp-ci unlink <name>`.
+```
+
+## nexus-mcp-ci unlink
+
+```text
+usage: nexus-mcp-ci unlink [-h] name
+
+Remove a link. The index of the repo stays in its .nexus folder.
+
+positional arguments:
+  name        Name of the link (see `nexus-mcp-ci links`)
+
+options:
+  -h, --help  show this help message and exit
+```
+
+## nexus-mcp-ci links
+
+```text
+usage: nexus-mcp-ci links [-h]
+
+List the repos linked to the project in the working folder, with their state.
+
+options:
+  -h, --help  show this help message and exit
+```
+
 ## nexus-mcp-ci data
 
 ```text
@@ -106,8 +151,8 @@ options:
 ### nexus-mcp-ci data clear
 
 ```text
-usage: nexus-mcp-ci data clear [-h] [--index] [--memories] [--graph] [--evals] [--clones]
-                               [--models] [--all] [--yes]
+usage: nexus-mcp-ci data clear [-h] [--index] [--memories] [--graph] [--links] [--evals]
+                               [--clones] [--models] [--all] [--yes]
                                [path]
 
 positional arguments:
@@ -118,6 +163,7 @@ options:
   --index     Delete the index
   --memories  Delete the memories
   --graph     Delete the graph
+  --links     Delete the links
   --evals     Delete the evals
   --clones    Delete the clones
   --models    Delete the models

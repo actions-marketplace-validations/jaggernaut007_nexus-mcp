@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added (linked repos, phase 2.1)
+
+- **Repo identity.** Each index stores `repo_id` (made one time, kept through reindexes),
+  `repo_name` and `extractor_version` in `index_metadata.json`. An index made before this
+  version is built again one time when it is linked.
+- **`nexus-mcp-ci link <path> [--name]`, `unlink <name>`, `links` and `link --refresh`.** Link
+  other repos to a project. Each repo keeps its own index. The links are in a user-level
+  file, `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`), outside every repo. `data where` and
+  `data clear --links` know the file. See [ADR-027](docs/adr/ADR-027-linked-repos.md).
+- **The server attaches linked stores read-only** at restore and after `index`, and `status`
+  lists each linked repo with its file count, stale flag and skip reason. No new tool and no
+  new parameter. With no link nothing changes, so the benchmark tokens and hit@1 do not move.
+  Search and graph across repos come in phases 2.2 to 2.4.
+
 ### Breaking (3.0.0)
 
 - **The default embedding model runs on the CPU with ONNX Runtime.** The default model `bge-small-en` is now the int8

@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 
 from nexus_mcp.evaluate import paths
 
-TARGETS = ("index", "memories", "graph", "evals", "clones", "models")
+TARGETS = ("index", "memories", "graph", "links", "evals", "clones", "models")
 MEMORIES_TABLE = "memories.lance"
 CHUNKS_TABLE = "chunks.lance"
 
@@ -52,6 +52,7 @@ def locations(project: Path) -> List[Dict[str, Any]]:
         ),
         ("memories", "Memories", store / "lancedb" / MEMORIES_TABLE, False),
         ("graph", "Code graph", store / "graph.db", False),
+        ("links", "Registry of linked repos (all projects)", paths.links_file(), False),
         ("evals", "Saved eval results", paths.eval_home(), False),
         ("clones", "Cloned repos for eval", paths.eval_cache(), True),
         ("models", "Embedding model (shared by all projects)", paths.model_dir(), False),
@@ -107,6 +108,7 @@ def _paths_for(project: Path, target: str) -> List[Path]:
         "index": [store / "lancedb" / CHUNKS_TABLE, store / "index_metadata.json"],
         "memories": [store / "lancedb" / MEMORIES_TABLE],
         "graph": [store / "graph.db"],
+        "links": [paths.links_file()],
         "evals": [paths.eval_home()],
         "clones": [paths.eval_cache() / "repos"],
         "models": paths.model_dirs(),

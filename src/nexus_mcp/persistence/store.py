@@ -28,7 +28,15 @@ class GraphPersistence:
     def __init__(self, db_path: str):
         self._db_path = str(db_path)
 
-    def _get_connection(self) -> sqlite3.Connection:
+    def _get_connection(self, read_only: bool = False) -> sqlite3.Connection:
+        if read_only:
+            # No pragma, no table creation, and `immutable=1` makes SQLite create no -wal or
+            # -shm file: the file and its folder are not changed. The cost: a write that
+            # runs at the same time is not seen. The graph is saved only at the end of an
+            # index or at shutdown, and a half-written file fails to load, so the link is
+            # skipped with a reason.
+            uri = f"{Path(self._db_path).resolve().as_uri()}?mode=ro&immutable=1"
+            return sqlite3.connect(uri, uri=True)
         conn = sqlite3.connect(self._db_path)
         conn.execute("PRAGMA journal_mode=WAL")
         return conn
@@ -152,14 +160,19 @@ class GraphPersistence:
         finally:
             conn.close()
 
-    def load(self) -> Optional[RustworkxCodeGraph]:
-        """Deserialize the graph from SQLite. Returns None if DB doesn't exist."""
+    def load(self, read_only: bool = False) -> Optional[RustworkxCodeGraph]:
+        """Deserialize the graph from SQLite. Returns None if DB doesn't exist.
+
+        With `read_only`, the database is opened in read-only mode and nothing is written:
+        the store of a linked repo is not changed by the server (ADR-027).
+        """
         if not Path(self._db_path).exists():
             return None
 
-        conn = self._get_connection()
+        conn = self._get_connection(read_only)
         try:
-            self._ensure_tables(conn)
+            if not read_only:
+                self._ensure_tables(conn)
 
             graph = RustworkxCodeGraph()
 
