@@ -61,6 +61,8 @@ EXTENSION_MAP: Dict[str, str] = {
     ".scala": "scala",
     # Lua (ast-grep only)
     ".lua": "lua",
+    # SQL (no grammar: parsing/sql_boundaries.py reads tables and views for the graph)
+    ".sql": "sql",
     # Dart (no parser: ast-grep-py ships no Dart grammar)
     ".dart": "dart",
 }
@@ -78,7 +80,7 @@ TREESITTER_GRAMMARS: Dict[str, str] = {"csharp": "c_sharp"}
 ASTGREP_LANGUAGES = {
     "python", "javascript", "typescript", "c", "cpp",
     "go", "java", "kotlin", "rust", "ruby", "php",
-    "swift", "csharp", "scala", "lua", "dart",
+    "swift", "csharp", "scala", "lua", "dart", "sql",
 }
 
 # Tree-sitter AST node type configurations per language

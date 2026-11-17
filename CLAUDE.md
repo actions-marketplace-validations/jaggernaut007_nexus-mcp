@@ -44,6 +44,7 @@ repo to read the skill content directly.
   - Python and JS/TS files have a `<top-level>` node for the calls outside every function. A function that is a bound value (`const f = () => {}`, a class field, a named object member, a default export, an assigned lambda) is a node. An anonymous callback is not: its calls belong to the function that holds it (ADR-019).
   - A receiver named like an imported module file (`cart.add_item()` after `from cart import Cart`) gets no edge (BACKLOG).
   - `nexus-mcp-ci check` compares a git diff with these edges (ADR-025); it is also a lower bound.
+  - **Boundary edges** (ADR-026) join the users of a route (`fetch`, `axios`, `requests`, a test client), an edge function (`functions.invoke`) or a table (`.from`, `.table`) to the code that provides it, with `DEPENDS_ON` edges. `graph` lists them as `boundary_callers`. A computed URL, `supabase.rpc`, an ORM query, a Next.js file route and a key with two providers give no edge.
   - `analyze` complexity is cyclomatic and approximate. Only Python counts `and`/`or`, and only Python functions carry docstrings.
 - **The call graph only sees static edges.** `graph()` is built from
   parsing, not runtime tracing. It will **miss**: dynamic dispatch (Python monkey-patching, Ruby
@@ -89,6 +90,8 @@ src/nexus_mcp/
 ├── parsing/
 │   ├── treesitter_parser.py   # Symbol extraction → embeddings
 │   ├── astgrep_parser.py      # Structural analysis → graph
+│   ├── boundaries.py          # Route, edge function and table facts of a file (ADR-026)
+│   ├── sql_boundaries.py      # `.sql` tables and views for the graph, no grammar (ADR-026)
 │   ├── language_registry.py   # Merged language support (25+ langs)
 │   └── file_watcher.py        # Debounced watchdog
 ├── engines/
@@ -105,6 +108,7 @@ src/nexus_mcp/
 │   ├── embedding_service.py   # Embeddings: bge-small-en (jina-code deprecated); GPU/MPS
 │   ├── parallel_indexer.py    # ThreadPool
 │   ├── call_resolver.py       # CALLS edges from callee names, after the last parse batch (ADR-019)
+│   ├── boundary_resolver.py   # DEPENDS_ON edges: route, edge function and table users to providers (ADR-026)
 │   ├── pipeline.py            # discover → parse → chunk → embed → store + corrupt index detection + multi-folder
 │   └── chunker.py             # Symbol → CodeChunk
 ├── formatting/
@@ -117,7 +121,7 @@ src/nexus_mcp/
 │   └── audit.py           # Audit logging with correlation IDs + field redaction
 └── persistence/
 │   └── store.py               # SQLite graph persistence
-└── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021), `index`, `check` (ADR-025)
+└── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021), `index`, `check` (ADR-025, ADR-026)
 benchmarks/                # Token-efficiency benchmark harness (ADR-018)
 evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1), impact/ (does `check` name what a change breaks); docs/EVALS.md
 self_test/
@@ -170,6 +174,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 - Adopter evaluation in the package (`eval`), ground truth from the parser — [ADR-020](docs/adr/ADR-020-adopter-evaluation.md)
 - One source for published numbers; opt-in sharing, no telemetry — [ADR-021](docs/adr/ADR-021-results-publishing-and-sharing.md)
 - Server lifecycle: idle timeout (3 h), orphan exit, `os._exit` after a bounded cleanup — [ADR-022](docs/adr/ADR-022-server-lifecycle-and-exit.md)
+- Boundary edges: routes, edge functions and SQL tables join code with no call between them — [ADR-026](docs/adr/ADR-026-boundary-edges.md)
 - MIT licence, commercial licence key removed again — [ADR-023](docs/adr/ADR-023-commercial-licence-check.md) (superseded by [ADR-024](docs/adr/ADR-024-mit-licence.md))
 
 ## Gotchas

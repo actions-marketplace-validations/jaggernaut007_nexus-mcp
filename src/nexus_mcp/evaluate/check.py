@@ -35,6 +35,8 @@ from nexus_mcp.core.graph_models import (
 )
 from nexus_mcp.core.keys import natural_keys, relative_path
 from nexus_mcp.engines.fusion import is_test_path
+from nexus_mcp.indexing.boundary_resolver import edge_function_name
+from nexus_mcp.parsing.boundaries import KIND_FUNCTION
 
 logger = logging.getLogger(__name__)
 
@@ -44,6 +46,7 @@ MAX_STALE_FILES = 200
 MAX_REFERENCE_SYMBOLS = 20
 MAX_TRANSITIVE_PER_SYMBOL = 20
 MAX_AFFECTED_TESTS = 40
+MAX_BOUNDARY_USERS_FOR_TESTS = 50
 MIN_REFERENCE_NAME = 4
 _HUNK = re.compile(r"^@@ -(\d+)(?:,(\d+))? \+(\d+)(?:,(\d+))? @@")
 _GIT_TIMEOUT_S = 60
@@ -99,7 +102,9 @@ class ChangedSymbol:
 @dataclass
 class Finding:
     severity: str
-    kind: str  # untouched_caller, caller_lines_unchanged, transitive_caller, reference_untouched
+    # untouched_caller, caller_lines_unchanged, transitive_caller, reference_untouched,
+    # boundary_untouched, boundary_lines_unchanged
+    kind: str
     symbol: str  # the key of the changed symbol
     name: str
     caller: str  # the key of the caller, or the file for a reference
@@ -233,7 +238,10 @@ def _file_nodes(graph: Any, abs_path: str) -> List[UniversalNode]:
 def innermost(nodes: Sequence[UniversalNode], line: int) -> Optional[UniversalNode]:
     """The smallest node that holds `line`. The `<top-level>` node counts only when no
     other node does, because it spans the whole file."""
-    holders = [n for n in nodes if n.location.start_line <= line <= n.location.end_line]
+    holders = [
+        n for n in nodes
+        if n.metadata.get("decorated_from", n.location.start_line) <= line <= n.location.end_line
+    ]
     real = [n for n in holders if not is_module_body(n)]
     pool = real or holders
     if not pool:
@@ -480,7 +488,10 @@ def changed_symbols(views: Views, diffs: List[FileDiff]) -> Tuple[List[ChangedSy
             else:
                 status = "added"
             sig = False
-            if status == "modified" and node.node_type == NodeType.FUNCTION:
+            if (
+                status == "modified" and node.node_type == NodeType.FUNCTION
+                and not is_module_body(node)
+            ):
                 old_text = _node_text(
                     _text_lines(views, "before", abs_path), before_by_key[key]
                 )
@@ -530,7 +541,7 @@ def analyze(
     seen: Set[Tuple[str, str, str]] = set()
     test_files: Set[str] = set()
     impacted_total = 0
-    edge_types = {RelationshipType.CALLS, RelationshipType.USES}
+    edge_types = {RelationshipType.CALLS, RelationshipType.USES, RelationshipType.DEPENDS_ON}
 
     def add(finding: Finding) -> None:
         marker = (finding.kind, finding.symbol, finding.caller)
@@ -587,6 +598,9 @@ def analyze(
                 reason=f"depends on `{symbol.name}`, which {why}, through a chain of calls",
             ))
 
+    _add_boundary_findings(
+        views, symbols, by_key_before, diff_files, key_of, test_files, add, depth, edge_types
+    )
     _add_reference_findings(views, symbols, diff_files, seen, test_files, add)
 
     findings.sort(key=lambda f: (-SEVERITY_RANK[f.severity], f.file, f.line, f.kind))
@@ -599,6 +613,127 @@ def analyze(
         "truncated": len(findings) > max_findings,
     }
     return findings[:max_findings], sorted(test_files)[:MAX_AFFECTED_TESTS], stats
+
+
+def _provided_keys(node: UniversalNode) -> Set[Tuple[str, str]]:
+    """The (kind, key) pairs that a node serves, defines or alters (ADR-026)."""
+    keys: Set[Tuple[str, str]] = set()
+    for field_name in ("boundary_serves", "boundary_defines", "boundary_touches"):
+        for fact in node.metadata.get(field_name, ()):
+            keys.add((fact["kind"], fact["key"]))
+    if node.node_type == NodeType.FUNCTION and (
+        is_module_body(node) or node.metadata.get("export") == "default"
+    ):
+        name = edge_function_name(node.location.file_path)
+        if name:
+            keys.add((KIND_FUNCTION, name))
+    return keys
+
+
+def _boundary_consumers(graph: Any) -> Tuple[
+    Dict[Tuple[str, str], List[UniversalNode]], Dict[str, List[Tuple[UniversalNode, str, str]]]
+]:
+    """Who uses each key, and who reaches each node through a boundary edge (before graph)."""
+    by_key: Dict[Tuple[str, str], List[UniversalNode]] = defaultdict(list)
+    for node in graph.nodes.values():
+        if node.node_type != NodeType.FUNCTION:
+            continue
+        for fact in node.metadata.get("boundary_uses", ()):
+            by_key[(fact["kind"], fact["key"])].append(node)
+    by_target: Dict[str, List[Tuple[UniversalNode, str, str]]] = defaultdict(list)
+    for rel in graph.get_relationships_by_type(RelationshipType.DEPENDS_ON):
+        source = graph.nodes.get(rel.source_id)
+        if source is not None:
+            by_target[rel.target_id].append(
+                (source, rel.metadata.get("boundary", ""), rel.metadata.get("key", ""))
+            )
+    return by_key, by_target
+
+
+def _add_boundary_findings(
+    views: Views, symbols: List[ChangedSymbol], by_key_before: Dict[str, UniversalNode],
+    diff_files: Set[str], key_of: Callable[[Any, str, UniversalNode], str],
+    test_files: Set[str], add_to: Callable[[Finding], None], depth: int,
+    edge_types: Set[RelationshipType],
+) -> None:
+    """Users of a route, an edge function or a table whose provider the diff changed.
+
+    A boundary has no call edge in the code, so the findings come from the boundary
+    facts (ADR-026). A change is `high` when the provider is gone, serves other keys, drops
+    columns, or drops or renames part of a table. Otherwise it is `medium`.
+    """
+    root = str(views.root)
+    changed_keys = {s.key for s in symbols}
+    by_key, by_target = _boundary_consumers(views.before)
+    listed_users = 0
+    for symbol in symbols:
+        abs_path = str(views.root / symbol.file)
+        before = by_key_before.get(symbol.key)
+        after = None
+        if symbol.status != "removed":
+            keys = natural_keys(_file_nodes(views.after, abs_path), root)
+            after = next((n for n in _file_nodes(views.after, abs_path)
+                          if keys.get(n.id) == symbol.key), None)
+        node = before or after
+        if node is None:
+            continue
+        touches = (after or node).metadata.get("boundary_touches", ())
+        if symbol.status == "added" and not touches:
+            continue  # a new provider has no user yet
+        before_keys = _provided_keys(before) if before else set()
+        after_keys = _provided_keys(after) if after else set()
+        lost = before_keys - after_keys
+        destructive = any(t.get("destructive") for t in touches)
+        columns_lost = (
+            sorted(set(before.metadata.get("columns", ())) - set(after.metadata.get("columns", ())))
+            if before and after else []
+        )
+        risk = (
+            "high" if symbol.status == "removed" or symbol.signature_changed or lost
+            or destructive or columns_lost else "medium"
+        )
+        why = (
+            "was removed" if symbol.status == "removed"
+            else "no longer serves it" if lost
+            else f"lost the columns {', '.join(columns_lost)}" if columns_lost
+            else "is dropped or renamed" if destructive
+            else "changed its parameters or return type" if symbol.signature_changed
+            else "changed"
+        )
+        found: Dict[str, Tuple[UniversalNode, str, str]] = {}
+        if before is not None:
+            for user, kind, key in by_target.get(before.id, ()):
+                found.setdefault(user.id, (user, kind, key))
+        for kind, key in before_keys | _provided_keys(node):
+            for user in by_key.get((kind, key), ()):
+                found.setdefault(user.id, (user, kind, key))
+        for user, kind, key in found.values():
+            user_key = key_of(views.before, "before", user)
+            if user_key == symbol.key or user_key in changed_keys:
+                continue
+            rel = relative_path(user.location.file_path, root)
+            same_file_changed = rel in diff_files
+            if is_test_path(rel):
+                test_files.add(rel)
+            if listed_users < MAX_BOUNDARY_USERS_FOR_TESTS:
+                listed_users += 1
+                for caller in views.before.get_transitive_callers(
+                    user.id, max_depth=max(depth, 1), edge_types=edge_types
+                ):
+                    caller_rel = relative_path(caller.location.file_path, root)
+                    if is_test_path(caller_rel):
+                        test_files.add(caller_rel)
+            add_to(Finding(
+                severity=risk,
+                kind="boundary_lines_unchanged" if same_file_changed else "boundary_untouched",
+                symbol=symbol.key, name=symbol.name, caller=user_key, file=rel,
+                line=user.location.start_line,
+                reason=(
+                    f"uses the {kind} `{key}`, which `{symbol.name}` serves and {why}; "
+                    + ("its file is in the diff, but this function is not"
+                       if same_file_changed else "its file is not in the diff")
+                ),
+            ))
 
 
 def _add_reference_findings(

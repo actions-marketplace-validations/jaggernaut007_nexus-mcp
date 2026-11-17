@@ -17,8 +17,27 @@ All notable changes to this project will be documented in this file.
   TypeScript 1.000). The misses stay in the set: a computed `getattr` name, and a method
   call whose receiver has the name of an imported module file (no edge; precision first).
 
+- **Boundary edges** ([ADR-026](docs/adr/ADR-026-boundary-edges.md)): `DEPENDS_ON` edges from
+  the code that uses a route (`fetch`, `axios`, `requests`, a test client), an edge function
+  (`supabase.functions.invoke`) or a SQL table (`.from`, `.table`) to the code that provides
+  it. Providers: Python route decorators, Express-style `app.post("/x", handler)`,
+  `supabase/functions/<name>/index.ts`, and `create table` or `create view` in `.sql` files
+  (read without a grammar; no search chunks). `check` reports `boundary_untouched` (`high` for a
+  removed provider, a changed key or signature, dropped columns or a destructive `alter`);
+  `graph` lists `boundary_callers` when users exist, and `transitive=true` follows them.
+  A changed decorator line now maps to its function.
+- **Boundary breakage set** (`python -m evals.impact.run --cases evals/impact/boundary_cases.yaml`):
+  6 cases. Recall 0.889, precision 1.000, tests recall 1.000; with the boundary findings off the
+  same set gives recall 0.000. The miss stays in the set: a computed URL (`BASE + "/orders"`).
+  `cases.yaml` is unchanged (recall 0.867, precision 1.000).
+
 ### Changed
 
+- **Boundary edges, offline numbers.** hit@1 (`bge-small-en`, `hybrid-exact`): `shop_repo` 0.750
+  to 0.750. `nexus_mcp` 17 of 24 to 16 of 24, because the new module `parsing/boundaries.py`
+  outranks `call_resolver.py` for one query ("connect each call site to the function that it
+  invokes"); the new code on the old corpus gives 17 of 24, so ranking did not change. Live
+  cost and wall time were not run. Fast suite: 1,856 passed.
 - **More functions and edges for Python and JS/TS.** Graph nodes and search symbols for
   `export const f = () => {}`, function expressions, class-field arrows, members of a named
   top-level object, `module.exports.x = ...`, `X.prototype.y = ...`, default exports (named

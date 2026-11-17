@@ -568,6 +568,9 @@ def resolve_calls(graph: RustworkxCodeGraph) -> int:
                     if graph.add_relationship(rel) is not None:
                         added += 1
         resolve_fixtures(graph)
+        from nexus_mcp.indexing.boundary_resolver import resolve_boundaries
+
+        resolve_boundaries(graph, index)
     logger.info("Resolved %d call edges from %d callers", added, len(callers))
     return added
 

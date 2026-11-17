@@ -36,7 +36,11 @@ from nexus_mcp.persistence.store import GraphPersistence
 CASES = Path(__file__).with_name("cases.yaml")
 _GIT = ["git", "-c", "user.name=impact", "-c", "user.email=impact@example.com"]
 # What counts as a claim that something was left behind.
-CLAIM_KINDS = ("untouched_caller", "caller_lines_unchanged", "reference_untouched")
+CLAIM_KINDS = (
+    "untouched_caller", "caller_lines_unchanged", "boundary_untouched",
+    "boundary_lines_unchanged", "reference_untouched",
+)
+KEY_CLAIM_KINDS = CLAIM_KINDS[:4]
 
 
 def _git(repo: Path, *args: str) -> None:
@@ -83,7 +87,7 @@ def run_case(case: Dict[str, Any], workdir: Path) -> Dict[str, Any]:
     unseen: Set[str] = set(case.get("breaks_unseen", []))
     expected_tests: Set[str] = set(case.get("tests", []))
 
-    named_keys = {f.caller for f in report.findings if f.kind in CLAIM_KINDS[:2]}
+    named_keys = {f.caller for f in report.findings if f.kind in KEY_CLAIM_KINDS}
     named_files = {f.file for f in report.findings if f.kind == "reference_untouched"}
     found = (expected_keys & named_keys) | (expected_files & named_files)
     expected = len(expected_keys) + len(expected_files) + len(unseen)

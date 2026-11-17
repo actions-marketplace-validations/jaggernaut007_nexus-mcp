@@ -27,7 +27,12 @@ Plan: Python and JS/TS function coverage, then a post-change check. Decisions: A
   (0.625 to 0.750) or `nexus_mcp` (0.625 to 0.750, corpus differs).
 - [ ] **Owner:** live benchmark run for cost and wall time before and after (Phase 1 changes
   `graph` results). Not run: it costs money.
-- [ ] Phase 3: boundary edges (`functions.invoke`, routes, `.from('table')` to SQL).
+- [x] Phase 3: boundary edges (`functions.invoke`, routes, `.from('table')` to SQL), ADR-026.
+  `check` reports `boundary_untouched`; `graph` lists `boundary_callers`. Boundary set
+  `evals/impact/boundary_cases.yaml`: recall 0.889, precision 1.000 (0.000 recall before).
+  Fast suite 1,856 passed. Self-suite hit@1 (hybrid-exact) 17/24 to 16/24: the new module
+  `parsing/boundaries.py` outranks `call_resolver.py` for one query; the new code on the old
+  corpus gives 17/24 and `shop_repo` is unchanged (0.750).
 - [ ] Phase 4: change-context in results, pre-edit hook and skill in `plugin/`.
 - [ ] Phase 5: change-safety benchmark.
 - [ ] Fix the receiver-named-like-a-module gap (BACKLOG).

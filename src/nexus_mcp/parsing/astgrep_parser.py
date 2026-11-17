@@ -11,7 +11,7 @@ import re
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 try:
     from ast_grep_py import SgRoot  # type: ignore[import-untyped]
@@ -27,10 +27,16 @@ from nexus_mcp.core.graph_models import (
     UniversalNode,
     UniversalRelationship,
 )
+from nexus_mcp.parsing.boundaries import (
+    KIND_TABLE,
+    collect_facts,
+    python_route_serves,
+)
 from nexus_mcp.parsing.language_registry import (
     ASTGREP_LANGUAGES,
     get_language_for_file,
 )
+from nexus_mcp.parsing.sql_boundaries import sql_statements
 from nexus_mcp.parsing.treesitter_parser import (
     c_declarator_name,
     is_cpp_header,
@@ -440,7 +446,7 @@ class AstGrepParser:
         language = get_language_for_file(filepath)
         if language is None or language not in ASTGREP_LANGUAGES:
             return 0
-        if not ASTGREP_LANG_IDS.get(language):
+        if not ASTGREP_LANG_IDS.get(language) and language != "sql":
             return 0
 
         try:
@@ -462,6 +468,8 @@ class AstGrepParser:
         if language is None or language not in ASTGREP_LANGUAGES:
             return 0
 
+        if language == "sql":
+            return self._parse_sql(content, filepath, graph)
         ast_grep_id = ASTGREP_LANG_IDS.get(language)
         if not ast_grep_id:
             return 0
@@ -527,6 +535,49 @@ class AstGrepParser:
         self._extract_imports(sg_node, filepath, language, module_id, graph)
 
         return nodes_added
+
+    def _parse_sql(self, content: str, filepath: str, graph: UniversalGraph) -> int:
+        """A module node and one node per create, alter or drop of a table or view.
+
+        The node is a `CLASS` named after the table. `boundary_defines` marks the `create`
+        statement as the provider of the table for `.from("name")` (ADR-026);
+        `boundary_touches` marks an `alter` or a `drop`.
+        """
+        lines = content.count("\n") + 1
+        module_id = self._make_id("module")
+        graph.add_node(UniversalNode(
+            id=module_id, name=Path(filepath).stem, node_type=NodeType.MODULE,
+            location=UniversalLocation(
+                file_path=str(filepath), start_line=1, end_line=lines, language="sql",
+            ),
+            language="sql", line_count=lines,
+        ))
+        added = 1
+        for statement in sql_statements(content):
+            key = {"kind": KIND_TABLE, "key": statement["name"]}
+            meta: Dict[str, Any] = {"sql": statement["action"], "sql_object": statement["what"]}
+            if statement["action"] == "create":
+                meta["boundary_defines"] = [key]
+                meta["columns"] = statement.get("columns", [])
+            else:
+                meta["boundary_touches"] = [{**key, "destructive": statement["destructive"]}]
+            node_id = self._make_id("table")
+            graph.add_node(UniversalNode(
+                id=node_id, name=statement["name"], node_type=NodeType.CLASS,
+                location=UniversalLocation(
+                    file_path=str(filepath), start_line=statement["start_line"],
+                    end_line=statement["end_line"], language="sql",
+                ),
+                language="sql",
+                line_count=statement["end_line"] - statement["start_line"] + 1,
+                metadata=meta,
+            ))
+            graph.add_relationship(UniversalRelationship(
+                id=self._make_rel_id(), source_id=module_id, target_id=node_id,
+                relationship_type=RelationshipType.CONTAINS,
+            ))
+            added += 1
+        return added
 
     def parse_directory(
         self, directory: Path, graph: UniversalGraph, recursive: bool = True
@@ -627,6 +678,10 @@ class AstGrepParser:
                 if extra.get("object_literal"):
                     metadata["parent_class"] = self._object_literal_owner(match)
                 metadata.update(extra)
+                if span_node is not match:
+                    # The decorators sit above the `def` line. The check maps a changed
+                    # decorator line to this function.
+                    metadata["decorated_from"] = span.start.line + 1
                 self._add_function_node(
                     func_name, match.range(), match, filepath, language, module_id,
                     graph, metadata,
@@ -911,6 +966,10 @@ class AstGrepParser:
         if not loose:
             return 0
         calls = sorted(loose, key=loose.__getitem__)[:MAX_CALLS_PER_FUNCTION]
+        meta: Dict[str, Any] = {"calls": calls, "module_body": True}
+        self._add_boundary_facts(
+            meta, sg_node, language, include=lambda index: not inside_a_function(index)
+        )
         func_id = self._make_id("func")
         graph.add_node(UniversalNode(
             id=func_id,
@@ -921,7 +980,7 @@ class AstGrepParser:
             ),
             language=language,
             line_count=max(lines, 1),
-            metadata={"calls": calls, "module_body": True},
+            metadata=meta,
         ))
         graph.add_relationship(UniversalRelationship(
             id=self._make_rel_id(),
@@ -998,6 +1057,7 @@ class AstGrepParser:
                 params = self._py_param_names(match)
                 if params:
                     meta["params"] = params  # a test names its fixtures by parameter
+        self._add_boundary_facts(meta, match, language)
         if calls:
             meta["calls"] = calls
             if language == "cpp":
@@ -1014,6 +1074,20 @@ class AstGrepParser:
         if parent:
             meta["parent_class"] = parent
         return meta
+
+    @staticmethod
+    def _add_boundary_facts(
+        meta: Dict[str, Any], sg_node, language: str,
+        include: Optional[Callable[[int], bool]] = None,
+    ) -> None:
+        """Store the boundaries that the code of `sg_node` uses or serves (ADR-026)."""
+        uses, serves = collect_facts(sg_node, language, include)
+        if language == "python" and sg_node.kind() == "function_definition":
+            serves = python_route_serves(sg_node) + serves
+        if uses:
+            meta["boundary_uses"] = uses
+        if serves:
+            meta["boundary_serves"] = serves
 
     @staticmethod
     def _py_decorators(match) -> List[str]:

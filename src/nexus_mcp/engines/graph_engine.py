@@ -6,7 +6,7 @@ Ported from code-graph-mcp. Thread-safe graph with advanced algorithms.
 import logging
 import threading
 from collections import defaultdict
-from typing import Any, Collection, Dict, List, Optional, Set
+from typing import Any, Collection, Dict, List, Optional, Set, Tuple
 
 import rustworkx as rx
 
@@ -130,6 +130,29 @@ class RustworkxCodeGraph:
         """Get nodes that call the given node (predecessors via CALLS edges)."""
         with self._lock:
             return self._get_callers_unlocked(node_id)
+
+    def get_boundary_users(self, node_id: str) -> List[Tuple[UniversalNode, str, str]]:
+        """Nodes that reach `node_id` through a boundary edge (ADR-026), as (node, kind, key).
+
+        A boundary is a route, an edge function or a table. The user has no call to the
+        provider in its code, so `get_callers` does not list it.
+        """
+        with self._lock:
+            idx = self._id_to_index.get(node_id)
+            if idx is None:
+                return []
+            users: List[Tuple[UniversalNode, str, str]] = []
+            for pred_idx in self.graph.predecessor_indices(idx):
+                pred_id = self._index_to_id.get(pred_idx)
+                rel = self.relationships.get(self.graph.get_edge_data(pred_idx, idx))
+                if pred_id in self.nodes and rel is not None and (
+                    rel.relationship_type == RelationshipType.DEPENDS_ON
+                ):
+                    users.append((
+                        self.nodes[pred_id],
+                        rel.metadata.get("boundary", ""), rel.metadata.get("key", ""),
+                    ))
+            return users
 
     def _get_callees_unlocked(self, node_id: str) -> List[UniversalNode]:
         """Get callees without acquiring lock. Caller must hold self._lock."""

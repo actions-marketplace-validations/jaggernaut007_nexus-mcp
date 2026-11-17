@@ -256,6 +256,12 @@ class TreeSitterParser(IParser):
                 parse_time=time.time() - start_time,
             )
 
+        if language == "sql":
+            # No grammar and no symbols: `parsing/sql_boundaries.py` reads SQL for the graph.
+            return ParsedFile(
+                filepath=str(filepath), language=language, parse_time=time.time() - start_time,
+            )
+
         file_size_mb = file_path.stat().st_size / (1024 * 1024)
         if file_size_mb > self.MAX_FILE_SIZE_MB:
             logger.warning("Large file (%.2fMB): %s", file_size_mb, filepath)
