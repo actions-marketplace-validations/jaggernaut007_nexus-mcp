@@ -6,7 +6,7 @@ Ported from code-graph-mcp. Thread-safe graph with advanced algorithms.
 import logging
 import threading
 from collections import defaultdict
-from typing import Any, Dict, List, Optional, Set
+from typing import Any, Collection, Dict, List, Optional, Set
 
 import rustworkx as rx
 
@@ -18,6 +18,8 @@ from nexus_mcp.core.graph_models import (
 )
 
 logger = logging.getLogger(__name__)
+
+_CALLS_ONLY = frozenset({RelationshipType.CALLS})
 
 
 class RustworkxCodeGraph:
@@ -101,11 +103,18 @@ class RustworkxCodeGraph:
             name_lower = name.lower()
             return [n for n in self.nodes.values() if name_lower in n.name.lower()]
 
-    def _get_callers_unlocked(self, node_id: str) -> List[UniversalNode]:
-        """Get callers without acquiring lock. Caller must hold self._lock."""
+    def _get_callers_unlocked(
+        self, node_id: str, edge_types: Optional[Collection[RelationshipType]] = None
+    ) -> List[UniversalNode]:
+        """Get callers without acquiring lock. Caller must hold self._lock.
+
+        `edge_types` defaults to CALLS only. Impact analysis of a change also follows USES
+        (a pytest test that names a fixture by parameter).
+        """
         idx = self._id_to_index.get(node_id)
         if idx is None:
             return []
+        wanted = edge_types if edge_types is not None else _CALLS_ONLY
         callers = []
         for pred_idx in self.graph.predecessor_indices(idx):
             pred_id = self._index_to_id.get(pred_idx)
@@ -113,7 +122,7 @@ class RustworkxCodeGraph:
                 edge_data = self.graph.get_edge_data(pred_idx, idx)
                 if edge_data and edge_data in self.relationships:
                     rel = self.relationships[edge_data]
-                    if rel.relationship_type == RelationshipType.CALLS:
+                    if rel.relationship_type in wanted:
                         callers.append(self.nodes[pred_id])
         return callers
 
@@ -169,8 +178,14 @@ class RustworkxCodeGraph:
                     result.append(self.nodes[succ_id])
             return result
 
-    def get_transitive_callers(self, node_id: str, max_depth: int = 10) -> List[UniversalNode]:
-        """Get transitive closure of callers (for impact analysis)."""
+    def get_transitive_callers(
+        self, node_id: str, max_depth: int = 10,
+        edge_types: Optional[Collection[RelationshipType]] = None,
+    ) -> List[UniversalNode]:
+        """Get transitive closure of callers (for impact analysis).
+
+        Follows CALLS edges, or the `edge_types` given.
+        """
         with self._lock:
             visited: Set[str] = set()
             result: List[UniversalNode] = []
@@ -183,7 +198,7 @@ class RustworkxCodeGraph:
                     if nid in visited:
                         continue
                     visited.add(nid)
-                    callers = self._get_callers_unlocked(nid)
+                    callers = self._get_callers_unlocked(nid, edge_types)
                     for caller in callers:
                         if caller.id not in visited:
                             result.append(caller)

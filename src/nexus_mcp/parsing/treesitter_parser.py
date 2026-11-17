@@ -24,6 +24,35 @@ from nexus_mcp.parsing.language_registry import (
 
 logger = logging.getLogger(__name__)
 
+# JS/TS values that are functions. One bound to a name is a symbol (the graph parser gives
+# it a node under the same rules); an anonymous one, and one inside another function, is not.
+_JS_FUNCTION_VALUES = frozenset({
+    "arrow_function", "function_expression", "function", "generator_function",
+})
+_JS_FUNCTION_LIKE = _JS_FUNCTION_VALUES | {
+    "function_declaration", "method_definition", "generator_function_declaration",
+}
+_JS_VALUE_WRAPPERS = frozenset({
+    "parenthesized_expression", "as_expression", "satisfies_expression",
+    "non_null_expression", "type_assertion",
+})
+_PY_FUNCTION_LIKE = frozenset({"function_definition", "lambda"})
+_EXPORTS_TARGET = re.compile(r"^(?:module\.)?exports\.([A-Za-z_$][\w$]*)$")
+_PROTOTYPE_TARGET = re.compile(r"^([A-Za-z_$][\w$]*)\.prototype\.([A-Za-z_$][\w$]*)$")
+
+
+def default_export_name(filepath: str) -> str:
+    """The name of an unnamed default export: its file, or its folder for `index`.
+
+    `supabase/functions/send-email/index.ts` is `send-email`, the name that a Supabase
+    caller uses. `pricing.ts` is `pricing`.
+    """
+    path = Path(str(filepath).replace("\\", "/"))
+    if path.stem == "index" and path.parent.name:
+        return path.parent.name
+    return path.stem or "default"
+
+
 # A `.h` file with one of these is a C++ header. Chromium and most C++ projects use `.h`.
 _CPP_HEADER_MARKERS = re.compile(
     rb"^[ \t]*(?:namespace\b|template\s*<|class\s+\w|(?:public|private|protected)\s*:)"
@@ -252,7 +281,7 @@ class TreeSitterParser(IParser):
             language = "cpp"
 
         try:
-            parser = self._get_parser(language)
+            parser = self._get_parser(language, filepath)
             config = get_config_for_language(language)
         except Exception as e:  # pragma: no cover
             return ParsedFile(
@@ -308,10 +337,13 @@ class TreeSitterParser(IParser):
                 return False
             return (text_chars / len(sample)) < 0.7
 
-    def _get_parser(self, language: str):
-        if language not in self._parsers:
-            self._parsers[language] = get_parser(TREESITTER_GRAMMARS.get(language, language))
-        return self._parsers[language]
+    def _get_parser(self, language: str, filepath: str = ""):
+        grammar = TREESITTER_GRAMMARS.get(language, language)
+        if language == "typescript" and str(filepath).lower().endswith(".tsx"):
+            grammar = "tsx"  # the typescript grammar cannot read JSX
+        if grammar not in self._parsers:
+            self._parsers[grammar] = get_parser(grammar)
+        return self._parsers[grammar]
 
     def _extract_symbols(
         self, root_node, content: bytes, filepath: str, language: str, config: Dict
@@ -337,6 +369,16 @@ class TreeSitterParser(IParser):
                     class_stack.append(scope)
                     current_class = scope
                     opened_class = True
+
+            elif self._is_bound_function_candidate(node, language):
+                # An arrow function or function expression is a symbol only when it is
+                # bound to a name. The generic method branch below would name an
+                # anonymous callback inside a class after its first parameter.
+                sym = self._bound_function_symbol(
+                    node, content, filepath, language, config, current_class
+                )
+                if sym:
+                    symbols.append(sym)
 
             elif node_type in class_types:
                 # A C++ class nested in another has the outer class as parent, so it is
@@ -522,6 +564,164 @@ class TreeSitterParser(IParser):
             imports=tuple(self._extract_imports_from_node(node, content, config)),
             calls=tuple(self._extract_calls_from_node(node, content, config)),
         )
+
+    @staticmethod
+    def _is_bound_function_candidate(node, language: str) -> bool:
+        """A function value (JS/TS), an object-literal method, or a Python lambda.
+
+        True means: this node is handled by _bound_function_symbol, which may give no
+        symbol (an anonymous callback). Declarations (`function f() {}`) and class
+        methods are not candidates; the generic branches take them.
+        """
+        if language in ("javascript", "typescript"):
+            if node.type in _JS_FUNCTION_VALUES:
+                return True
+            parent = node.parent
+            return node.type == "method_definition" and parent is not None and (
+                parent.type == "object"
+            )
+        return language == "python" and node.type == "lambda"
+
+    def _bound_function_symbol(
+        self, node, content: bytes, filepath: str, language: str, config: Dict,
+        current_class: Optional[str],
+    ) -> Optional[Symbol]:
+        """The symbol of a function that is a value bound to a name, else None.
+
+        The naming rules are the ones of AstGrepParser._js_binding: `const f = () => {}`,
+        a class field, a member of a named top-level object, `module.exports.x = ...`,
+        `X.prototype.y = ...` and `export default <anonymous function>`. A Python lambda
+        counts when it is assigned to a name at module or class level. A function inside
+        another function gets no symbol; its calls belong to the outer one.
+        """
+        like = _PY_FUNCTION_LIKE if language == "python" else _JS_FUNCTION_LIKE
+        ancestor = node.parent
+        while ancestor is not None:
+            if ancestor.type in like:
+                return None
+            ancestor = ancestor.parent
+        if language == "python":
+            bound = self._py_lambda_binding(node, content)
+        else:
+            bound = self._js_binding(node, content, filepath)
+        if bound is None:
+            return None
+        name, statement, parent_class = bound
+        if parent_class is None and current_class and language == "python":
+            parent_class = current_class
+        return Symbol(
+            name=name,
+            type=SymbolType.METHOD if parent_class else SymbolType.FUNCTION,
+            filepath=filepath,
+            line_start=statement.start_point[0] + 1,
+            line_end=statement.end_point[0] + 1,
+            language=language,
+            signature=self._get_node_text(statement, content).split("\n")[0].strip(),
+            docstring=self._extract_docstring(statement, content, config),
+            parent=parent_class,
+            code_snippet=self._get_code_snippet(statement, content),
+            imports=tuple(self._extract_imports_from_node(node, content, config)),
+            calls=tuple(self._extract_calls_from_node(node, content, config)),
+        )
+
+    def _py_lambda_binding(self, node, content: bytes):
+        """(name, statement, None) for `name = lambda ...`, else None."""
+        parent = node.parent
+        if parent is None or parent.type != "assignment":
+            return None
+        left, right = parent.child_by_field_name("left"), parent.child_by_field_name("right")
+        if left is None or right is None or left.type != "identifier":
+            return None
+        if right.start_byte != node.start_byte:
+            return None
+        statement = parent.parent
+        if statement is None or statement.type != "expression_statement":
+            statement = parent
+        return self._get_node_text(left, content), statement, None
+
+    def _js_binding(self, node, content: bytes, filepath: str):
+        """(name, statement node, parent class or None) for a JS/TS function value."""
+        text = lambda n: self._get_node_text(n, content)  # noqa: E731
+        if node.type == "method_definition":  # a member of an object literal
+            owner = self._object_owner(node.parent, content)
+            name = node.child_by_field_name("name")
+            if owner is None or name is None:
+                return None
+            return text(name).strip("'\""), node, owner
+        value, parent = node, node.parent
+        while parent is not None and parent.type in _JS_VALUE_WRAPPERS:
+            value, parent = parent, parent.parent
+        if parent is None:
+            return None
+
+        def holds(field: str) -> bool:
+            held = parent.child_by_field_name(field)
+            return held is not None and held.start_byte == value.start_byte
+
+        kind = parent.type
+        if kind == "variable_declarator" and holds("value"):
+            name = parent.child_by_field_name("name")
+            if name is None or name.type != "identifier":
+                return None
+            statement = parent.parent or parent
+            outer = statement.parent
+            if outer is not None and outer.type == "export_statement":
+                statement = outer
+            return text(name), statement, None
+        if kind in ("public_field_definition", "field_definition"):
+            name = parent.child_by_field_name("name") or parent.child_by_field_name("property")
+            owner = self._class_owner(parent, content)
+            if name is None:
+                return None
+            return text(name), parent, owner
+        if kind == "pair" and holds("value"):
+            key = parent.child_by_field_name("key")
+            owner = self._object_owner(parent.parent, content)
+            if key is None or owner is None:
+                return None
+            return text(key).strip("'\""), parent, owner
+        if kind == "assignment_expression" and holds("right"):
+            left = parent.child_by_field_name("left")
+            target = "".join(text(left).split()) if left is not None else ""
+            statement = parent.parent
+            if statement is None or statement.type != "expression_statement":
+                statement = parent
+            if target == "module.exports":
+                return default_export_name(filepath), statement, None
+            found = _EXPORTS_TARGET.match(target)
+            if found:
+                return found.group(1), statement, None
+            found = _PROTOTYPE_TARGET.match(target)
+            if found:
+                return found.group(2), statement, found.group(1)
+            return None
+        if kind == "export_statement" and any(c.type == "default" for c in parent.children):
+            return default_export_name(filepath), parent, None
+        return None
+
+    def _object_owner(self, obj, content: bytes) -> Optional[str]:
+        """`api` for the object in `const api = { ... }`, else None."""
+        if obj is None or obj.type != "object":
+            return None
+        holder = obj.parent
+        if holder is not None and holder.type in _JS_VALUE_WRAPPERS:
+            holder = holder.parent
+        if holder is None or holder.type != "variable_declarator":
+            return None
+        name = holder.child_by_field_name("name")
+        if name is None or name.type != "identifier":
+            return None
+        return self._get_node_text(name, content)
+
+    def _class_owner(self, node, content: bytes) -> Optional[str]:
+        """The name of the class that holds a class field."""
+        ancestor = node.parent
+        while ancestor is not None:
+            if ancestor.type in ("class_declaration", "abstract_class_declaration", "class"):
+                name = ancestor.child_by_field_name("name")
+                return self._get_node_text(name, content) if name is not None else None
+            ancestor = ancestor.parent
+        return None
 
     def _extract_function_symbol(
         self, node, content: bytes, filepath: str, language: str, config: Dict,

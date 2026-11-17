@@ -4,6 +4,38 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added
+
+- **`nexus-mcp-ci check`**: reads the git diff, maps changed lines to symbols, and lists the
+  callers, references and tests that the diff did not update (exit 0 clean, 1 finding at
+  `--fail-on`, 2 usage or git error, 3 no or stale index). It runs outside the model, so it
+  adds no tokens to a session. `nexus-mcp-ci index` builds the index without an agent.
+- **Stable symbol keys** (`core/keys.py`): `<file>::<type>::<qualified name>`, the same on
+  every index run. Node ids stay random.
+- **Seeded breakage set** (`python -m evals.impact.run`): 10 cases, 5 Python and 5
+  TypeScript. First run: recall 0.867, precision 1.000, tests recall 1.000 (Python 0.750,
+  TypeScript 1.000). The misses stay in the set: a computed `getattr` name, and a method
+  call whose receiver has the name of an imported module file (no edge; precision first).
+
+### Changed
+
+- **More functions and edges for Python and JS/TS.** Graph nodes and search symbols for
+  `export const f = () => {}`, function expressions, class-field arrows, members of a named
+  top-level object, `module.exports.x = ...`, `X.prototype.y = ...`, default exports (named
+  from the file, or the folder for `index`) and assigned Python lambdas. A `<top-level>`
+  node per file owns the calls outside every function (`Deno.serve(...)`, `app = FastAPI()`).
+  Python decorators count as calls of the decorated function. pytest fixtures get `USES`
+  edges from the tests that name them. Default, aliased, namespace and `require` imports,
+  and re-exports (3 hops), resolve calls. `.tsx` uses the tsx grammar. A callback inside a
+  class is no longer a symbol named after its first parameter.
+- **Offline numbers, before and after** (live cost and wall time were not run; they need the
+  owner's go-ahead). Graph coverage: shop fixture Python functions 36 to 38, CALLS edges 32
+  to 34; `src` Python functions 625 to 692, CALLS edges 844 to 936. hit@1 (`bge-small-en`,
+  hybrid): `shop_repo` 0.625 to 0.750 (same 60 chunks; the old code gave 0.625 on a rerun);
+  `nexus_mcp` 0.625 to 0.750, but the corpus differs between the runs (927 and 975 chunks);
+  vector-only on `nexus_mcp` 0.667 to 0.625 (one query of 24). Not added: an
+  `affected_tests` field in `graph`, because its token cost is unmeasured.
+
 ### Benchmarks
 
 - **Head to head with four other code tools on Django and Home Assistant.** Nexus-MCP,

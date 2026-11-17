@@ -4,13 +4,14 @@ Ported from code-graph-mcp's universal_parser.py. Uses ast-grep for
 structural analysis across 25+ languages.
 """
 
+import bisect
 import logging
 import posixpath
 import re
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 try:
     from ast_grep_py import SgRoot  # type: ignore[import-untyped]
@@ -18,6 +19,7 @@ except ImportError:
     SgRoot = None
 
 from nexus_mcp.core.graph_models import (
+    MODULE_BODY_NAME,
     NodeType,
     RelationshipType,
     UniversalGraph,
@@ -34,6 +36,9 @@ from nexus_mcp.parsing.treesitter_parser import (
     is_cpp_header,
     mask_cpp_class_macros,
     split_cpp_scope,
+)
+from nexus_mcp.parsing.treesitter_parser import (
+    default_export_name as _default_export_name,
 )
 
 logger = logging.getLogger(__name__)
@@ -102,6 +107,29 @@ CLASS_KINDS: Dict[str, tuple] = {
     ),
 }
 _C_FAMILY = ("c", "cpp")
+
+# Function-like node kinds. A function that sits inside one of these is part of it and
+# is not a node of its own: its calls belong to the function that holds it.
+_JS_FUNCTION_LIKE = (
+    "function_declaration", "method_definition", "arrow_function", "function_expression",
+    "function", "generator_function", "generator_function_declaration",
+)
+FUNCTION_LIKE_KINDS: Dict[str, tuple] = {
+    "python": ("function_definition", "lambda"),
+    "javascript": _JS_FUNCTION_LIKE,
+    "typescript": _JS_FUNCTION_LIKE,
+}
+# JS/TS function values that get a node when they are bound to a name.
+_JS_FUNCTION_VALUES = ("arrow_function", "function_expression", "function")
+# Wrappers that do not change what a value is: `(() => 1)`, `(() => 1) as F`.
+_JS_VALUE_WRAPPERS = (
+    "parenthesized_expression", "as_expression", "satisfies_expression",
+    "non_null_expression", "type_assertion",
+)
+# Languages whose loose calls at module level get a `<top-level>` node.
+MODULE_BODY_LANGUAGES = frozenset({"python", "javascript", "typescript"})
+_EXPORTS_TARGET = re.compile(r"^(?:module\.)?exports\.([A-Za-z_$][\w$]*)$")
+_PROTOTYPE_TARGET = re.compile(r"^([A-Za-z_$][\w$]*)\.prototype\.([A-Za-z_$][\w$]*)$")
 
 # Enclosing type kinds per language: (node kind, field that holds the name).
 CLASS_ANCESTOR_KINDS: Dict[str, tuple] = {
@@ -207,6 +235,97 @@ def normalize_call_text(text: str) -> str:
     if len(text) > MAX_CALL_TEXT or not _DOTTED_NAME.fullmatch(text):
         return ""
     return text
+
+
+def _js_require_source(call) -> str:
+    """`./x` for `require('./x')` and `import('./x')`, else "" (also for a computed path)."""
+    callee = call.field("function")
+    if callee is None:
+        return ""
+    if callee.kind() != "import" and not (
+        callee.kind() == "identifier" and callee.text() == "require"
+    ):
+        return ""
+    args = call.field("arguments")
+    first = next((c for c in args.children() if c.is_named()), None) if args else None
+    if first is None or first.kind() != "string":
+        return ""
+    return first.text().strip("'\"`")
+
+
+def _js_import_bindings(sg_node) -> Tuple[Dict[str, List[str]], List[List[str]]]:
+    """Local names that a JS/TS file binds to another module, and its re-exports.
+
+    Bindings: {local: [source, imported]}. `imported` is the exported name, "default" for
+    a default import, or "*" for a whole module (`import * as ns`, `const m = require(..)`).
+    Re-exports: [source, imported, exported] for `export { a as b } from './x'`; `export *
+    from './x'` is [source, "*", "*"].
+    """
+    bindings: Dict[str, List[str]] = {}
+    reexports: List[List[str]] = []
+
+    def strip(node) -> str:
+        return node.text().strip("'\"`")
+
+    for stmt in sg_node.find_all(kind="import_statement"):
+        source_node = stmt.field("source")
+        clause = next((c for c in stmt.children() if c.kind() == "import_clause"), None)
+        if source_node is None or clause is None:
+            continue
+        source = strip(source_node)
+        for part in clause.children():
+            kind = part.kind()
+            if kind == "identifier":
+                bindings[part.text()] = [source, "default"]
+            elif kind == "namespace_import":
+                ident = next((c for c in part.children() if c.kind() == "identifier"), None)
+                if ident is not None:
+                    bindings[ident.text()] = [source, "*"]
+            elif kind == "named_imports":
+                for spec in part.children():
+                    if spec.kind() != "import_specifier":
+                        continue
+                    name, alias = spec.field("name"), spec.field("alias")
+                    if name is not None:
+                        bindings[(alias or name).text()] = [source, name.text()]
+
+    for decl in sg_node.find_all(kind="variable_declarator"):
+        value = decl.field("value")
+        if value is not None and value.kind() == "await_expression":
+            value = next((c for c in value.children() if c.is_named()), None)
+        if value is None or value.kind() != "call_expression":
+            continue
+        source = _js_require_source(value)
+        target = decl.field("name")
+        if not source or target is None:
+            continue
+        if target.kind() == "identifier":
+            bindings[target.text()] = [source, "*"]
+        elif target.kind() == "object_pattern":
+            for item in target.children():
+                if item.kind() == "shorthand_property_identifier_pattern":
+                    bindings[item.text()] = [source, item.text()]
+                elif item.kind() == "pair_pattern":
+                    key, local = item.field("key"), item.field("value")
+                    if key is not None and local is not None and local.kind() == "identifier":
+                        bindings[local.text()] = [source, key.text()]
+
+    for stmt in sg_node.find_all(kind="export_statement"):
+        source_node = stmt.field("source")
+        if source_node is None:
+            continue
+        source = strip(source_node)
+        clause = next((c for c in stmt.children() if c.kind() == "export_clause"), None)
+        if clause is None:
+            reexports.append([source, "*", "*"])
+            continue
+        for spec in clause.children():
+            if spec.kind() != "export_specifier":
+                continue
+            name, alias = spec.field("name"), spec.field("alias")
+            if name is not None:
+                reexports.append([source, name.text(), (alias or name).text()])
+    return bindings, reexports
 
 
 class _SgView:
@@ -321,9 +440,7 @@ class AstGrepParser:
         language = get_language_for_file(filepath)
         if language is None or language not in ASTGREP_LANGUAGES:
             return 0
-
-        ast_grep_id = ASTGREP_LANG_IDS.get(language)
-        if not ast_grep_id:
+        if not ASTGREP_LANG_IDS.get(language):
             return 0
 
         try:
@@ -331,6 +448,25 @@ class AstGrepParser:
         except (UnicodeDecodeError, OSError) as e:
             logger.warning("Cannot read %s: %s", filepath, e)
             return 0
+        return self.parse_source(content, filepath, graph)
+
+    def parse_source(self, content: str, filepath: str, graph: UniversalGraph) -> int:
+        """Parse source text that is not on disk, as the file `filepath`.
+
+        `parse_file` reads a file and calls this. The post-change check uses it for the
+        text of a file at an old commit (`git show <base>:<path>`). `filepath` gives the
+        language and goes into every node. Returns the number of nodes added.
+        """
+        file_path = Path(filepath)
+        language = get_language_for_file(filepath)
+        if language is None or language not in ASTGREP_LANGUAGES:
+            return 0
+
+        ast_grep_id = ASTGREP_LANG_IDS.get(language)
+        if not ast_grep_id:
+            return 0
+        if language == "typescript" and str(filepath).lower().endswith(".tsx"):
+            ast_grep_id = "tsx"  # JSX needs the tsx grammar; the language stays typescript
 
         if language in _C_FAMILY:
             raw = content.encode("utf-8")
@@ -366,9 +502,22 @@ class AstGrepParser:
             logger.warning("ast-grep parse failed for %s: %s", filepath, e)
             return nodes_added
 
-        # Extract functions
+        # Extract functions. `ranges` collects the byte span of each one, so that the
+        # calls outside all of them can go to the `<top-level>` node.
+        ranges: List[Tuple[int, int]] = []
         nodes_added += self._extract_functions(
-            sg_node, filepath, language, module_id, graph
+            sg_node, filepath, language, module_id, graph, ranges
+        )
+        if language in ("javascript", "typescript"):
+            nodes_added += self._extract_js_bound_functions(
+                sg_node, filepath, language, module_id, graph, ranges
+            )
+        elif language == "python":
+            nodes_added += self._extract_py_bound_lambdas(
+                sg_node, filepath, language, module_id, graph, ranges
+            )
+        nodes_added += self._add_module_body_node(
+            sg_node, filepath, language, module_id, graph, ranges, lines
         )
         # Extract classes
         nodes_added += self._extract_classes(
@@ -412,7 +561,7 @@ class AstGrepParser:
 
     def _extract_functions(
         self, sg_node, filepath: str, language: str, module_id: str,
-        graph: UniversalGraph,
+        graph: UniversalGraph, ranges: Optional[List[Tuple[int, int]]] = None,
     ) -> int:
         """Extract function definitions from ast-grep node.
 
@@ -420,11 +569,15 @@ class AstGrepParser:
         pattern like "def $NAME($$$PARAMS): $$$BODY" silently fails to match
         any function carrying a return annotation (`def f() -> int:`), which
         is most of a typed codebase. Kind matching is annotation-agnostic.
+
+        `ranges` receives the byte span of every function that became a node. A
+        decorated Python function counts from its first decorator.
         """
         count = 0
         lang_kinds = FUNCTION_KINDS.get(language)
         if not lang_kinds:
             return 0
+        is_js = language in ("javascript", "typescript")
 
         matches = []
         for kind in lang_kinds:
@@ -435,8 +588,8 @@ class AstGrepParser:
 
         for match in matches:
             try:
-                rng = match.range()
                 scope: List[str] = []
+                extra: Dict[str, Any] = {}
                 if language in _C_FAMILY:
                     resolved = c_declarator_name(_SgView(match), _sg_text)
                     if resolved is None:
@@ -444,44 +597,339 @@ class AstGrepParser:
                     scope, func_name = resolved
                 else:
                     name_text = match.field("name")
-                    func_name = (
-                        name_text.text() if name_text else f"anonymous_{self._node_counter}"
-                    )
+                    if name_text:
+                        func_name = name_text.text()
+                    else:
+                        func_name = f"anonymous_{self._node_counter}"
+                    if is_js and self._is_default_export(match):
+                        extra["export"] = "default"
+                        if not name_text:
+                            func_name = _default_export_name(filepath)
+                if is_js and match.kind() == "method_definition":
+                    if match.parent() is not None and match.parent().kind() == "object":
+                        # `const api = { get() {} }`: a member of a named object at the
+                        # top level. A member of any other object is a callback.
+                        owner = self._object_literal_owner(match)
+                        if owner is None or self._has_function_ancestor(match, language):
+                            continue
+                        extra["object_literal"] = True
+                span_node = match
+                parent = match.parent()
+                if language == "python" and parent is not None and (
+                    parent.kind() == "decorated_definition"
+                ):
+                    span_node = parent
+                span = span_node.range()
+                if ranges is not None:
+                    ranges.append((span.start.index, span.end.index))
 
-                func_id = self._make_id("func")
-                func_node = UniversalNode(
-                    id=func_id,
-                    name=func_name,
-                    node_type=NodeType.FUNCTION,
-                    location=UniversalLocation(
-                        file_path=filepath,
-                        start_line=rng.start.line + 1,
-                        end_line=rng.end.line + 1,
-                        start_column=rng.start.column,
-                        end_column=rng.end.column,
-                        language=language,
-                    ),
-                    language=language,
-                    line_count=rng.end.line - rng.start.line + 1,
-                    complexity=self._complexity(match, language),
-                    docstring=self._docstring(match, language),
-                    metadata=self._function_metadata(match, language, scope),
+                metadata = self._function_metadata(match, language, scope)
+                if extra.get("object_literal"):
+                    metadata["parent_class"] = self._object_literal_owner(match)
+                metadata.update(extra)
+                self._add_function_node(
+                    func_name, match.range(), match, filepath, language, module_id,
+                    graph, metadata,
                 )
-                graph.add_node(func_node)
-
-                # Add CONTAINS relationship from module
-                graph.add_relationship(UniversalRelationship(
-                    id=self._make_rel_id(),
-                    source_id=module_id,
-                    target_id=func_id,
-                    relationship_type=RelationshipType.CONTAINS,
-                ))
                 count += 1
             except Exception as e:
                 logger.debug("Failed to extract function at %s: %s", filepath, e)
                 continue
 
         return count
+
+    def _add_function_node(
+        self, name: str, rng, match, filepath: str, language: str, module_id: str,
+        graph: UniversalGraph, metadata: Dict[str, Any],
+    ) -> str:
+        """Add one FUNCTION node and the CONTAINS edge from its module. Returns its id.
+
+        `rng` is the span that the node reports (for `export const f = () => ...` the
+        whole statement); `match` is the function node that complexity and docstring
+        are read from.
+        """
+        func_id = self._make_id("func")
+        graph.add_node(UniversalNode(
+            id=func_id,
+            name=name,
+            node_type=NodeType.FUNCTION,
+            location=UniversalLocation(
+                file_path=filepath,
+                start_line=rng.start.line + 1,
+                end_line=rng.end.line + 1,
+                start_column=rng.start.column,
+                end_column=rng.end.column,
+                language=language,
+            ),
+            language=language,
+            line_count=rng.end.line - rng.start.line + 1,
+            complexity=self._complexity(match, language),
+            docstring=self._docstring(match, language),
+            metadata=metadata,
+        ))
+        graph.add_relationship(UniversalRelationship(
+            id=self._make_rel_id(),
+            source_id=module_id,
+            target_id=func_id,
+            relationship_type=RelationshipType.CONTAINS,
+        ))
+        return func_id
+
+    @staticmethod
+    def _has_function_ancestor(match, language: str) -> bool:
+        """True when a function-like node encloses this one."""
+        kinds = FUNCTION_LIKE_KINDS.get(language, ())
+        try:
+            return any(a.kind() in kinds for a in match.ancestors())
+        except Exception as e:
+            logger.debug("Ancestor walk failed: %s", e)
+            return False
+
+    @staticmethod
+    def _is_default_export(match) -> bool:
+        """`export default function f() {}`: the function is the default export."""
+        parent = match.parent()
+        if parent is None or parent.kind() != "export_statement":
+            return False
+        return any(c.kind() == "default" for c in parent.children())
+
+    @staticmethod
+    def _object_literal_owner(match) -> Optional[str]:
+        """`api` for a member of `const api = { ... }`, else None."""
+        obj = match.parent()
+        if obj is None or obj.kind() != "object":
+            return None
+        return AstGrepParser._object_literal_owner_of_object(obj)
+
+    def _extract_js_bound_functions(
+        self, sg_node, filepath: str, language: str, module_id: str,
+        graph: UniversalGraph, ranges: List[Tuple[int, int]],
+    ) -> int:
+        """Nodes for JS/TS functions that are values bound to a name.
+
+        `export const handler = async (req) => {}`, `const f = function () {}`, a class
+        field `handle = () => {}`, an object member `post: () => {}`,
+        `module.exports.x = function () {}` and `export default (req) => {}`. The
+        declaration forms (`function f() {}`, methods) are found by _extract_functions.
+        An anonymous callback, and any function inside another function, gets no node:
+        its calls belong to the function or to the `<top-level>` node that holds it.
+        """
+        count = 0
+        for kind in _JS_FUNCTION_VALUES:
+            try:
+                found = sg_node.find_all(kind=kind)
+            except Exception as e:
+                logger.debug("ast-grep find_all failed for kind %s: %s", kind, e)
+                continue
+            for fn in found:
+                try:
+                    if self._has_function_ancestor(fn, language):
+                        continue
+                    bound = self._js_binding(fn, filepath, language)
+                    if bound is None:
+                        continue
+                    name, statement, extra = bound
+                    span = statement.range()
+                    ranges.append((span.start.index, span.end.index))
+                    metadata = self._function_metadata(fn, language)
+                    owner = extra.pop("parent_class", None)
+                    if owner:
+                        metadata["parent_class"] = owner
+                    metadata.update(extra)
+                    self._add_function_node(
+                        name, span, fn, filepath, language, module_id, graph, metadata,
+                    )
+                    count += 1
+                except Exception as e:
+                    logger.debug("Failed to extract bound function at %s: %s", filepath, e)
+        return count
+
+    def _js_binding(
+        self, fn, filepath: str, language: str
+    ) -> Optional[Tuple[str, Any, Dict[str, Any]]]:
+        """(name, statement node, extra metadata) for a function value, or None.
+
+        None means the function is anonymous: a callback or an inline value.
+        """
+        value, parent = fn, fn.parent()
+        while parent is not None and parent.kind() in _JS_VALUE_WRAPPERS:
+            value, parent = parent, parent.parent()
+        if parent is None:
+            return None
+        start = value.range().start.index
+        kind = parent.kind()
+
+        def holds_value(field: str) -> bool:
+            field_node = parent.field(field)
+            return field_node is not None and field_node.range().start.index == start
+
+        if kind == "variable_declarator" and holds_value("value"):
+            name = parent.field("name")
+            if name is None or name.kind() != "identifier":
+                return None  # `const { a } = ...` and `const [a] = ...` name no function
+            statement = parent.parent() or parent
+            outer = statement.parent()
+            if outer is not None and outer.kind() == "export_statement":
+                statement = outer
+            return name.text(), statement, {}
+        if kind in ("public_field_definition", "field_definition"):
+            name = parent.field("name") or parent.field("property")
+            if name is None:
+                return None
+            owner = self._enclosing_class(fn, language)
+            return name.text(), parent, {"parent_class": owner} if owner else {}
+        if kind == "pair" and holds_value("value"):
+            key = parent.field("key")
+            owner_node = parent.parent()
+            if key is None or owner_node is None or owner_node.kind() != "object":
+                return None
+            owner = self._object_literal_owner_of_object(owner_node)
+            if owner is None:
+                return None
+            return key.text().strip("'\""), parent, {
+                "parent_class": owner, "object_literal": True,
+            }
+        if kind == "assignment_expression" and holds_value("right"):
+            left = parent.field("left")
+            target = "".join(left.text().split()) if left is not None else ""
+            statement = parent.parent() if parent.parent() is not None else parent
+            if statement.kind() != "expression_statement":
+                statement = parent
+            if target == "module.exports":
+                return _default_export_name(filepath), statement, {"export": "default"}
+            found = _EXPORTS_TARGET.match(target)
+            if found:
+                return found.group(1), statement, {}
+            found = _PROTOTYPE_TARGET.match(target)
+            if found:
+                return found.group(2), statement, {"parent_class": found.group(1)}
+            return None
+        if kind == "export_statement" and any(c.kind() == "default" for c in parent.children()):
+            return _default_export_name(filepath), parent, {"export": "default"}
+        return None
+
+    @staticmethod
+    def _object_literal_owner_of_object(obj) -> Optional[str]:
+        """`api` for the object in `const api = { ... }`, else None."""
+        holder = obj.parent()
+        if holder is not None and holder.kind() in _JS_VALUE_WRAPPERS:
+            holder = holder.parent()
+        if holder is None or holder.kind() != "variable_declarator":
+            return None
+        name = holder.field("name")
+        return name.text() if name is not None and name.kind() == "identifier" else None
+
+    def _extract_py_bound_lambdas(
+        self, sg_node, filepath: str, language: str, module_id: str,
+        graph: UniversalGraph, ranges: List[Tuple[int, int]],
+    ) -> int:
+        """Nodes for Python lambdas assigned to a name: `handler = lambda e: run(e)`.
+
+        Only at module or class level. A lambda inside a function belongs to it.
+        """
+        count = 0
+        try:
+            found = sg_node.find_all(kind="lambda")
+        except Exception as e:
+            logger.debug("ast-grep find_all failed for kind lambda: %s", e)
+            return 0
+        for lam in found:
+            try:
+                parent = lam.parent()
+                if parent is None or parent.kind() != "assignment":
+                    continue
+                right = parent.field("right")
+                left = parent.field("left")
+                if (
+                    right is None or left is None or left.kind() != "identifier"
+                    or right.range().start.index != lam.range().start.index
+                    or self._has_function_ancestor(lam, language)
+                ):
+                    continue
+                statement = parent.parent()
+                if statement is None or statement.kind() != "expression_statement":
+                    statement = parent
+                span = statement.range()
+                ranges.append((span.start.index, span.end.index))
+                metadata = self._function_metadata(lam, language)
+                owner = self._enclosing_class(lam, language)
+                if owner:
+                    metadata["parent_class"] = owner
+                self._add_function_node(
+                    left.text(), span, lam, filepath, language, module_id, graph, metadata,
+                )
+                count += 1
+            except Exception as e:
+                logger.debug("Failed to extract lambda at %s: %s", filepath, e)
+        return count
+
+    def _add_module_body_node(
+        self, sg_node, filepath: str, language: str, module_id: str,
+        graph: UniversalGraph, ranges: List[Tuple[int, int]], lines: int,
+    ) -> int:
+        """One `<top-level>` node for the calls that sit outside every function.
+
+        `Deno.serve(async (req) => ...)`, `app = FastAPI()`, `describe(...)` and
+        `if __name__ == "__main__": main()` call code, so a change to the callee reaches
+        this file. The node spans the whole file and nothing can call it. A file with
+        no such call gets no node.
+        """
+        if language not in MODULE_BODY_LANGUAGES:
+            return 0
+        merged: List[Tuple[int, int]] = []
+        for a, b in sorted(ranges):
+            if merged and a <= merged[-1][1]:
+                merged[-1] = (merged[-1][0], max(merged[-1][1], b))
+            else:
+                merged.append((a, b))
+        starts = [a for a, _b in merged]
+
+        def inside_a_function(index: int) -> bool:
+            slot = bisect.bisect_right(starts, index) - 1
+            return slot >= 0 and index < merged[slot][1]
+
+        loose: Dict[str, int] = {}
+        for kind, field_name in CALL_KINDS.get(language, ()):
+            try:
+                found = sg_node.find_all(kind=kind)
+            except Exception as e:
+                logger.debug("ast-grep call search failed for kind %s: %s", kind, e)
+                continue
+            for call in found:
+                try:
+                    index = call.range().start.index
+                    if inside_a_function(index):
+                        continue
+                    name = normalize_call_text(
+                        _language_callee(self._callee_text(call, field_name), language)
+                    )
+                except Exception as e:
+                    logger.debug("Failed to read a module-level call: %s", e)
+                    continue
+                if name and (name not in loose or index < loose[name]):
+                    loose[name] = index
+        if not loose:
+            return 0
+        calls = sorted(loose, key=loose.__getitem__)[:MAX_CALLS_PER_FUNCTION]
+        func_id = self._make_id("func")
+        graph.add_node(UniversalNode(
+            id=func_id,
+            name=MODULE_BODY_NAME,
+            node_type=NodeType.FUNCTION,
+            location=UniversalLocation(
+                file_path=filepath, start_line=1, end_line=max(lines, 1), language=language,
+            ),
+            language=language,
+            line_count=max(lines, 1),
+            metadata={"calls": calls, "module_body": True},
+        ))
+        graph.add_relationship(UniversalRelationship(
+            id=self._make_rel_id(),
+            source_id=module_id,
+            target_id=func_id,
+            relationship_type=RelationshipType.CONTAINS,
+        ))
+        return 1
 
     @staticmethod
     def _complexity(match, language: str) -> int:
@@ -536,6 +984,20 @@ class AstGrepParser:
         """
         meta: Dict[str, Any] = {}
         calls = self._extract_calls(match, language)
+        if language == "python" and match.kind() == "function_definition":
+            decorators = self._py_decorators(match)
+            if decorators:
+                # A decorator calls its callee when the module loads, but the function it
+                # decorates is the one that a change to the decorator reaches.
+                meta["decorators"] = decorators
+                calls = list(dict.fromkeys(decorators + calls))
+            if any(d.rsplit(".", 1)[-1] == "fixture" for d in decorators):
+                meta["fixture"] = True
+            name = match.field("name")
+            if meta.get("fixture") or (name is not None and name.text().startswith("test")):
+                params = self._py_param_names(match)
+                if params:
+                    meta["params"] = params  # a test names its fixtures by parameter
         if calls:
             meta["calls"] = calls
             if language == "cpp":
@@ -552,6 +1014,57 @@ class AstGrepParser:
         if parent:
             meta["parent_class"] = parent
         return meta
+
+    @staticmethod
+    def _py_decorators(match) -> List[str]:
+        """Normalised names of the decorators above a Python function, top first.
+
+        `@app.get("/x")` is `app.get`, `@retry(3)` is `retry`, `@cache` is `cache`.
+        """
+        parent = match.parent()
+        if parent is None or parent.kind() != "decorated_definition":
+            return []
+        names: List[str] = []
+        for child in parent.children():
+            if child.kind() != "decorator":
+                continue
+            expr = next((c for c in child.children() if c.is_named()), None)
+            if expr is None:
+                continue
+            if expr.kind() == "call":
+                callee = expr.field("function")
+                text = callee.text() if callee is not None else ""
+            else:
+                text = expr.text()
+            name = normalize_call_text(text)
+            if name and name not in names:
+                names.append(name)
+        return names
+
+    @staticmethod
+    def _py_param_names(match) -> List[str]:
+        """Parameter names of a Python function, without `self`, `cls`, `*args`, `**kw`."""
+        params = match.field("parameters")
+        if params is None:
+            return []
+        names: List[str] = []
+        for child in params.children():
+            kind = child.kind()
+            if kind == "identifier":
+                name = child.text()
+            elif kind == "default_parameter":
+                field = child.field("name")
+                name = field.text() if field is not None else ""
+            elif kind in ("typed_parameter", "typed_default_parameter"):
+                field = child.field("name") or next(
+                    (c for c in child.children() if c.kind() == "identifier"), None
+                )
+                name = field.text() if field is not None else ""
+            else:
+                continue
+            if name and name not in ("self", "cls"):
+                names.append(name)
+        return names
 
     def _extract_calls(self, match, language: str) -> List[str]:
         """Distinct normalised callee names inside a function, in source order."""
@@ -813,6 +1326,16 @@ class AstGrepParser:
         module = graph.nodes.get(module_id)
         if module is not None and imported:
             module.metadata["imports"] = list(imported)
+        if module is not None and language in ("javascript", "typescript"):
+            try:
+                bindings, reexports = _js_import_bindings(sg_node)
+            except Exception as e:
+                logger.debug("Import binding collection failed in %s: %s", filepath, e)
+                bindings, reexports = {}, []
+            if bindings:
+                module.metadata["import_bindings"] = bindings
+            if reexports:
+                module.metadata["reexports"] = reexports
 
     @staticmethod
     def _collect_import_names(sg_node, language: str) -> Dict[str, None]:
@@ -836,6 +1359,16 @@ class AstGrepParser:
                     source = node.field("source")
                     if source:
                         names.setdefault(source.text().strip("'\"`"), None)
+                # `export { a } from './x'`, `require('./x')` and `import('./x')` read the
+                # module too.
+                for node in sg_node.find_all(kind="export_statement"):
+                    source = node.field("source")
+                    if source:
+                        names.setdefault(source.text().strip("'\"`"), None)
+                for call in sg_node.find_all(kind="call_expression"):
+                    required = _js_require_source(call)
+                    if required:
+                        names.setdefault(required, None)
             elif language in _C_FAMILY:
                 # `#include "base/util.h"` imports the module path `base/util`: the
                 # header and its `.c` or `.cc` file. `<stdio.h>` is a system header.
