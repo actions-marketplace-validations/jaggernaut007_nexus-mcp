@@ -37,7 +37,7 @@ All notable changes to this project will be documented in this file.
   to 0.750. `nexus_mcp` 17 of 24 to 16 of 24, because the new module `parsing/boundaries.py`
   outranks `call_resolver.py` for one query ("connect each call site to the function that it
   invokes"); the new code on the old corpus gives 17 of 24, so ranking did not change. Live
-  cost and wall time were not run. Fast suite: 1,856 passed.
+  cost and wall time were not run. Fast suite: 1,859 passed.
 - **More functions and edges for Python and JS/TS.** Graph nodes and search symbols for
   `export const f = () => {}`, function expressions, class-field arrows, members of a named
   top-level object, `module.exports.x = ...`, `X.prototype.y = ...`, default exports (named
