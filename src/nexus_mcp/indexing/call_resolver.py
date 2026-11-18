@@ -112,6 +112,11 @@ def _is_method(node: UniversalNode) -> bool:
     return bool(node.metadata.get("parent_class"))
 
 
+_SCRIPT_IMPORT_EXTENSIONS = frozenset(
+    {".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"}
+)
+
+
 def _module_path(file_path: str) -> str:
     """File path without extension and with forward slashes."""
     path = file_path.replace("\\", "/")
@@ -273,7 +278,11 @@ class _Index:
         Python: `.x` is the caller's package, `..x` its parent. JS/TS: `./x`, `../x`.
         """
         if imp.startswith("./") or imp.startswith("../"):
-            return [posixpath.normpath(posixpath.join(caller_dir, imp))]
+            target = posixpath.normpath(posixpath.join(caller_dir, imp))
+            # `./cart.ts` (Node type stripping, Deno) and `./cart.js` (TypeScript with
+            # NodeNext) both name the module `cart`, whose key has no extension.
+            stem, ext = posixpath.splitext(target)
+            return [stem if ext in _SCRIPT_IMPORT_EXTENSIONS else target]
         dots = len(imp) - len(imp.lstrip("."))
         rest = imp.lstrip(".").replace(".", "/")
         base = caller_dir

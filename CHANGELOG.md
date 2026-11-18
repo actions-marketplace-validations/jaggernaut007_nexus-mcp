@@ -6,6 +6,14 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Change-safety benchmark (ADR-028).** `benchmarks/change_safety/`: four tasks (a new
+  required parameter and a renamed route in Python, a renamed function and a changed edge
+  function response in TypeScript), a scorer with no model (hidden tests, left-behind sites), a
+  live runner that is a dry run unless `--go` is given, and a report. The tasks prove
+  themselves offline: the start state fails, the reference change is safe, the partial change
+  is not. `nexus-mcp-ci check` names every visible left-behind site of the four partial
+  changes (the computed route name stays a miss). Not run live: cost, wall time and the safe
+  rate of a real agent need the owner's go-ahead (24 runs, $36 at most by the cap).
 - **Stop hook and `check` skill in the plugin (ADR-027).** `nexus-mcp-ci check --hook` runs at
   the end of an agent turn. It prints a block decision only for a new `high` finding (6
   findings at most, one line each, and 5 tests), then holds the same finding by a digest. It
@@ -43,6 +51,13 @@ All notable changes to this project will be documented in this file.
 
 ### Changed
 
+- **TypeScript imports with an extension give call edges.** `import { f } from "./cart.ts"`
+  (Node type stripping, Deno) and `"./cart.js"` (TypeScript with NodeNext) named no module, so a
+  renamed function was found only by text search at `medium`. The resolver strips a script
+  extension from a relative import; `./cart.json` stays as it is. Found by the change-safety
+  tasks; four tests failed before the fix. Offline numbers: impact set recall 0.867 and
+  precision 1.000 before and after; retrieval code did not change, so hit@1 did not change.
+  Live cost and wall time were not run.
 - **Boundary edges, offline numbers.** hit@1 (`bge-small-en`, `hybrid-exact`): `shop_repo` 0.750
   to 0.750. `nexus_mcp` 17 of 24 to 16 of 24, because the new module `parsing/boundaries.py`
   outranks `call_resolver.py` for one query ("connect each call site to the function that it

@@ -34,7 +34,8 @@ Plan: Python and JS/TS function coverage, then a post-change check. Decisions: A
   `parsing/boundaries.py` outranks `call_resolver.py` for one query; the new code on the old
   corpus gives 17/24 and `shop_repo` is unchanged (0.750).
 - [x] Phase 4: Stop hook (`check --hook`) and user-started `check` skill in `plugin/`, ADR-027. No change-context result field: it repeats what `graph` lists.
-- [ ] Phase 5: change-safety benchmark.
+- [x] Phase 5, offline part: change-safety benchmark (`benchmarks/change_safety/`: 4 tasks, scorer, runner, report), ADR-028. Tasks validated with no model; `check` names every visible left-behind site. Found and fixed: TS imports with `.ts` or `.js` extensions gave no call edge.
+- [ ] Phase 5, live part: run it (24 runs, owner go-ahead for spend), and the live cost and wall time of #52.
 - [ ] Fix the receiver-named-like-a-module gap (BACKLOG).
 
 ## MIT licence and install channels — released in 2.3.0 (2026-11-06)

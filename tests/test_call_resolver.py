@@ -371,6 +371,46 @@ class TestOtherLanguages:
         })
         assert _caller_names(graph, "idx") == {"run"}
 
+    def test_typescript_import_with_a_ts_extension(self, tmp_path):
+        """Node's type stripping and Deno write `./cart.ts`; the file has no such module."""
+        graph = _graph_from(tmp_path, {
+            "src/cart.ts": "export function fetchCart() { return 1; }\n",
+            "src/app.ts": (
+                'import { fetchCart } from "./cart.ts";\nexport function run() { fetchCart(); }\n'
+            ),
+        })
+        assert _caller_names(graph, "fetchCart") == {"run"}
+
+    def test_typescript_import_with_a_js_extension_names_the_ts_file(self, tmp_path):
+        """TypeScript with NodeNext writes `./cart.js` for the source file `cart.ts`."""
+        graph = _graph_from(tmp_path, {
+            "src/cart.ts": "export function fetchCart() { return 1; }\n",
+            "src/app.ts": (
+                'import { fetchCart as load } from "./cart.js";\n'
+                "export function run() { load(); }\n"
+            ),
+        })
+        assert _caller_names(graph, "fetchCart") == {"run"}
+
+    def test_namespace_import_with_an_extension(self, tmp_path):
+        graph = _graph_from(tmp_path, {
+            "src/cart.ts": "export function fetchCart() { return 1; }\n",
+            "src/app.ts": (
+                'import * as cart from "./cart.ts";\nexport function run() { cart.fetchCart(); }\n'
+            ),
+        })
+        assert _caller_names(graph, "fetchCart") == {"run"}
+
+    def test_import_of_a_data_file_does_not_strip_its_extension(self, tmp_path):
+        """`./cart.json` must not turn into the module `./cart`."""
+        graph = _graph_from(tmp_path, {
+            "src/cart.ts": "export function fetchCart() { return 1; }\n",
+            "src/app.ts": (
+                'import { fetchCart } from "./cart.json";\nexport function run() { fetchCart(); }\n'
+            ),
+        })
+        assert _caller_names(graph, "fetchCart") == set()
+
     def test_java_implicit_this_call(self, tmp_path):
         graph = _graph_from(tmp_path, {
             "A.java": (
