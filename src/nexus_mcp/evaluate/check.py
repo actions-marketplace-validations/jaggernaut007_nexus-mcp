@@ -892,3 +892,89 @@ def exit_code(report: CheckReport, fail_on: str) -> int:
         return 0
     threshold = SEVERITY_RANK[fail_on]
     return 1 if any(SEVERITY_RANK[f.severity] >= threshold for f in report.findings) else 0
+
+
+# --- agent hook --------------------------------------------------------------------
+
+HOOK_MAX_FINDINGS = 6
+HOOK_MAX_TESTS = 5
+HOOK_DIGEST_FILE = "hook-last.json"
+
+
+def hook_reason(report: CheckReport) -> Optional[str]:
+    """The text that a Stop hook gives back to the agent, or None when all is quiet.
+
+    Only a `high` finding speaks: a hook that talks on every turn costs tokens on every
+    turn (ADR-027). The text is short on purpose: one line for each finding.
+    """
+    high = [f for f in report.findings if f.severity == "high"]
+    if not high:
+        return None
+    lines = ["nexus-mcp-ci check: your change leaves these callers or users without an update:"]
+    for f in high[:HOOK_MAX_FINDINGS]:
+        where = f"{f.file}:{f.line}" if f.line else f.file
+        lines.append(f"- {f.name} -> {where}: {f.reason}")
+    if len(high) > HOOK_MAX_FINDINGS:
+        lines.append(f"- and {len(high) - HOOK_MAX_FINDINGS} more (run `nexus-mcp-ci check .`)")
+    if report.affected_tests:
+        shown = report.affected_tests[:HOOK_MAX_TESTS]
+        more = len(report.affected_tests) - len(shown)
+        lines.append("Tests to run: " + ", ".join(shown) + (f" and {more} more" if more else ""))
+    lines.append(
+        "Update them, or say why they stay. The check is static, so it can be wrong "
+        "about a dynamic call."
+    )
+    return "\n".join(lines)
+
+
+def _digest(reason: str) -> str:
+    import hashlib
+
+    return hashlib.sha256(reason.encode("utf-8")).hexdigest()[:16]
+
+
+def _forget_digest(path: Path) -> None:
+    try:
+        path.unlink()
+    except OSError:
+        pass
+
+
+def hook_decision(
+    project: Path, store: Path, payload: Optional[Dict[str, Any]] = None,
+    run: Runner = subprocess.run,
+) -> Optional[Dict[str, Any]]:
+    """What a Claude Code `Stop` hook prints, or None for silence.
+
+    Silent, with no error, when: the hook already blocked this stop (`stop_hook_active`),
+    `NEXUS_HOOK=off`, there is no index or no git, nothing high is found, or the same
+    finding set was already shown (the digest is kept next to the index). The agent hears
+    about a finding once, so it can decide to leave a caller alone without a loop.
+    """
+    payload = payload or {}
+    if payload.get("stop_hook_active") or os.environ.get("NEXUS_HOOK", "").lower() == "off":
+        return None
+    try:
+        report = run_check(project, store, run=run)
+    except CheckError:
+        return None
+    except Exception:  # a hook must never break a session
+        logger.debug("hook check failed", exc_info=True)
+        return None
+    reason = hook_reason(report)
+    digest_path = Path(store) / HOOK_DIGEST_FILE
+    if reason is None:
+        _forget_digest(digest_path)
+        return None
+    digest = _digest(reason)
+    try:
+        if json.loads(digest_path.read_text()).get("digest") == digest:
+            return None
+    except (OSError, ValueError, AttributeError):
+        pass
+    try:
+        digest_path.parent.mkdir(parents=True, exist_ok=True)
+        digest_path.write_text(json.dumps({"digest": digest}))
+    except OSError:
+        logger.debug("hook digest not saved", exc_info=True)
+    return {"decision": "block", "reason": reason}

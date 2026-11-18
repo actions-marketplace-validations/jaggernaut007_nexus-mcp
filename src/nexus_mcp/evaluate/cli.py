@@ -244,7 +244,35 @@ def _check_parser() -> argparse.ArgumentParser:
     p.add_argument(
         "--max-findings", type=int, default=50, help="Findings to print (default: 50)"
     )
+    p.add_argument(
+        "--hook",
+        action="store_true",
+        help=(
+            "Run as a Claude Code Stop hook: read the hook JSON from stdin and print a "
+            "block decision only for a new high finding. Always exits 0 and is silent "
+            "otherwise (NEXUS_HOOK=off disables it)"
+        ),
+    )
     return p
+
+
+def run_hook(project: Path) -> int:
+    """The Stop hook: silent and exit 0 unless a new high finding exists."""
+    from nexus_mcp.evaluate import check
+
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+    except (OSError, ValueError):
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    cwd = payload.get("cwd")
+    if isinstance(cwd, str) and Path(cwd).is_dir():
+        project = Path(cwd).resolve()
+    decision = check.hook_decision(project, paths.project_store(project), payload)
+    if decision:
+        print(json.dumps(decision))
+    return 0
 
 
 def run_check(argv: List[str]) -> int:
@@ -256,6 +284,8 @@ def run_check(argv: List[str]) -> int:
         return 2
     apply_privacy_defaults()
     project = Path(args.path).resolve()
+    if args.hook:
+        return run_hook(project)
     try:
         report_ = check.run_check(
             project, paths.project_store(project), base=args.base, staged=args.staged,

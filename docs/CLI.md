@@ -95,6 +95,7 @@ options:
 ```text
 usage: nexus-mcp-ci check [-h] [--base BASE] [--staged] [--depth DEPTH] [--format {markdown,json}]
                           [--fail-on {high,medium,low,never}] [--max-findings MAX_FINDINGS]
+                          [--hook]
                           [path]
 
 Check a change against the call graph. Reads the git diff, finds the symbols that it changes, and
@@ -114,6 +115,9 @@ options:
                         Exit 1 when a finding has this severity or more (default: high)
   --max-findings MAX_FINDINGS
                         Findings to print (default: 50)
+  --hook                Run as a Claude Code Stop hook: read the hook JSON from stdin and print a
+                        block decision only for a new high finding. Always exits 0 and is silent
+                        otherwise (NEXUS_HOOK=off disables it)
 
 Exit codes: 0 clean, 1 a finding reached --fail-on, 2 usage or git error, 3 no index or a stale
 index. The result is a lower bound: edges are static and name-based.

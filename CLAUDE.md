@@ -175,6 +175,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 - One source for published numbers; opt-in sharing, no telemetry — [ADR-021](docs/adr/ADR-021-results-publishing-and-sharing.md)
 - Server lifecycle: idle timeout (3 h), orphan exit, `os._exit` after a bounded cleanup — [ADR-022](docs/adr/ADR-022-server-lifecycle-and-exit.md)
 - Boundary edges: routes, edge functions and SQL tables join code with no call between them — [ADR-026](docs/adr/ADR-026-boundary-edges.md)
+- Stop hook and a user-started `check` skill in the plugin; silent unless a new `high` finding exists — [ADR-027](docs/adr/ADR-027-change-hook-and-skill.md)
 - MIT licence, commercial licence key removed again — [ADR-023](docs/adr/ADR-023-commercial-licence-check.md) (superseded by [ADR-024](docs/adr/ADR-024-mit-licence.md))
 
 ## Gotchas

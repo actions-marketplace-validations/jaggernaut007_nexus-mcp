@@ -33,7 +33,7 @@ Plan: Python and JS/TS function coverage, then a post-change check. Decisions: A
   Fast suite 1,856 passed. Self-suite hit@1 (hybrid-exact) 17/24 to 16/24: the new module
   `parsing/boundaries.py` outranks `call_resolver.py` for one query; the new code on the old
   corpus gives 17/24 and `shop_repo` is unchanged (0.750).
-- [ ] Phase 4: change-context in results, pre-edit hook and skill in `plugin/`.
+- [x] Phase 4: Stop hook (`check --hook`) and user-started `check` skill in `plugin/`, ADR-027. No change-context result field: it repeats what `graph` lists.
 - [ ] Phase 5: change-safety benchmark.
 - [ ] Fix the receiver-named-like-a-module gap (BACKLOG).
 

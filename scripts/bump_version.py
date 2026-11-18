@@ -60,6 +60,7 @@ def bump(new: str) -> None:
         data["mcpServers"]["nexus-mcp"]["args"][-1] = f"nexus-mcp-ci=={new}"
 
     _json_set(ROOT / "plugin" / ".mcp.json", plugin_mcp)
+    regex("plugin/hooks/hooks.json", r"nexus-mcp-ci==[0-9.]+", f"nexus-mcp-ci=={new}")
 
 
 def main(argv=None) -> int:

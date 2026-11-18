@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 ### Added
 
+- **Stop hook and `check` skill in the plugin (ADR-027).** `nexus-mcp-ci check --hook` runs at
+  the end of an agent turn. It prints a block decision only for a new `high` finding (6
+  findings at most, one line each, and 5 tests), then holds the same finding by a digest. It
+  is silent for a clean turn, no index, no git, `stop_hook_active` and `NEXUS_HOOK=off`, and it
+  always exits 0. The hook command ends in `|| true`, so a pinned release without the flag does
+  nothing. The skill `check` is started by the user only (`disable-model-invocation`). No new
+  tool, no new parameter, no change in any tool result: the tokens of a session do not change,
+  except about 100 to 300 once for a new `high` finding. Not run: the live benchmark. The hook
+  costs about 1.2 s of wall time at each turn end on a small project (measured in the tests).
+  A change-context field in `graph` was left out: it repeats the files that `graph` lists.
 - **`nexus-mcp-ci check`**: reads the git diff, maps changed lines to symbols, and lists the
   callers, references and tests that the diff did not update (exit 0 clean, 1 finding at
   `--fail-on`, 2 usage or git error, 3 no or stale index). It runs outside the model, so it
