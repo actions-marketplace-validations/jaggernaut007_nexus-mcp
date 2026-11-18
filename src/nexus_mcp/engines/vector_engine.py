@@ -92,14 +92,24 @@ class LanceDBVectorEngine(IEngine):
             table = self._get_or_create_table()
             table.add(items)
 
+    def embed_query(self, query: str) -> List[float]:
+        """The vector of a search query. `search` takes it as ``query_vector``, so that one
+        query is embedded one time for several stores (linked repos, ADR-027)."""
+        return self._embedding_service.embed(query, is_query=True)
+
     def search(
-        self, query: str, limit: int = 10, **kwargs
+        self,
+        query: str,
+        limit: int = 10,
+        query_vector: Optional[List[float]] = None,
+        **kwargs,
     ) -> List[Dict[str, Any]]:
         """Search for chunks matching query text.
 
         Args:
-            query: Search text (will be embedded).
+            query: Search text (will be embedded, unless ``query_vector`` is given).
             limit: Max results.
+            query_vector: The vector of ``query`` from `embed_query`, of the same model.
             **kwargs: Optional filters — language, symbol_type.
 
         Returns:
@@ -109,7 +119,7 @@ class LanceDBVectorEngine(IEngine):
         if table.count_rows() == 0:
             return []
 
-        vector = self._embedding_service.embed(query, is_query=True)
+        vector = query_vector if query_vector is not None else self.embed_query(query)
         search_builder = table.search(vector).limit(limit)
 
         # Apply filters (values are escaped to prevent injection)

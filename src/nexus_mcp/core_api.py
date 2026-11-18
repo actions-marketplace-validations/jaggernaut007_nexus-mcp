@@ -1002,6 +1002,110 @@ def _drop_declarations_of_defined_names(results: list[dict]) -> list[dict]:
     ]
 
 
+def _attached_linked(state) -> list:
+    """The linked repos of the session whose stores are open. [] when there is no link."""
+    return [repo for repo in (getattr(state, "linked", None) or []) if repo.attached]
+
+
+def _tag_repo(found: list[dict], repo) -> list[dict]:
+    """Mark the results of a linked repo with its name (`_repo`, removed before output)."""
+    for r in found:
+        r["_repo"] = repo.name
+    return found
+
+
+def _merge_by_score(lists: list[list[dict]]) -> list[dict]:
+    """One list from the lists of several stores, best score first.
+
+    The score is the same kind in every store: the vector score is 1 / (1 + distance) of
+    one model, and the BM25 score is divided by the best score of its store, so the best
+    keyword result of each store has the score 1. The sort is stable: on a tie the
+    primary project comes first. One list is returned as it is.
+    """
+    if len(lists) == 1:
+        return lists[0]
+    merged = [r for found in lists for r in found]
+    merged.sort(key=lambda r: r.get("score", 0.0), reverse=True)
+    # A folder that two stores both hold (a link to a sub-folder of the project) gives the
+    # same chunk id in both. Keep the first copy, so that fusion counts the chunk one time.
+    seen: set = set()
+    unique = []
+    for r in merged:
+        rid = r.get("id")
+        if rid is not None:
+            if rid in seen:
+                continue
+            seen.add(rid)
+        unique.append(r)
+    return unique
+
+
+def _search_linked(
+    repos: list, query: str, limit: int, kwargs: dict, mode: str, query_vector
+) -> tuple[list[list[dict]], list[list[dict]]]:
+    """Vector and BM25 results of each linked repo, as (vector lists, BM25 lists).
+
+    A store that fails is left out with a warning. Nothing is written to a linked store:
+    its BM25 engine is read-only (ADR-027).
+    """
+    vector_lists: list[list[dict]] = []
+    bm25_lists: list[list[dict]] = []
+    for repo in repos:
+        if mode in ("hybrid", "vector") and query_vector is not None:
+            try:
+                found = repo.vector_engine.search(
+                    query, limit=limit, query_vector=query_vector, **kwargs
+                )
+                vector_lists.append(_tag_repo(found, repo))
+            except Exception as e:  # noqa: BLE001 - one linked store must not stop the search
+                logger.warning("Vector search of linked repo %r failed: %s", repo.name, e)
+        if mode in ("hybrid", "bm25") and repo.bm25_engine:
+            try:
+                found = repo.bm25_engine.search(query, limit=limit, **kwargs)
+                if found:
+                    bm25_lists.append(_tag_repo(found, repo))
+            except Exception as e:  # noqa: BLE001
+                logger.warning("BM25 search of linked repo %r failed: %s", repo.name, e)
+    return vector_lists, bm25_lists
+
+
+def _linked_definitions(repos: list, names: list[str]) -> list[dict]:
+    """The chunks that define one of ``names`` in the linked repos (no embedding is run)."""
+    found: list[dict] = []
+    for repo in repos:
+        try:
+            found += _tag_repo(repo.vector_engine.find_by_symbol_names(names), repo)
+        except Exception as e:  # noqa: BLE001 - an addition, never a failure
+            logger.debug("Exact name lookup in linked repo %r failed: %s", repo.name, e)
+    return found
+
+
+def _resolve_in_scope(state, scope, name: str, exact: bool) -> list:
+    """The graph nodes of `name` in one scope. A linked repo that fails gives no node and a
+    warning: it must not stop the answer of the primary project."""
+    if scope is state:
+        return _resolve_symbol(scope.graph_engine, name, exact=exact)
+    try:
+        return _resolve_symbol(scope.graph_engine, name, exact=exact)
+    except Exception as e:  # noqa: BLE001 - one bad linked repo must not stop the call
+        logger.warning("find_symbol: linked repo %r failed: %s", scope.name, e)
+        return []
+
+
+def _linked_stale_warning(names: list[str]) -> Optional[str]:
+    """The `search` warning for linked repos that changed after their last index."""
+    if not names:
+        return None
+    from nexus_mcp import linked
+
+    label = "repo" if len(names) == 1 else "repos"
+    quoted = ", ".join(repr(n) for n in names)
+    return (
+        f"Linked {label} {quoted} changed after indexing. Results in the changed files have "
+        f"no snippet. {linked.REFRESH_HINT}"
+    )
+
+
 def search(
     query: str,
     limit: int = 10,
@@ -1018,7 +1122,13 @@ def search(
     ``COMPACT_SNIPPET_CHARS``) for the first ``COMPACT_TOP_RESULTS`` results and the
     signature for the others, and returns only ``total``, ``results``, ``hint`` and a
     ``warning`` when the index is stale. ``detail="full"`` keeps scores, ids, absolute
-    paths, the query, the engine names and snippets up to ``FULL_SNIPPET_CHARS``."""
+    paths, the query, the engine names and snippets up to ``FULL_SNIPPET_CHARS``.
+
+    Linked repos (ADR-027): each attached linked repo is searched too. The query is embedded
+    one time. The vector lists and the BM25 lists of all stores merge by score before the RRF.
+    A path of a linked repo starts with the repo name. A changed file of a linked repo gives
+    ``changed_since_index`` and no snippet, and the ``warning`` names the repo. A search never
+    writes to a linked store. The live-grep fallback reads the primary roots only."""
     from nexus_mcp.config import get_settings
     from nexus_mcp.engines.fusion import (
         ReciprocalRankFusion,
@@ -1061,23 +1171,45 @@ def search(
     engines_used = []
     ranked_lists: dict[str, list] = {}
     overfetch = limit * SEARCH_OVERFETCH
+    linked_repos = _attached_linked(state)
 
+    vector_lists: list[list[dict]] = []
+    query_vector = None
     if mode in ("hybrid", "vector"):
         try:
-            vector_results = state.vector_engine.search(query, limit=overfetch, **kwargs)
-            ranked_lists["vector"] = vector_results
-            engines_used.append("vector")
+            search_args = {}
+            if linked_repos:
+                # One embedding for every store (ADR-027).
+                query_vector = state.vector_engine.embed_query(query)
+                search_args["query_vector"] = query_vector
+            vector_lists.append(
+                state.vector_engine.search(query, limit=overfetch, **search_args, **kwargs)
+            )
         except Exception as e:
             logger.warning("Vector search failed: %s", e)
 
+    bm25_lists: list[list[dict]] = []
     if mode in ("hybrid", "bm25") and state.bm25_engine:
         try:
             bm25_results = state.bm25_engine.search(query, limit=overfetch, **kwargs)
             if bm25_results:
-                ranked_lists["bm25"] = bm25_results
-                engines_used.append("bm25")
+                bm25_lists.append(bm25_results)
         except Exception as e:
             logger.warning("BM25 search failed: %s", e)
+
+    if linked_repos:
+        more_vector, more_bm25 = _search_linked(
+            linked_repos, query, overfetch, kwargs, mode, query_vector
+        )
+        vector_lists += more_vector
+        bm25_lists += more_bm25
+
+    if vector_lists:
+        ranked_lists["vector"] = _merge_by_score(vector_lists)[:overfetch]
+        engines_used.append("vector")
+    if bm25_lists:
+        ranked_lists["bm25"] = _merge_by_score(bm25_lists)[:overfetch]
+        engines_used.append("bm25")
 
     # Each list: source before tests, then the same length that fusion always got. A
     # wider list into fusion lowered hit@1 in the eval; a list of tests only is worse.
@@ -1113,7 +1245,19 @@ def search(
                 if (not language or d.get("language") == language)
                 and (not symbol_type or d.get("symbol_type") == symbol_type)
             ]
+            definitions += [
+                d
+                for d in _linked_definitions(linked_repos, names)
+                if (not language or d.get("language") == language)
+                and (not symbol_type or d.get("symbol_type") == symbol_type)
+            ]
             if definitions:
+                seen_ids: set = set()
+                definitions = [
+                    d
+                    for d in definitions
+                    if d.get("id") is None or not (d["id"] in seen_ids or seen_ids.add(d["id"]))
+                ]
                 results = exact_names_first(query, results, definitions)
                 engines_used.append("exact_name")
         except Exception as e:  # noqa: BLE001 - an addition, never a failure
@@ -1164,8 +1308,21 @@ def search(
 
     changed_paths = staleness.get("changed_paths") or set()
     compact = detail == "compact"
+    stale_linked: list[str] = []
+    repo_by_name = {repo.name: repo for repo in linked_repos}
+    linked_changed: dict[str, set] = {}  # a linked repo is checked once, if it has a result
     for rank, r in enumerate(results):
         r.pop("vector", None)
+        repo = repo_by_name.get(r.pop("_repo", None))
+        if repo is not None and repo.name not in linked_changed:
+            from nexus_mcp import linked
+
+            repo_staleness = linked.staleness(repo, settings.staleness_check_interval_s)
+            linked_changed[repo.name] = (
+                set(repo_staleness.get("changed_paths") or ()) if repo_staleness["stale"] else set()
+            )
+            if repo_staleness["stale"]:
+                stale_linked.append(repo.name)
 
         signature, docstring = r.get("signature") or "", r.get("docstring") or ""
         tail = compact and rank >= COMPACT_TOP_RESULTS
@@ -1194,24 +1351,35 @@ def search(
         # A stored snippet of a changed file is not the code on disk. After a restore the
         # stored index can even come from the repository itself (a shipped `.nexus`).
         # Live-grep results are read from disk now, so they keep theirs.
-        if (
-            r["absolute_path"] in changed_paths
-            and not str(r.get("search_mode", "")).startswith("live_grep")
+        own_changed = linked_changed[repo.name] if repo is not None else changed_paths
+        if r["absolute_path"] in own_changed and not str(r.get("search_mode", "")).startswith(
+            "live_grep"
         ):
             r.pop("code_snippet", None)
             r["changed_since_index"] = True
 
-        for root in roots:
+        if repo is not None:
+            # The repo name comes first. A multi-root index has no root prefix (ADR-027).
             try:
-                r["filepath"] = str(Path(abs_path).relative_to(root))
-                break
+                r["filepath"] = f"{repo.name}/{Path(abs_path).relative_to(repo.path)}"
             except ValueError:
                 r["filepath"] = str(abs_path)
+        else:
+            for root in roots:
+                try:
+                    r["filepath"] = str(Path(abs_path).relative_to(root))
+                    break
+                except ValueError:
+                    r["filepath"] = str(abs_path)
 
         if not r.get("language") or r.get("language") == "unknown":
             from nexus_mcp.parsing.language_registry import get_language_for_file
 
             r["language"] = get_language_for_file(r["absolute_path"]) or "unknown"
+
+    linked_warning = _linked_stale_warning(stale_linked)
+    if linked_warning:
+        search_warning = f"{search_warning} {linked_warning}" if search_warning else linked_warning
 
     if compact:
         # No echo of the query and no engine names: the agent sent the first and does
@@ -1444,6 +1612,30 @@ def _chunk_symbol_entries(state, name: str) -> list[tuple[dict[str, Any], tuple]
     return out
 
 
+def _prefix_repo(entry: dict[str, Any], repo, detail: str) -> None:
+    """Put the repo name before each path of a `find_symbol` entry of a linked repo.
+
+    The same rule as in `search`: `backend/src/app.py`. A path that is not relative to the
+    repo (the index gave an absolute one) is left as it is. `detail="full"` also names the
+    repo in a `repo` field.
+    """
+    prefix = f"{repo.name}/"
+
+    def joined(path: str) -> str:
+        return path if path.startswith("/") else prefix + path
+
+    if isinstance(entry.get("file"), str):
+        entry["file"] = joined(entry["file"])
+    location = entry.get("location")
+    if isinstance(location, dict) and isinstance(location.get("file"), str):
+        location["file"] = joined(location["file"])
+    for key in ("callers", "callees"):
+        if isinstance(entry.get(key), dict):
+            entry[key] = {joined(f): names for f, names in entry[key].items()}
+    if detail == "full":
+        entry["repo"] = repo.name
+
+
 def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -> dict[str, Any]:
     """Look up one or more symbols by name: place, code and call-graph relationships.
 
@@ -1460,7 +1652,12 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
 
     ``detail="compact"`` (default) gives file, lines and the callers and callees by name
     (`file -> ["name:line"]`, at most ``MAX_SYMBOL_RELATIONS`` each). ``detail="full"``
-    gives every node field and the raw relationship records."""
+    gives every node field and the raw relationship records.
+
+    Linked repos (ADR-027): the graph of each attached linked repo is searched after the
+    primary project. A path of a linked repo starts with the repo name. With
+    ``detail="full"`` an entry of a linked repo has a ``repo`` field. All matches of a name
+    share the ``MAX_MATCHES_PER_NAME`` cap."""
     from nexus_mcp.engines.fusion import is_test_path
 
     err = validate_symbol_name(symbol_name)
@@ -1477,44 +1674,62 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
     not_found: list[str] = []
     more_matches: dict[str, int] = {}
     stale_code = 0
+    stale_linked: set[str] = set()
     outlined = False
     budget = SYMBOL_CODE_BUDGET
     seen_places: set[tuple] = set()  # (file, start, end) of each symbol already in the result
-    roots = _index_roots(state)
+    # The primary project first, then each linked repo (ADR-027). Each symbol is read in the
+    # scope that holds it: its graph, its chunk table and its root.
+    scopes = [state, *_attached_linked(state)]
     for name in _split_symbol_names(symbol_name) or [symbol_name]:
-        nodes = _resolve_symbol(state.graph_engine, name, exact=exact)
+        scope_nodes = [
+            (scope, node)
+            for scope in scopes
+            for node in _resolve_in_scope(state, scope, name, exact)
+        ]
         # Functions and classes first, then tests, then the node of a whole file (the graph
         # has one for each file, named like it: `main` is also `main.py`). A C++ or C#
-        # constructor has the name of its class, so it comes after the class.
-        nodes = sorted(
-            nodes,
-            key=lambda n: (
-                n.node_type == NodeType.MODULE,
-                is_test_path(n.location.file_path),
-                n.node_type == NodeType.FUNCTION and n.metadata.get("parent_class") == n.name,
+        # constructor has the name of its class, so it comes after the class. The sort is
+        # stable: of equal rank the primary project comes first.
+        scope_nodes = sorted(
+            scope_nodes,
+            key=lambda sn: (
+                sn[1].node_type == NodeType.MODULE,
+                is_test_path(sn[1].location.file_path),
+                sn[1].node_type == NodeType.FUNCTION
+                and sn[1].metadata.get("parent_class") == sn[1].name,
             ),
         )
-        if len(nodes) > MAX_MATCHES_PER_NAME:
-            more_matches[name] = len(nodes) - MAX_MATCHES_PER_NAME
-            nodes = nodes[:MAX_MATCHES_PER_NAME]
+        if len(scope_nodes) > MAX_MATCHES_PER_NAME:
+            more_matches[name] = len(scope_nodes) - MAX_MATCHES_PER_NAME
+            scope_nodes = scope_nodes[:MAX_MATCHES_PER_NAME]
         found: list[tuple[dict[str, Any], tuple]] = []
         node_of: dict[int, UniversalNode] = {}  # id(entry) -> graph node
-        for node in nodes:
+        scope_of: dict[int, Any] = {}  # id(entry) -> state or linked repo
+        for scope, node in scope_nodes:
             if detail == "compact":
-                entry = _symbol_compact(node, state)
+                entry = _symbol_compact(node, scope)
             else:
-                entry = _serialize_node(node, state.codebase_path)
-                rels_from = state.graph_engine.get_relationships_from(node.id)
-                rels_to = state.graph_engine.get_relationships_to(node.id)
+                entry = _serialize_node(node, scope.codebase_path)
+                rels_from = scope.graph_engine.get_relationships_from(node.id)
+                rels_to = scope.graph_engine.get_relationships_to(node.id)
                 entry["relationships_out"] = [_serialize_relationship(r) for r in rels_from]
                 entry["relationships_in"] = [_serialize_relationship(r) for r in rels_to]
+            if scope is not state:
+                _prefix_repo(entry, scope, detail)
             loc = node.location
             found.append((entry, (loc.file_path, loc.start_line, loc.end_line)))
             node_of[id(entry)] = node
+            scope_of[id(entry)] = scope
         # Also with exact=False: a method is in the graph by its bare name, so `Class.method`
         # is only in the chunk table, and an exact match is a fuzzy match too.
         if not found:
-            found = _chunk_symbol_entries(state, name)
+            for scope in scopes:
+                for entry, place in _chunk_symbol_entries(scope, name):
+                    if scope is not state:
+                        _prefix_repo(entry, scope, detail)
+                    found.append((entry, place))
+                    scope_of[id(entry)] = scope
         if not found:
             not_found.append(name)
             continue
@@ -1531,13 +1746,17 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
             if wants_code:
                 # Decide "long class" from the source before the budget cut: a class cut
                 # to a small leftover budget would look short and send a cut body.
+                scope = scope_of.get(id(entry), state)
+                roots = _index_roots(scope)
                 source = _symbol_source(*place, SYMBOL_CODE_CHARS, roots)
                 code = source if budget >= SYMBOL_CODE_CHARS else _trim_snippet(source, budget)
                 node = node_of.get(id(entry))
                 if code and not _slice_names_symbol(code, entry.get("name", "")):
                     stale_code += 1  # the file changed after it was indexed
+                    if scope is not state:
+                        stale_linked.add(scope.name)
                 elif code and node is not None and _is_long_class(node, source):
-                    outline = _class_outline(state, node, roots)
+                    outline = _class_outline(scope, node, roots)
                     if outline:
                         entry["outline"] = _trim_snippet(outline, budget)
                         budget -= len(entry["outline"])
@@ -1573,6 +1792,13 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
             f"A file changed after it was indexed, so the code of {stale_code} symbol(s) is "
             "left out. The index refreshes in the background: call again, or read the file."
         )
+        if stale_linked:
+            from nexus_mcp import linked
+
+            result["warning"] += (
+                f" A linked repo is never reindexed by a call: {', '.join(sorted(stale_linked))}. "
+                f"{linked.REFRESH_HINT}"
+            )
     return result
 
 

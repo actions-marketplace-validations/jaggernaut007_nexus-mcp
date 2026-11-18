@@ -111,6 +111,8 @@ nexus-mcp-ci link --refresh                   # index the changed files of every
 nexus-mcp-ci unlink backend                   # remove the link; the index stays on disk
 ```
 
+`search` and `find_symbol` also look in the linked repos. A result of a linked repo shows the link name first in its path (`backend/src/app.py`). `find_symbol` with `detail="full"` adds a `repo` field. If a file of a linked repo changed after its index, the result has no snippet for it and the `warning` tells you to run `nexus-mcp-ci link --refresh`. `graph` does not cross repos yet.
+
 The links are in `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`). Each repo keeps its own index in `<repo>/.nexus`. See [ADR-027](adr/ADR-027-linked-repos.md).
 
 #### `map`

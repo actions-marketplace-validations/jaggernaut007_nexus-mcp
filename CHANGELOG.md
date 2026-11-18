@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added (linked repos, phase 2.2)
+
+- **`search` and `find_symbol` look in the linked repos.** The query is embedded one time.
+  Each linked store gives vector and BM25 results, which merge by score before the same RRF as
+  before. A result of a linked repo has the repo name first in its path (`backend/src/app.py`).
+  `find_symbol` looks in the graph of each repo, the primary project first; `detail="full"`
+  adds a `repo` field. A stale linked repo gives `changed_since_index` and a warning that names
+  `nexus-mcp-ci link --refresh`. No new tool and no new parameter.
+- **The BM25 engine of a linked store is read-only** (`IndexingPipeline(read_only=True)`). It
+  never creates the full-text index, so a search never writes to a linked store.
+- **Audit fixes.** A folder that two stores both hold (a link to a sub-folder of the project)
+  gives one result, not two. One failing linked graph does not stop `find_symbol`. The stale
+  code warning of `find_symbol` names `nexus-mcp-ci link --refresh` for a linked repo.
+- **North-star gate, no link (2026-11-18, `python -m evals.retrieval.run`, `bge-small-en`).**
+  The 2.2 code gives the same hit@1 as the 2.1 code in all four modes, on the same paths:
+  `nexus_mcp` hybrid 0.708 before and 0.708 after (24 queries), `shop_repo` hybrid 0.625 and
+  0.625 (8 queries). Two checkouts at different paths gave `shop_repo` hybrid 0.625 and 0.750:
+  chunk ids come from absolute paths, so ties order differently. This is not a code effect.
+  Tokens with no link: the code path is the same (no `query_vector`, one list to the merge),
+  and the tests show the same output as before. **Not run:** the live benchmark (it needs a
+  login and costs API money), the flask suite and the language suites (they need clones of
+  `benchmarks/setup_repos.sh`), the private jobscout suite. **Not measured:** a project with
+  links. BM25 scores are scaled in each store, so the stores interleave; the result for a
+  project with links needs its own eval.
+
 ### Added (linked repos, phase 2.1)
 
 - **Repo identity.** Each index stores `repo_id` (made one time, kept through reindexes),
