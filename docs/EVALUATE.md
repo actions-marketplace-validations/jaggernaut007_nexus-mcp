@@ -96,7 +96,7 @@ Run `nexus-mcp-ci eval doctor` first. It checks ripgrep, the cached model, the `
 ## Saved results
 
 Every run is saved in `~/.nexus-mcp/evals/<run-id>/` (`report.md`, `report.json`, `env.json`)
-and listed in `history.jsonl`. The folder `~/.nexus-mcp/` also holds `links.json`, the registry of linked repos (see ADR-027).
+and listed in `history.jsonl`. The folder `~/.nexus-mcp/` also holds `links.json`, the registry of linked repos (see ADR-030).
 
 ```bash
 nexus-mcp-ci eval list
@@ -129,7 +129,8 @@ claude mcp add nexus-mcp -- nexus-mcp-ci
 ```
 
 Run the eval with `--keep-index` first, and the index in `.nexus/` is ready when the server
-starts. Add `.nexus/` to `.gitignore`: the index holds code snippets.
+starts. The index holds code snippets, so the eval adds `.nexus/` to `.git/info/exclude` of
+the repo. Git then does not commit the folder.
 
 ## Remove everything
 

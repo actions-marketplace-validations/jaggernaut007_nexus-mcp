@@ -9,6 +9,7 @@ Set these as environment variables of the server, for example `claude mcp add ne
 | Variable | Default | Effect |
 |---|---|---|
 | `NEXUS_STORAGE_DIR` | `.nexus` | Folder for the index, memories and graph. A relative path is in the folder the server starts in, or in the indexed project when that is outside it. |
+| `NEXUS_GIT_EXCLUDE` | `true` | Add the index folder to `.git/info/exclude` when it is in a git work tree and no ignore rule covers it. The tracked `.gitignore` does not change. |
 | `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | `bge-small-en` (int8 ONNX, the default) or `bge-small-en-torch` (fp32 on PyTorch, needs `pip install 'nexus-mcp-ci[torch]'`). The index rebuilds after a change. |
 | `NEXUS_EMBEDDING_DEVICE` | `auto` | `auto`, `cpu`, `cuda` or `mps`. It applies to the PyTorch model (`bge-small-en-torch`): `auto` picks CUDA, then MPS, then the CPU. The default ONNX model runs on the CPU only and ignores a GPU value with a warning. |
 | `NEXUS_EMBEDDING_BATCH_SIZE` | `32` | Chunks embedded and stored in one step. The ONNX model runs one chunk in each call (`ONNX_MAX_BATCH`), so this value does not change its speed. |

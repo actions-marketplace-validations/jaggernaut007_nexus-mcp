@@ -1,4 +1,4 @@
-"""Each index stores a repo identity: repo_id, repo_name and extractor_version (ADR-027)."""
+"""Each index stores a repo identity: repo_id, repo_name and extractor_version (ADR-030)."""
 
 import json
 import re

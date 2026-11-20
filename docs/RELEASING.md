@@ -10,7 +10,7 @@
 - `server.json` (`version`, and the `version` of each package)
 - `plugin/.claude-plugin/plugin.json` (`version`)
 - `plugin/.cursor-plugin/plugin.json` (`version`)
-- `plugin/.mcp.json`, `gemini-extension.json` and `mcpb/pyproject.toml` (the pinned
+- `plugin/.mcp.json`, `plugin/hooks/hooks.json`, `gemini-extension.json` and `mcpb/pyproject.toml` (the pinned
   `nexus-mcp-ci==X.Y.Z` launch), `mcpb/manifest.json` and `mcpb/pyproject.toml` (`version`)
 
 `python scripts/bump_version.py X.Y.Z` sets all of these at once, except `date-released`.

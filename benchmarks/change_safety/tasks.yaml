@@ -1,0 +1,543 @@
+# Change-safety tasks (ADR-028). A pilot set: two Python and two TypeScript projects.
+#
+# Each task is a tiny project (`files`), a change request (`prompt`), and the facts that make
+# a score possible without a model:
+#   test_command  runs the visible and the hidden tests (`python` is the interpreter of the
+#                 harness; TypeScript runs with node's own type stripping, node 23.6 or newer)
+#   acceptance    hidden tests, written into the project only AFTER the agent has finished
+#   sites         the places that the change must update. A site is missed when its file still
+#                 matches a `stale` regex. `unseen: true` marks a site that no static tool can
+#                 see (a computed name): it stays in the set, as in evals/impact.
+#   reference     the files of a correct change (the tests must pass, no site may be missed)
+#   partial       the files of the typical mistake: the definition and the obvious caller only
+#
+# Rules for this file: write the sites from the code, never from what a tool reports. Keep the
+# tasks where Nexus-MCP does not help. `tests/test_change_safety.py` proves that every task
+# fails at the start, passes with `reference`, and fails with `partial`.
+
+tasks:
+  - id: py-add-required-parameter
+    language: python
+    kind: signature
+    test_command: python -m pytest -q -p no:cacheprovider
+    prompt: >
+      `pricing.discount` must never return less than a floor. Add a third required parameter
+      `floor` (a number). The result is the larger of the old result and `floor`. Update
+      every caller. A caller that needs no floor passes 0, so its behaviour does not change.
+      Update the tests that call `discount` directly. Run the tests when you finish.
+    files:
+      conftest.py: |
+        # Puts the project folder on sys.path for pytest.
+      pricing.py: |
+        def discount(price, rate):
+            return round(price * (1 - rate), 2)
+      cart.py: |
+        from pricing import discount
+
+
+        def cart_total(items, rate):
+            return sum(discount(price, rate) for price in items)
+      invoice.py: |
+        import pricing
+
+
+        def invoice_line(name, price, rate):
+            return f"{name}: {pricing.discount(price, rate):.2f}"
+      promo.py: |
+        from pricing import discount as apply_discount
+
+
+        def promo_price(price):
+            return apply_discount(price, 0.25)
+      report.py: |
+        from cart import cart_total
+
+
+        def summary(carts, rate):
+            return [cart_total(cart, rate) for cart in carts]
+      tests/test_pricing.py: |
+        from pricing import discount
+
+
+        def test_discount_halves_the_price():
+            assert discount(100, 0.5) == 50.0
+      tests/test_cart.py: |
+        from cart import cart_total
+
+
+        def test_cart_total_applies_the_rate_to_each_item():
+            assert cart_total([10, 20], 0.5) == 15.0
+      tests/test_invoice.py: |
+        from invoice import invoice_line
+
+
+        def test_invoice_line_shows_two_decimals():
+            assert invoice_line("pen", 3, 0.5) == "pen: 1.50"
+      tests/test_promo.py: |
+        from promo import promo_price
+
+
+        def test_promo_price_takes_a_quarter_off():
+            assert promo_price(100) == 75.0
+    acceptance:
+      tests/test_floor.py: |
+        from cart import cart_total
+        from invoice import invoice_line
+        from pricing import discount
+        from promo import promo_price
+        from report import summary
+
+
+        def test_discount_never_drops_below_the_floor():
+            assert discount(100, 0.9, 20) == 20
+            assert discount(100, 0.5, 0) == 50.0
+
+
+        def test_callers_keep_their_behaviour():
+            assert cart_total([10, 20], 0.5) == 15.0
+            assert invoice_line("pen", 3, 0.5) == "pen: 1.50"
+            assert promo_price(100) == 75.0
+            assert summary([[10], [20]], 0.5) == [5.0, 10.0]
+    sites:
+      - file: pricing.py
+        stale: ['def discount\(price, rate\)']
+      - file: cart.py
+        stale: ['discount\(price, rate\)']
+      - file: invoice.py
+        stale: ['pricing\.discount\(price, rate\)']
+      - file: promo.py
+        stale: ['apply_discount\(price, 0\.25\)']
+      - file: tests/test_pricing.py
+        stale: ['discount\(100, 0\.5\)\s*==']
+    reference:
+      pricing.py: |
+        def discount(price, rate, floor):
+            return max(round(price * (1 - rate), 2), floor)
+      cart.py: |
+        from pricing import discount
+
+
+        def cart_total(items, rate):
+            return sum(discount(price, rate, 0) for price in items)
+      invoice.py: |
+        import pricing
+
+
+        def invoice_line(name, price, rate):
+            return f"{name}: {pricing.discount(price, rate, 0):.2f}"
+      promo.py: |
+        from pricing import discount as apply_discount
+
+
+        def promo_price(price):
+            return apply_discount(price, 0.25, 0)
+      tests/test_pricing.py: |
+        from pricing import discount
+
+
+        def test_discount_halves_the_price():
+            assert discount(100, 0.5, 0) == 50.0
+    partial:
+      pricing.py: |
+        def discount(price, rate, floor):
+            return max(round(price * (1 - rate), 2), floor)
+      cart.py: |
+        from pricing import discount
+
+
+        def cart_total(items, rate):
+            return sum(discount(price, rate, 0) for price in items)
+
+  - id: py-rename-route
+    language: python
+    kind: boundary
+    test_command: python -m pytest -q -p no:cacheprovider
+    prompt: >
+      Rename the route `POST /orders` to `POST /v2/orders`. The old path must stop working.
+      Update the server and every client of the route. Run the tests when you finish.
+    files:
+      conftest.py: |
+        # Puts the project folder on sys.path for pytest.
+      framework.py: |
+        ROUTES = {}
+
+
+        class App:
+            def post(self, path):
+                def register(fn):
+                    ROUTES[("POST", path)] = fn
+                    return fn
+
+                return register
+
+
+        class Client:
+            def post(self, path, json=None):
+                handler = ROUTES.get(("POST", path))
+                if handler is None:
+                    return {"status": 404}
+                return {"status": 200, "body": handler(json or {})}
+
+
+        app = App()
+        client = Client()
+      server.py: |
+        from framework import app
+
+
+        @app.post("/orders")
+        def create_order(payload):
+            return {"id": 1, "items": payload.get("items", [])}
+      checkout.py: |
+        from framework import client
+
+
+        def submit(items):
+            return client.post("/orders", json={"items": items})
+      admin.py: |
+        from framework import client
+
+
+        def create_test_order():
+            return client.post("/orders", json={"items": ["x"]})
+      sync.py: |
+        from framework import client
+
+        BASE = "/orders"
+
+
+        def resubmit(items):
+            return client.post(BASE, json={"items": items})
+      tests/test_checkout.py: |
+        import server  # noqa: F401  (registers the routes)
+        from checkout import submit
+
+
+        def test_submit_creates_an_order():
+            assert submit(["a"])["status"] == 200
+      tests/test_admin.py: |
+        import server  # noqa: F401
+        from admin import create_test_order
+
+
+        def test_create_test_order_works():
+            assert create_test_order()["status"] == 200
+    acceptance:
+      tests/test_route.py: |
+        import server  # noqa: F401
+        from admin import create_test_order
+        from checkout import submit
+        from framework import client
+        from sync import resubmit
+
+
+        def test_every_client_uses_the_new_path():
+            assert submit(["a"])["status"] == 200
+            assert create_test_order()["status"] == 200
+            assert resubmit(["a"])["status"] == 200
+
+
+        def test_the_old_path_is_gone():
+            assert client.post("/orders", json={})["status"] == 404
+    sites:
+      - file: server.py
+        stale: ['"/orders"']
+      - file: checkout.py
+        stale: ['"/orders"']
+      - file: admin.py
+        stale: ['"/orders"']
+      - file: sync.py
+        stale: ['BASE = "/orders"']
+        unseen: true
+    reference:
+      server.py: |
+        from framework import app
+
+
+        @app.post("/v2/orders")
+        def create_order(payload):
+            return {"id": 1, "items": payload.get("items", [])}
+      checkout.py: |
+        from framework import client
+
+
+        def submit(items):
+            return client.post("/v2/orders", json={"items": items})
+      admin.py: |
+        from framework import client
+
+
+        def create_test_order():
+            return client.post("/v2/orders", json={"items": ["x"]})
+      sync.py: |
+        from framework import client
+
+        BASE = "/v2/orders"
+
+
+        def resubmit(items):
+            return client.post(BASE, json={"items": items})
+    partial:
+      server.py: |
+        from framework import app
+
+
+        @app.post("/v2/orders")
+        def create_order(payload):
+            return {"id": 1, "items": payload.get("items", [])}
+      checkout.py: |
+        from framework import client
+
+
+        def submit(items):
+            return client.post("/v2/orders", json={"items": items})
+
+  - id: ts-rename-function
+    language: typescript
+    kind: rename
+    test_command: node --test tests/*.test.ts
+    prompt: >
+      Rename the exported function `loadCart` to `fetchCart`. The old name must stop
+      working. Update every use, and the tests that use it. Run the tests when you finish.
+    files:
+      src/cart.ts: |
+        export function loadCart(id: string) {
+          return { id, items: [id + "-a", id + "-b"] };
+        }
+      src/checkout.ts: |
+        import { loadCart } from "./cart.ts";
+
+        export function checkout(id: string) {
+          return loadCart(id).items.length;
+        }
+      src/summary.ts: |
+        import { loadCart as load } from "./cart.ts";
+
+        export const summary = (id: string) => load(id).items.join(",");
+      src/index.ts: |
+        import * as cart from "./cart.ts";
+
+        export function first(id: string) {
+          return cart.loadCart(id).items[0];
+        }
+      src/jobs.ts: |
+        import { loadCart } from "./cart.ts";
+
+        export const jobs = {
+          nightly: () => loadCart("n").id,
+        };
+      tests/cart.test.ts: |
+        import assert from "node:assert/strict";
+        import { test } from "node:test";
+        import { loadCart } from "../src/cart.ts";
+
+        test("loadCart returns the items", () => {
+          assert.deepEqual(loadCart("a").items, ["a-a", "a-b"]);
+        });
+      tests/checkout.test.ts: |
+        import assert from "node:assert/strict";
+        import { test } from "node:test";
+        import { checkout } from "../src/checkout.ts";
+
+        test("checkout counts the items", () => {
+          assert.equal(checkout("a"), 2);
+        });
+    acceptance:
+      tests/rename.test.ts: |
+        import assert from "node:assert/strict";
+        import { test } from "node:test";
+        import * as cartModule from "../src/cart.ts";
+        import { checkout } from "../src/checkout.ts";
+        import { first } from "../src/index.ts";
+        import { jobs } from "../src/jobs.ts";
+        import { summary } from "../src/summary.ts";
+
+        test("the new name works and the old name is gone", () => {
+          assert.deepEqual(cartModule.fetchCart("a").items, ["a-a", "a-b"]);
+          assert.equal((cartModule as Record<string, unknown>).loadCart, undefined);
+        });
+
+        test("every user of the function still works", () => {
+          assert.equal(checkout("a"), 2);
+          assert.equal(summary("a"), "a-a,a-b");
+          assert.equal(first("a"), "a-a");
+          assert.equal(jobs.nightly(), "n");
+        });
+    sites:
+      - file: src/cart.ts
+        stale: ['loadCart']
+      - file: src/checkout.ts
+        stale: ['loadCart']
+      - file: src/summary.ts
+        stale: ['loadCart']
+      - file: src/index.ts
+        stale: ['loadCart']
+      - file: src/jobs.ts
+        stale: ['loadCart']
+      - file: tests/cart.test.ts
+        stale: ['loadCart']
+    reference:
+      src/cart.ts: |
+        export function fetchCart(id: string) {
+          return { id, items: [id + "-a", id + "-b"] };
+        }
+      src/checkout.ts: |
+        import { fetchCart } from "./cart.ts";
+
+        export function checkout(id: string) {
+          return fetchCart(id).items.length;
+        }
+      src/summary.ts: |
+        import { fetchCart as load } from "./cart.ts";
+
+        export const summary = (id: string) => load(id).items.join(",");
+      src/index.ts: |
+        import * as cart from "./cart.ts";
+
+        export function first(id: string) {
+          return cart.fetchCart(id).items[0];
+        }
+      src/jobs.ts: |
+        import { fetchCart } from "./cart.ts";
+
+        export const jobs = {
+          nightly: () => fetchCart("n").id,
+        };
+      tests/cart.test.ts: |
+        import assert from "node:assert/strict";
+        import { test } from "node:test";
+        import { fetchCart } from "../src/cart.ts";
+
+        test("fetchCart returns the items", () => {
+          assert.deepEqual(fetchCart("a").items, ["a-a", "a-b"]);
+        });
+    partial:
+      src/cart.ts: |
+        export function fetchCart(id: string) {
+          return { id, items: [id + "-a", id + "-b"] };
+        }
+      src/checkout.ts: |
+        import { fetchCart } from "./cart.ts";
+
+        export function checkout(id: string) {
+          return fetchCart(id).items.length;
+        }
+
+  - id: ts-edge-function-response
+    language: typescript
+    kind: boundary
+    test_command: node --test tests/*.test.ts
+    prompt: >
+      The edge function `send-receipt` must return the field `state` instead of `status`,
+      with the same values. Update the function and every consumer of its response. Run the
+      tests when you finish.
+    files:
+      supabase/functions/send-receipt/index.ts: |
+        export default async function handler(body: { orderId: string }) {
+          return { status: "sent", orderId: body.orderId };
+        }
+      src/supabase.ts: |
+        export const supabase = {
+          functions: {
+            async invoke(name: string, options: { body: any }) {
+              const mod = await import("../supabase/functions/" + name + "/index.ts");
+              return { data: await mod.default(options.body), error: null };
+            },
+          },
+        };
+      src/checkout.ts: |
+        import { supabase } from "./supabase.ts";
+
+        export async function pay(orderId: string) {
+          const { data } = await supabase.functions.invoke("send-receipt", { body: { orderId } });
+          return data.status === "sent";
+        }
+      src/orders.ts: |
+        import { supabase } from "./supabase.ts";
+
+        export async function notify(orderId: string) {
+          const { data } = await supabase.functions.invoke("send-receipt", { body: { orderId } });
+          return data.status;
+        }
+      src/admin.ts: |
+        import { supabase } from "./supabase.ts";
+
+        export async function resend(orderId: string) {
+          const result = await supabase.functions.invoke("send-receipt", { body: { orderId } });
+          return result.data.status.toUpperCase();
+        }
+      tests/checkout.test.ts: |
+        import assert from "node:assert/strict";
+        import { test } from "node:test";
+        import { pay } from "../src/checkout.ts";
+
+        test("pay is true when the receipt is sent", async () => {
+          assert.equal(await pay("o1"), true);
+        });
+    acceptance:
+      tests/receipt.test.ts: |
+        import assert from "node:assert/strict";
+        import { test } from "node:test";
+        import handler from "../supabase/functions/send-receipt/index.ts";
+        import { resend } from "../src/admin.ts";
+        import { pay } from "../src/checkout.ts";
+        import { notify } from "../src/orders.ts";
+
+        test("the function returns state and no status", async () => {
+          const out = (await handler({ orderId: "o1" })) as Record<string, unknown>;
+          assert.equal(out.state, "sent");
+          assert.equal(out.status, undefined);
+        });
+
+        test("every consumer reads state", async () => {
+          assert.equal(await pay("o1"), true);
+          assert.equal(await notify("o1"), "sent");
+          assert.equal(await resend("o1"), "SENT");
+        });
+    sites:
+      - file: supabase/functions/send-receipt/index.ts
+        stale: ['status']
+      - file: src/checkout.ts
+        stale: ['\.status']
+      - file: src/orders.ts
+        stale: ['\.status']
+      - file: src/admin.ts
+        stale: ['\.status']
+    reference:
+      supabase/functions/send-receipt/index.ts: |
+        export default async function handler(body: { orderId: string }) {
+          return { state: "sent", orderId: body.orderId };
+        }
+      src/checkout.ts: |
+        import { supabase } from "./supabase.ts";
+
+        export async function pay(orderId: string) {
+          const { data } = await supabase.functions.invoke("send-receipt", { body: { orderId } });
+          return data.state === "sent";
+        }
+      src/orders.ts: |
+        import { supabase } from "./supabase.ts";
+
+        export async function notify(orderId: string) {
+          const { data } = await supabase.functions.invoke("send-receipt", { body: { orderId } });
+          return data.state;
+        }
+      src/admin.ts: |
+        import { supabase } from "./supabase.ts";
+
+        export async function resend(orderId: string) {
+          const result = await supabase.functions.invoke("send-receipt", { body: { orderId } });
+          return result.data.state.toUpperCase();
+        }
+    partial:
+      supabase/functions/send-receipt/index.ts: |
+        export default async function handler(body: { orderId: string }) {
+          return { state: "sent", orderId: body.orderId };
+        }
+      src/checkout.ts: |
+        import { supabase } from "./supabase.ts";
+
+        export async function pay(orderId: string) {
+          const { data } = await supabase.functions.invoke("send-receipt", { body: { orderId } });
+          return data.state === "sent";
+        }

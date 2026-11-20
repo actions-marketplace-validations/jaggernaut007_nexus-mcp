@@ -1,4 +1,4 @@
-"""The registry of linked repos (ADR-027).
+"""The registry of linked repos (ADR-030).
 
 A project can link other repos. Each repo keeps its own index in `<repo>/.nexus`. The
 links are kept in one user-level file, outside every repo, because a clone or an archive

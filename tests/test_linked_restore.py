@@ -1,4 +1,4 @@
-"""A new server process attaches the linked repos of the project, read-only (ADR-027)."""
+"""A new server process attaches the linked repos of the project, read-only (ADR-030)."""
 
 import json
 import shutil

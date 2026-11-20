@@ -1,4 +1,4 @@
-"""jina-code, `trust_remote_code` and the PyTorch dependency were removed in 3.0.0 (ADR-026).
+"""jina-code, `trust_remote_code` and the PyTorch dependency were removed in 3.0.0 (ADR-029).
 
 These tests replace `test_model_deprecation.py` and `test_trust_remote_code.py`. The
 requirement changed: the model that was deprecated in 2.x is now gone, and a person who

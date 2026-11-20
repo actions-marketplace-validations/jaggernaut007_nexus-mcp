@@ -16,7 +16,7 @@ def eval_home() -> Path:
 
 
 def links_file() -> Path:
-    """The registry of linked repos (ADR-027). Set ``NEXUS_LINKS_FILE`` to move it."""
+    """The registry of linked repos (ADR-030). Set ``NEXUS_LINKS_FILE`` to move it."""
     return Path(os.environ.get("NEXUS_LINKS_FILE") or Path.home() / ".nexus-mcp" / "links.json")
 
 

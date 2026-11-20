@@ -1,4 +1,4 @@
-"""The link registry: a user-level file outside each repo (ADR-027)."""
+"""The link registry: a user-level file outside each repo (ADR-030)."""
 
 import json
 

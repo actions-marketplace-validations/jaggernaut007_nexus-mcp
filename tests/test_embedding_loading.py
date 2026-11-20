@@ -6,7 +6,7 @@ test builds. The SentenceTransformer class (the `torch` extra) is replaced by a 
 because those tests check the arguments the service passes, not the model weights.
 Model-change detection uses the real pipeline and a real index on disk.
 
-Requirement changes in 3.0.0 (ADR-026): the encoder is native ONNX, `jina-code` and
+Requirement changes in 3.0.0 (ADR-029): the encoder is native ONNX, `jina-code` and
 `trust_remote_code` are gone, and the torch backend is the optional model `bge-small-en-torch`.
 """
 

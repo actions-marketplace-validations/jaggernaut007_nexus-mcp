@@ -201,7 +201,7 @@ All settings via environment variables with `NEXUS_` prefix:
 | Decision | Rationale |
 |----------|-----------|
 | LanceDB over ChromaDB | Embedded, mmap (disk-backed), native FTS, fewer dependencies |
-| ONNX Runtime over PyTorch | Download of the wheels 336 MB to 157 MB (macOS) and 1,054 MB to 185 MB (Linux); search peak RSS 483 MB to 266 MB. About 1.2 times slower than PyTorch on the Apple Silicon CPU and 2 times slower than its MPS GPU ([ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md)) |
+| ONNX Runtime over PyTorch | Download of the wheels 336 MB to 157 MB (macOS) and 1,054 MB to 185 MB (Linux); search peak RSS 483 MB to 266 MB. About 1.2 times slower than PyTorch on the Apple Silicon CPU and 2 times slower than its MPS GPU ([ADR-029](adr/ADR-029-cpu-only-onnx-embeddings.md)) |
 | bge-small-en default | Lightweight 384d embeddings, int8 ONNX file ([ADR-004](adr/ADR-004-bge-small-default-model.md)); CPU only (PyTorch model for a GPU); jina-code removed in 3.0.0 |
 | rustworkx over Neo4j | In-memory graph is sufficient, no DB server dependency |
 | Single MCP over two | Halves memory, eliminates cross-process coordination |
