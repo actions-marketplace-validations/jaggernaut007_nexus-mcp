@@ -21,7 +21,12 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Callable, List, Optional
 
 from nexus_mcp import __version__
-from nexus_mcp.core.graph_models import NodeType, UniversalNode, UniversalRelationship
+from nexus_mcp.core.graph_models import (
+    NodeType,
+    RelationshipType,
+    UniversalNode,
+    UniversalRelationship,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -1585,8 +1590,42 @@ def _graph_immediate(
         )
     if direction == "callers":
         _add_overrides(result, state, matches)
+        _add_boundary_users(result, state, matches)
         _add_references(result, state, symbol_name, matches)
     return result
+
+
+MAX_BOUNDARY_USERS = 20  # users of a route, an edge function or a table that `graph` lists
+
+
+def _add_boundary_users(result: dict[str, Any], state, matches: List[UniversalNode]) -> None:
+    """Add the code that reaches the matched symbols through a boundary (ADR-026).
+
+    `fetch("/orders")`, `supabase.functions.invoke("send-receipt")` and `.from("orders")` give
+    no call edge. The field is left out when no such user exists, so it costs no tokens
+    in the common case.
+    """
+    found: list[tuple[UniversalNode, str, str]] = []
+    seen: set[str] = set()
+    for node in matches:
+        for user, kind, key in state.graph_engine.get_boundary_users(node.id):
+            if user.id not in seen:
+                seen.add(user.id)
+                found.append((user, kind, key))
+    if not found:
+        return
+    grouped: dict[str, dict[str, list[str]]] = {}
+    for user, kind, key in found[:MAX_BOUNDARY_USERS]:
+        short = _serialize_node_compact(user, state.codebase_path)
+        files = grouped.setdefault(f"{kind} {key}", {})
+        files.setdefault(short["file"], []).append(f"{short['name']}:{short['start_line']}")
+    result["boundary_callers"] = grouped
+    if len(found) > MAX_BOUNDARY_USERS:
+        result["boundary_callers_not_listed"] = len(found) - MAX_BOUNDARY_USERS
+    result["boundary_note"] = (
+        "boundary_callers: code that reaches this symbol through a route, an edge function "
+        "or a table. It has no call in the code, so it is not in `callers`."
+    )
 
 
 def _references_only(state, symbol_name: str, direction: str) -> dict[str, Any]:
@@ -1696,6 +1735,9 @@ def _add_references(
     )
 
 
+_IMPACT_EDGES = frozenset({RelationshipType.CALLS, RelationshipType.DEPENDS_ON})
+
+
 def _graph_transitive_impact(
     state, symbol_name: str, max_depth: int, detail: str = "compact"
 ) -> dict[str, Any]:
@@ -1711,7 +1753,9 @@ def _graph_transitive_impact(
     by_file: dict[str, list[str]] = {}
     seen: set[str] = set()
     for node in matches:
-        for caller in state.graph_engine.get_transitive_callers(node.id, max_depth=max_depth):
+        for caller in state.graph_engine.get_transitive_callers(
+            node.id, max_depth=max_depth, edge_types=_IMPACT_EDGES
+        ):
             if caller.id not in seen:
                 seen.add(caller.id)
                 all_impacted.append(serialize(caller, state.codebase_path))

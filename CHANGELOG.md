@@ -9,7 +9,7 @@ All notable changes to this project will be documented in this file.
 - **The default embedding model runs on the CPU with ONNX Runtime.** The default model `bge-small-en` is now the int8
   ONNX file of `Xenova/bge-small-en-v1.5` (32 MB, pinned to a commit). A native encoder
   (`tokenizers` and `onnxruntime`) runs it. `torch`, `sentence-transformers`, `optimum` and
-  the CUDA packages are no longer dependencies. See [ADR-026](docs/adr/ADR-026-cpu-only-onnx-embeddings.md).
+  the CUDA packages are no longer dependencies. See [ADR-029](docs/adr/ADR-029-cpu-only-onnx-embeddings.md).
 - **PyTorch is the optional GPU model.** Install `nexus-mcp-ci[torch]` and set
   `NEXUS_EMBEDDING_MODEL=bge-small-en-torch` (fp32 weights). It uses a GPU when one is present
   (CUDA, then Apple MPS) and the CPU if not. On Apple Silicon the MPS GPU is about 2 times
@@ -57,6 +57,48 @@ a shared machine). Linux speed is not measured.
 
 ### Added
 
+- **Change-safety benchmark (ADR-028).** `benchmarks/change_safety/`: four tasks (a new
+  required parameter and a renamed route in Python, a renamed function and a changed edge
+  function response in TypeScript), a scorer with no model (hidden tests, left-behind sites), a
+  live runner that is a dry run unless `--go` is given, and a report. The tasks prove
+  themselves offline: the start state fails, the reference change is safe, the partial change
+  is not. `nexus-mcp-ci check` names every visible left-behind site of the four partial
+  changes (the computed route name stays a miss). Not run live: cost, wall time and the safe
+  rate of a real agent need the owner's go-ahead (24 runs, $36 at most by the cap).
+- **Stop hook and `check` skill in the plugin (ADR-027).** `nexus-mcp-ci check --hook` runs at
+  the end of an agent turn. It prints a block decision only for a new `high` finding (6
+  findings at most, one line each, and 5 tests), then holds the same finding by a digest. It
+  is silent for a clean turn, no index, no git, `stop_hook_active` and `NEXUS_HOOK=off`, and it
+  always exits 0. The hook command ends in `|| true`, so a pinned release without the flag does
+  nothing. The skill `check` is started by the user only (`disable-model-invocation`). No new
+  tool, no new parameter, no change in any tool result: the tokens of a session do not change,
+  except about 100 to 300 once for a new `high` finding. Not run: the live benchmark. The hook
+  costs about 1.2 s of wall time at each turn end on a small project (measured in the tests).
+  A change-context field in `graph` was left out: it repeats the files that `graph` lists.
+- **`nexus-mcp-ci check`**: reads the git diff, maps changed lines to symbols, and lists the
+  callers, references and tests that the diff did not update (exit 0 clean, 1 finding at
+  `--fail-on`, 2 usage or git error, 3 no or stale index). It runs outside the model, so it
+  adds no tokens to a session. `nexus-mcp-ci index` builds the index without an agent.
+- **Stable symbol keys** (`core/keys.py`): `<file>::<type>::<qualified name>`, the same on
+  every index run. Node ids stay random.
+- **Seeded breakage set** (`python -m evals.impact.run`): 10 cases, 5 Python and 5
+  TypeScript. First run: recall 0.867, precision 1.000, tests recall 1.000 (Python 0.750,
+  TypeScript 1.000). The misses stay in the set: a computed `getattr` name, and a method
+  call whose receiver has the name of an imported module file (no edge; precision first).
+
+- **Boundary edges** ([ADR-026](docs/adr/ADR-026-boundary-edges.md)): `DEPENDS_ON` edges from
+  the code that uses a route (`fetch`, `axios`, `requests`, a test client), an edge function
+  (`supabase.functions.invoke`) or a SQL table (`.from`, `.table`) to the code that provides
+  it. Providers: Python route decorators, Express-style `app.post("/x", handler)`,
+  `supabase/functions/<name>/index.ts`, and `create table` or `create view` in `.sql` files
+  (read without a grammar; no search chunks). `check` reports `boundary_untouched` (`high` for a
+  removed provider, a changed key or signature, dropped columns or a destructive `alter`);
+  `graph` lists `boundary_callers` when users exist, and `transitive=true` follows them.
+  A changed decorator line now maps to its function.
+- **Boundary breakage set** (`python -m evals.impact.run --cases evals/impact/boundary_cases.yaml`):
+  6 cases. Recall 0.889, precision 1.000, tests recall 1.000; with the boundary findings off the
+  same set gives recall 0.000. The miss stays in the set: a computed URL (`BASE + "/orders"`).
+  `cases.yaml` is unchanged (recall 0.867, precision 1.000).
 - **`index` keeps the index folder out of git.** The index holds code and can be about 1 GB.
   Before this change, only the docs told the user to add `.nexus/` to `.gitignore`.
   - When the index folder is in a git work tree and no ignore rule covers it
@@ -71,6 +113,37 @@ a shared machine). Linux speed is not measured.
   - New module `src/nexus_mcp/indexing/git_exclude.py`.
   - No tool description, tool schema or tool result changes. The north-star numbers
     (tokens, cost, hit@1) do not move, so there is no before and after pair to record.
+
+### Changed
+
+- **TypeScript imports with an extension give call edges.** `import { f } from "./cart.ts"`
+  (Node type stripping, Deno) and `"./cart.js"` (TypeScript with NodeNext) named no module, so a
+  renamed function was found only by text search at `medium`. The resolver strips a script
+  extension from a relative import; `./cart.json` stays as it is. Found by the change-safety
+  tasks; four tests failed before the fix. Offline numbers: impact set recall 0.867 and
+  precision 1.000 before and after; retrieval code did not change, so hit@1 did not change.
+  Live cost and wall time were not run.
+- **Boundary edges, offline numbers.** hit@1 (`bge-small-en`, `hybrid-exact`): `shop_repo` 0.750
+  to 0.750. `nexus_mcp` 17 of 24 to 16 of 24, because the new module `parsing/boundaries.py`
+  outranks `call_resolver.py` for one query ("connect each call site to the function that it
+  invokes"); the new code on the old corpus gives 17 of 24, so ranking did not change. Live
+  cost and wall time were not run. Fast suite: 1,859 passed.
+- **More functions and edges for Python and JS/TS.** Graph nodes and search symbols for
+  `export const f = () => {}`, function expressions, class-field arrows, members of a named
+  top-level object, `module.exports.x = ...`, `X.prototype.y = ...`, default exports (named
+  from the file, or the folder for `index`) and assigned Python lambdas. A `<top-level>`
+  node per file owns the calls outside every function (`Deno.serve(...)`, `app = FastAPI()`).
+  Python decorators count as calls of the decorated function. pytest fixtures get `USES`
+  edges from the tests that name them. Default, aliased, namespace and `require` imports,
+  and re-exports (3 hops), resolve calls. `.tsx` uses the tsx grammar. A callback inside a
+  class is no longer a symbol named after its first parameter.
+- **Offline numbers, before and after** (live cost and wall time were not run; they need the
+  owner's go-ahead). Graph coverage: shop fixture Python functions 36 to 38, CALLS edges 32
+  to 34; `src` Python functions 625 to 692, CALLS edges 844 to 936. hit@1 (`bge-small-en`,
+  hybrid): `shop_repo` 0.625 to 0.750 (same 60 chunks; the old code gave 0.625 on a rerun);
+  `nexus_mcp` 0.625 to 0.750, but the corpus differs between the runs (927 and 975 chunks);
+  vector-only on `nexus_mcp` 0.667 to 0.625 (one query of 24). Not added: an
+  `affected_tests` field in `graph`, because its token cost is unmeasured.
 
 ### Benchmarks
 

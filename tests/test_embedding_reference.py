@@ -1,4 +1,4 @@
-"""The default model against stored vectors of the fp32 PyTorch model (ADR-026).
+"""The default model against stored vectors of the fp32 PyTorch model (ADR-029).
 
 `tests/fixtures/bge_small_reference.json` holds the vectors that sentence-transformers made
 for five fixed texts (`scripts/measure_embedding_backends.py --write-reference`). The test

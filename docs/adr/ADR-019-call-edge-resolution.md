@@ -126,3 +126,26 @@ additions. Precision still comes first.
   through a receiver of unknown type with one of these names does not resolve. For C#
   the check ignores case.
 - The routing eval and the benchmark can now test the graph tools on real data.
+
+## Amendment 2026-11-17: Python and JS/TS function coverage
+
+- **More nodes.** TypeScript and JavaScript now give nodes to functions that are values
+  bound to a name: `const f = () => {}`, function expressions, class-field arrows, members
+  of a named top-level object (`parent_class` is the object, `object_literal` is set),
+  `module.exports.x = ...`, `X.prototype.y = ...` and default exports (named from the
+  file, or from the folder when the file is `index`). Python gives nodes to lambdas assigned
+  to a name at module or class level. An anonymous callback, and any function inside
+  another function, gets no node: its calls belong to the function that holds it.
+- **`<top-level>` node.** One per Python or JS/TS file, for the calls outside every
+  function (`Deno.serve(...)`, `app = FastAPI()`). It has `metadata["module_body"]`. The
+  analyzer skips it. No call can resolve to it.
+- **Decorators.** A Python decorator is a call of the function it decorates, and its name
+  is kept in `metadata["decorators"]`.
+- **Fixtures.** `resolve_fixtures` adds `USES` edges from a pytest test or fixture to the
+  fixture that its parameter names (same file, then the nearest `conftest.py`).
+- **Imports.** JS/TS bindings (`import_bindings`: default, alias, namespace, `require`) and
+  `reexports` are stored on the module node. A name that an import binds resolves through
+  that import, or not at all. Re-exports are followed for three hops.
+- Search and graph follow the same naming rules (`tests/test_bound_functions.py` compares
+  them). `.tsx` uses the tsx grammar in both parsers.
+- See ADR-025 for the check that uses these edges.

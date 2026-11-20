@@ -1,4 +1,4 @@
-# ADR-026: Default Embeddings on ONNX Runtime (CPU), PyTorch Optional for a GPU, jina-code Removed
+# ADR-029: Default Embeddings on ONNX Runtime (CPU), PyTorch Optional for a GPU, jina-code Removed
 
 ## Status: Accepted
 ## Date: 2026-11-17 (amended the same day: the PyTorch model keeps GPU support)

@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Set
 from nexus_mcp.core.graph_models import (
     NodeType,
     RelationshipType,
+    UniversalNode,
+    is_module_body,
 )
 from nexus_mcp.engines.graph_engine import RustworkxCodeGraph
 
@@ -23,6 +25,13 @@ class CodeAnalyzer:
     def __init__(self, graph: RustworkxCodeGraph):
         self.graph = graph
 
+    def _functions(self) -> List[UniversalNode]:
+        """Real functions only: the per-file `<top-level>` node spans the whole file and
+        nothing calls it, so it would show as a long function and as dead code."""
+        return [
+            n for n in self.graph.get_nodes_by_type(NodeType.FUNCTION) if not is_module_body(n)
+        ]
+
     def detect_code_smells(self) -> Dict[str, List[Dict[str, Any]]]:
         """Detect code smells across the codebase."""
         smells: Dict[str, List[Dict[str, Any]]] = {
@@ -32,7 +41,7 @@ class CodeAnalyzer:
             "dead_code": [],
         }
 
-        functions = self.graph.get_nodes_by_type(NodeType.FUNCTION)
+        functions = self._functions()
         for func in functions:
             if func.line_count > 50:
                 smells["long_functions"].append({
@@ -68,7 +77,7 @@ class CodeAnalyzer:
 
     def analyze_complexity(self, threshold: int = 10) -> Dict[str, Any]:
         """Analyze complexity distribution."""
-        functions = self.graph.get_nodes_by_type(NodeType.FUNCTION)
+        functions = self._functions()
         if not functions:
             return {
                 "total_functions": 0,
@@ -147,7 +156,7 @@ class CodeAnalyzer:
 
     def calculate_quality_metrics(self) -> Dict[str, Any]:
         """Calculate overall code quality metrics."""
-        functions = self.graph.get_nodes_by_type(NodeType.FUNCTION)
+        functions = self._functions()
         if not functions:
             return {
                 "maintainability_index": 0,
@@ -177,7 +186,7 @@ class CodeAnalyzer:
 
     def _find_dead_code(self) -> List[Dict[str, Any]]:
         """Find functions that are never called."""
-        functions = {n.id: n for n in self.graph.get_nodes_by_type(NodeType.FUNCTION)}
+        functions = {n.id: n for n in self._functions()}
         called: Set[str] = set()
 
         for rel in self.graph.get_relationships_by_type(RelationshipType.CALLS):

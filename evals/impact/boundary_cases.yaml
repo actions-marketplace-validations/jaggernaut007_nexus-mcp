@@ -1,0 +1,152 @@
+# Seeded breakage set for the boundaries of `nexus-mcp-ci check` (ADR-026).
+#
+# Same format and rules as `cases.yaml`. The break here crosses a boundary: a route, an
+# edge function or a SQL table. The two sides share a key, never a call, so a call graph
+# finds nothing. Run it with:
+#   python -m evals.impact.run --cases evals/impact/boundary_cases.yaml
+#
+# Rules for this file: write the ground truth from the code, never from the output of
+# the check. Keep the cases that the check misses. Do not tune a case until it passes.
+
+cases:
+  - id: route-path-renamed
+    language: boundary
+    files:
+      api/orders.py: |
+        @app.post("/orders")
+        def create_order(payload):
+            return payload
+      web/src/api.ts: |
+        export async function submit(cart: object) {
+          return fetch("/orders", { method: "POST", body: JSON.stringify(cart) });
+        }
+      tests/test_orders.py: |
+        def test_create(client):
+            assert client.post("/orders", json={}).status_code == 200
+    change:
+      api/orders.py: |
+        @app.post("/v2/orders")
+        def create_order(payload):
+            return payload
+    breaks: [web/src/api.ts::function::submit, tests/test_orders.py::function::test_create]
+    tests: [tests/test_orders.py]
+
+  - id: route-parameter-added
+    language: boundary
+    files:
+      api/orders.py: |
+        @router.get("/orders/{order_id}")
+        def read_order(order_id):
+            return {"id": order_id}
+      web/src/orders.ts: |
+        export async function readOrder(id: string) {
+          return fetch(`/orders/${id}`);
+        }
+    change:
+      api/orders.py: |
+        @router.get("/orders/{order_id}")
+        def read_order(order_id, tenant):
+            return {"id": order_id, "tenant": tenant}
+    breaks: [web/src/orders.ts::function::readOrder]
+    tests: []
+
+  - id: edge-function-response-changed
+    language: boundary
+    files:
+      supabase/functions/send-receipt/index.ts: |
+        export default async function handler(req: Request) {
+          return new Response(JSON.stringify({ sent: true }));
+        }
+      web/src/checkout.ts: |
+        export async function pay(order: object) {
+          const res = await supabase.functions.invoke("send-receipt", { body: order });
+          return res.data.sent;
+        }
+      tests/checkout.test.ts: |
+        import { pay } from "../web/src/checkout";
+
+        describe("pay", () => {
+          it("sends a receipt", async () => { await pay({}); });
+        });
+    change:
+      supabase/functions/send-receipt/index.ts: |
+        export default async function handler(req: Request) {
+          return new Response(JSON.stringify({ queued: true }));
+        }
+    breaks: [web/src/checkout.ts::function::pay]
+    tests: [tests/checkout.test.ts]
+
+  - id: table-column-dropped
+    language: boundary
+    files:
+      supabase/migrations/001_orders.sql: |
+        create table orders (
+          id uuid primary key,
+          total numeric not null,
+          note text
+        );
+      web/src/orders.ts: |
+        export async function load() {
+          return supabase.from("orders").select("id, total, note");
+        }
+      svc/report.py: |
+        def totals(db):
+            return db.table("orders").select("id, total, note").execute()
+      tests/orders.test.ts: |
+        import { load } from "../web/src/orders";
+
+        describe("load", () => { it("reads", async () => { await load(); }); });
+    change:
+      supabase/migrations/001_orders.sql: |
+        create table orders (
+          id uuid primary key,
+          total numeric not null
+        );
+    breaks: [web/src/orders.ts::function::load, svc/report.py::function::totals]
+    tests: [tests/orders.test.ts]
+
+  - id: ts-route-handler-changed
+    language: boundary
+    files:
+      server/routes.ts: |
+        export function createOrder(req: object, res: { send: (v: string) => void }) {
+          res.send("ok");
+        }
+        app.post("/orders", createOrder);
+      tests/test_orders.py: |
+        def test_create(client):
+            assert client.post("/orders", json={}).text == "ok"
+    change:
+      server/routes.ts: |
+        export function createOrder(req: object, res: { send: (v: string) => void }) {
+          res.send("created");
+        }
+        app.post("/orders", createOrder);
+    breaks: [tests/test_orders.py::function::test_create]
+    tests: [tests/test_orders.py]
+
+  - id: route-path-with-computed-url
+    language: boundary
+    files:
+      api/orders.py: |
+        @app.get("/orders")
+        def list_orders():
+            return []
+      web/src/api.ts: |
+        const BASE = "";
+
+        export async function list() {
+          return fetch("/orders");
+        }
+
+        export async function listRaw() {
+          return fetch(BASE + "/orders");
+        }
+    change:
+      api/orders.py: |
+        @app.get("/v2/orders")
+        def list_orders():
+            return []
+    breaks: [web/src/api.ts::function::list]
+    breaks_unseen: [web/src/api.ts::function::listRaw]
+    tests: []

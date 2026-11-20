@@ -36,6 +36,7 @@ logger = logging.getLogger(__name__)
 SELF_RECEIVERS = frozenset({"self", "cls", "this", "Self"})
 SUPER_RECEIVER = "super"
 MAX_SUPER_CANDIDATES = 20
+MAX_REEXPORT_HOPS = 3
 # Method names that built-in types also have. A call like `self._data.get(key)`
 # or `os.environ.get(...)` has an unknown receiver type, so a project method with
 # the same name must not receive the edge.
@@ -111,6 +112,11 @@ def _is_method(node: UniversalNode) -> bool:
     return bool(node.metadata.get("parent_class"))
 
 
+_SCRIPT_IMPORT_EXTENSIONS = frozenset(
+    {".ts", ".tsx", ".mts", ".cts", ".js", ".jsx", ".mjs", ".cjs"}
+)
+
+
 def _module_path(file_path: str) -> str:
     """File path without extension and with forward slashes."""
     path = file_path.replace("\\", "/")
@@ -142,8 +148,13 @@ class _Index:
         self.module_imports: Dict[str, List[str]] = {}
         self.file_by_module_path: Dict[str, str] = {}
         self.module_files_by_stem: Dict[str, List[Tuple[str, str]]] = defaultdict(list)
+        # JS/TS: `import { a as b } from './x'` binds `b` to (`./x`, `a`).
+        self.module_bindings: Dict[str, Dict[str, Tuple[str, str]]] = {}
+        self.module_reexports: Dict[str, List[Tuple[str, str, str]]] = {}
+        self.default_export: Dict[str, List[UniversalNode]] = defaultdict(list)
         self._imported_files: Dict[str, Set[str]] = {}
         self._imported_stems: Dict[str, Dict[str, Set[str]]] = {}
+        self._source_files: Dict[Tuple[str, str], List[str]] = {}
         for node in graph.nodes.values():
             if node.node_type in (NodeType.FUNCTION, NodeType.CLASS):
                 self.by_name[node.name].append(node)
@@ -151,13 +162,25 @@ class _Index:
                 parent = node.metadata.get("parent_class")
                 if parent:
                     self.by_class_name[(parent, node.name)].append(node)
+                    if node.metadata.get("object_literal"):
+                        self.class_names.add(parent)  # `api.get()` for `const api = {..}`
                 if node.node_type == NodeType.CLASS:
                     self.class_names.add(node.name)
+                if node.metadata.get("export") == "default":
+                    self.default_export[node.location.file_path].append(node)
             elif node.node_type == NodeType.MODULE:
                 path = node.location.file_path
                 imports = node.metadata.get("imports")
                 if imports:
                     self.module_imports[path] = list(imports)
+                bindings = node.metadata.get("import_bindings")
+                if bindings:
+                    self.module_bindings[path] = {
+                        local: (pair[0], pair[1]) for local, pair in bindings.items()
+                    }
+                reexports = node.metadata.get("reexports")
+                if reexports:
+                    self.module_reexports[path] = [(r[0], r[1], r[2]) for r in reexports]
                 module_path = _module_path(path)
                 self.file_by_module_path[module_path] = path
                 self.module_files_by_stem[_stem(module_path)].append((path, module_path))
@@ -183,6 +206,46 @@ class _Index:
                 cached[_stem(_module_path(path))].add(path)
             self._imported_stems[caller_file] = cached
         return cached
+
+    def files_for_source(self, from_file: str, source: str) -> List[str]:
+        """The files that the import specifier `source` names, as written in `from_file`."""
+        key = (from_file, source)
+        cached = self._source_files.get(key)
+        if cached is None:
+            from_dir = posixpath.dirname(from_file.replace("\\", "/"))
+            cached = self._files_for_import(source, from_dir)
+            self._source_files[key] = cached
+        return cached
+
+    def exported_nodes(
+        self, files: List[str], name: str, depth: int = 0
+    ) -> List[UniversalNode]:
+        """Callables that `files` export as `name` ("default" for the default export).
+
+        A file that only re-exports the name (`export { a } from './x'`) is followed, up
+        to three hops. A method is never an export.
+        """
+        found: List[UniversalNode] = []
+        for path in files:
+            if name == "default":
+                found.extend(self.default_export.get(path, ()))
+            else:
+                found.extend(
+                    n for n in self.by_name_file.get((name, path), ()) if not _is_method(n)
+                )
+            if found or depth >= MAX_REEXPORT_HOPS:
+                continue
+            for source, imported, exported in self.module_reexports.get(path, ()):
+                if exported == "*" and name == "default":
+                    continue  # `export * from` leaves the default export out
+                if exported == name or exported == "*":
+                    wanted = name if imported == "*" else imported
+                    found.extend(
+                        self.exported_nodes(
+                            self.files_for_source(path, source), wanted, depth + 1
+                        )
+                    )
+        return found
 
     def _files_for_import(self, imp: str, caller_dir: str) -> List[str]:
         imp = imp.strip()
@@ -215,7 +278,11 @@ class _Index:
         Python: `.x` is the caller's package, `..x` its parent. JS/TS: `./x`, `../x`.
         """
         if imp.startswith("./") or imp.startswith("../"):
-            return [posixpath.normpath(posixpath.join(caller_dir, imp))]
+            target = posixpath.normpath(posixpath.join(caller_dir, imp))
+            # `./cart.ts` (Node type stripping, Deno) and `./cart.js` (TypeScript with
+            # NodeNext) both name the module `cart`, whose key has no extension.
+            stem, ext = posixpath.splitext(target)
+            return [stem if ext in _SCRIPT_IMPORT_EXTENSIONS else target]
         dots = len(imp) - len(imp.lstrip("."))
         rest = imp.lstrip(".").replace(".", "/")
         base = caller_dir
@@ -270,6 +337,43 @@ def _in_files(
     return out
 
 
+def _resolve_binding(
+    name: str, caller: UniversalNode, index: _Index
+) -> Optional[Resolution]:
+    """`h()` after `import h from './x'` or `import { a as h } from './x'`.
+
+    Returns None when `name` is not bound by an import of the caller's file, so the
+    ordinary tiers run. A bound name that resolves to nothing, or to several things,
+    gives no edge: a name from an import must not fall back to a same-named function
+    somewhere else.
+    """
+    binding = index.module_bindings.get(caller.location.file_path, {}).get(name)
+    if binding is None:
+        return None
+    source, imported = binding
+    if imported == "*":
+        return NONE  # a whole module is not callable
+    files = index.files_for_source(caller.location.file_path, source)
+    targets = index.exported_nodes(files, imported)
+    return _single(_without_constructors(targets), caller, TIER_IMPORTED)
+
+
+def _resolve_namespace(
+    receiver: str, name: str, caller: UniversalNode, index: _Index
+) -> Optional[Resolution]:
+    """`ns.fn()` after `import * as ns from './x'` or `const ns = require('./x')`.
+
+    Returns None when `receiver` is not bound to a whole module.
+    """
+    binding = index.module_bindings.get(caller.location.file_path, {}).get(receiver)
+    if binding is None or binding[1] != "*":
+        return None
+    files = index.files_for_source(caller.location.file_path, binding[0])
+    return _single(
+        _without_constructors(index.exported_nodes(files, name)), caller, TIER_IMPORTED
+    )
+
+
 def _resolve_plain(
     name: str, caller: UniversalNode, index: _Index, own_methods: bool = True
 ) -> Resolution:
@@ -279,6 +383,10 @@ def _resolve_plain(
     names a namespace (`ns::foo()` in C++).
     """
     caller_file = caller.location.file_path
+    if caller.language in IMPORT_SCOPED_LANGUAGES:
+        bound = _resolve_binding(name, caller, index)
+        if bound is not None:
+            return bound
     own_class = caller.metadata.get("parent_class")
     implicit_self = own_methods and caller.language in IMPLICIT_SELF_LANGUAGES
 
@@ -424,6 +532,9 @@ def _resolve_one(text: str, caller: UniversalNode, index: _Index) -> Tuple[Resol
             result = _resolve_class_qualified(receiver, name, caller, index)
             if result[0]:
                 return result, False
+        namespace_result = _resolve_namespace(receiver, name, caller, index)
+        if namespace_result is not None:
+            return namespace_result, False
         module_result = _resolve_module_qualified(receiver, name, caller, index)
         if module_result is not None:
             return module_result, False
@@ -465,5 +576,80 @@ def resolve_calls(graph: RustworkxCodeGraph) -> int:
                     )
                     if graph.add_relationship(rel) is not None:
                         added += 1
+        resolve_fixtures(graph)
+        from nexus_mcp.indexing.boundary_resolver import resolve_boundaries
+
+        resolve_boundaries(graph, index)
     logger.info("Resolved %d call edges from %d callers", added, len(callers))
+    return added
+
+
+def _nearest_fixture(
+    param: str, user: UniversalNode, candidates: List[UniversalNode]
+) -> Optional[UniversalNode]:
+    """The pytest fixture that a parameter names, as pytest finds it.
+
+    A fixture of the same file wins. Then `conftest.py` files count, from the folder of
+    the user up to the root. At each level exactly one fixture must fit; two give no
+    edge. A fixture never names itself (`def db(db)` overrides the fixture above it).
+    """
+    pool = [c for c in candidates if c.id != user.id]
+    if not pool:
+        return None
+    user_file = user.location.file_path
+    same_file = [c for c in pool if c.location.file_path == user_file]
+    if same_file:
+        return same_file[0] if len(same_file) == 1 else None
+    by_dir: Dict[str, List[UniversalNode]] = defaultdict(list)
+    for fixture in pool:
+        path = fixture.location.file_path.replace("\\", "/")
+        if posixpath.basename(path) == "conftest.py":
+            by_dir[posixpath.dirname(path)].append(fixture)
+    folder = posixpath.dirname(user_file.replace("\\", "/"))
+    while True:
+        level = by_dir.get(folder)
+        if level:
+            return level[0] if len(level) == 1 else None
+        parent = posixpath.dirname(folder)
+        if parent == folder:
+            return None
+        folder = parent
+
+
+def resolve_fixtures(graph: RustworkxCodeGraph) -> int:
+    """Rebuild the USES edges from pytest tests and fixtures to the fixtures they name.
+
+    A test gets a fixture through a parameter of the same name, so no call exists in
+    the code. Without the edge, a change to what a fixture calls never reaches the tests
+    that use it. Impact analysis follows USES as well as CALLS. Returns the edge count.
+    """
+    with graph._lock:
+        graph.remove_relationships_by_type(RelationshipType.USES)
+        fixtures: Dict[str, List[UniversalNode]] = defaultdict(list)
+        users: List[UniversalNode] = []
+        for node in graph.nodes.values():
+            if node.node_type != NodeType.FUNCTION:
+                continue
+            if node.metadata.get("fixture"):
+                fixtures[node.name].append(node)
+            if node.metadata.get("params"):
+                users.append(node)
+        added = 0
+        for user in users:
+            linked: Set[str] = set()
+            for param in user.metadata["params"]:
+                target = _nearest_fixture(param, user, fixtures.get(param, []))
+                if target is None or target.id in linked:
+                    continue
+                linked.add(target.id)
+                rel = UniversalRelationship(
+                    id=f"use:{user.id}->{target.id}",
+                    source_id=user.id,
+                    target_id=target.id,
+                    relationship_type=RelationshipType.USES,
+                    metadata={"resolution": "fixture", "param": param},
+                )
+                if graph.add_relationship(rel) is not None:
+                    added += 1
+    logger.info("Resolved %d fixture edges", added)
     return added

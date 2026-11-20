@@ -1,4 +1,4 @@
-"""Embedding service. See ADR-026.
+"""Embedding service. See ADR-029.
 
 Two backends, chosen by the model name:
 - `OnnxEncoder` (the default): `tokenizers` for the text, `onnxruntime` for the model.

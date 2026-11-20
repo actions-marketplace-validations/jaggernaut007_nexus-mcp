@@ -51,7 +51,7 @@ SKIP_DIRS: Set[str] = {
 # 9: `bge-small-en` is the int8 ONNX model (3.0.0). Before, it was the fp32 model on PyTorch,
 # and the vectors differ a little (cosine 0.994 at the lowest). An index of format 8 holds the
 # fp32 vectors, so its chunks are rebuilt, and no chunk table mixes the two. Stored memories
-# are not re-embedded: the memory store checks the vector width only (see ADR-026).
+# are not re-embedded: the memory store checks the vector width only (see ADR-029).
 CHUNK_FORMAT = 9
 
 

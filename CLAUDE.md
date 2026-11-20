@@ -4,14 +4,20 @@ Local MCP server that cuts coding-agent tokens: the agent reads less code to fin
 
 ## North star
 
-Lower token use for an agent, with the same accuracy. Set by the owner on 2026-10-08.
+High-quality coding changes, at a lower cost, in faster sessions. Set by the owner on
+2026-11-17. It replaces "lower token use, same accuracy" (2026-10-08).
 
-- **Measure:** the tokens and the cost of a task in the live benchmark (`benchmarks/`),
-  against the Grep and Read condition.
-- **Gate:** accuracy must not fall. Check hit@1 on the four retrieval suites
-  (`python -m evals.retrieval.run`) and the answer score of the benchmark.
-- Keep a change only when it lowers the measure and passes the gate. Record the two
-  numbers, before and after, in `CHANGELOG.md`.
+- **Measure:** the cost (tokens and dollars) and the wall time of a task in the live
+  benchmark (`benchmarks/`), against the Grep and Read condition.
+- **Gate:** quality must not fall. Quality has three parts:
+  1. Find the right code: the answer score of the benchmark and hit@1 on the retrieval
+     suites (`python -m evals.retrieval.run`).
+  2. See what a change touches: impact recall and precision on the seeded breakage set
+     (`evals/impact/`, Python and TypeScript), once it exists.
+  3. Make the change without a break: missed call sites and failing tests in the
+     change-safety benchmark, once it exists.
+- Keep a change only when it lowers cost or wall time, the other does not rise, and it
+  passes the gate. Record the numbers, before and after, in `CHANGELOG.md`.
 
 ## Use Nexus-MCP Tools Before Built-in Tools
 
@@ -41,6 +47,10 @@ repo to read the skill content directly.
   - Edges exist for Python, JavaScript, TypeScript, Go, Java, Rust, C, C++, C# and PHP. Python has the best coverage. ADR-019 gives the other languages.
   - A call gets an edge only when exactly one callee fits: in the same file, in an imported file, or with a unique name in the index.
   - A name shared by several definitions gets no edge. Treat results as a lower bound.
+  - Python and JS/TS files have a `<top-level>` node for the calls outside every function. A function that is a bound value (`const f = () => {}`, a class field, a named object member, a default export, an assigned lambda) is a node. An anonymous callback is not: its calls belong to the function that holds it (ADR-019).
+  - A receiver named like an imported module file (`cart.add_item()` after `from cart import Cart`) gets no edge (BACKLOG).
+  - `nexus-mcp-ci check` compares a git diff with these edges (ADR-025); it is also a lower bound.
+  - **Boundary edges** (ADR-026) join the users of a route (`fetch`, `axios`, `requests`, a test client), an edge function (`functions.invoke`) or a table (`.from`, `.table`) to the code that provides it, with `DEPENDS_ON` edges. `graph` lists them as `boundary_callers`. A computed URL, `supabase.rpc`, an ORM query, a Next.js file route and a key with two providers give no edge.
   - `analyze` complexity is cyclomatic and approximate. Only Python counts `and`/`or`, and only Python functions carry docstrings.
 - **The call graph only sees static edges.** `graph()` is built from
   parsing, not runtime tracing. It will **miss**: dynamic dispatch (Python monkey-patching, Ruby
@@ -79,12 +89,15 @@ src/nexus_mcp/
 ├── lifecycle.py           # Idle timeout, orphan exit, signals; finish() always ends the process
 ├── core/
 │   ├── models.py          # Symbol, ParsedFile, CodebaseIndex, Memory
-│   ├── graph_models.py    # UniversalNode, Relationship
+│   ├── graph_models.py    # UniversalNode, Relationship, MODULE_BODY_NAME
+│   ├── keys.py            # Stable symbol keys: <file>::<type>::<name> (ADR-025)
 │   ├── interfaces.py      # IParser, IEngine
 │   └── exceptions.py      # NexusException hierarchy + Auth/RateLimit errors
 ├── parsing/
 │   ├── treesitter_parser.py   # Symbol extraction → embeddings
 │   ├── astgrep_parser.py      # Structural analysis → graph
+│   ├── boundaries.py          # Route, edge function and table facts of a file (ADR-026)
+│   ├── sql_boundaries.py      # `.sql` tables and views for the graph, no grammar (ADR-026)
 │   ├── language_registry.py   # Merged language support (25+ langs)
 │   └── file_watcher.py        # Debounced watchdog
 ├── engines/
@@ -101,6 +114,7 @@ src/nexus_mcp/
 │   ├── embedding_service.py   # Embeddings: OnnxEncoder (int8 bge-small-en, CPU only); TorchEncoder (extra `torch`, GPU when present)
 │   ├── parallel_indexer.py    # ThreadPool
 │   ├── call_resolver.py       # CALLS edges from callee names, after the last parse batch (ADR-019)
+│   ├── boundary_resolver.py   # DEPENDS_ON edges: route, edge function and table users to providers (ADR-026)
 │   ├── pipeline.py            # discover → parse → chunk → embed → store + corrupt index detection + multi-folder
 │   ├── git_exclude.py         # Add the index folder to `.git/info/exclude` (NEXUS_GIT_EXCLUDE)
 │   └── chunker.py             # Symbol → CodeChunk
@@ -114,9 +128,9 @@ src/nexus_mcp/
 │   └── audit.py           # Audit logging with correlation IDs + field redaction
 └── persistence/
 │   └── store.py               # SQLite graph persistence
-└── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021)
+└── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021), `index`, `check` (ADR-025, ADR-026)
 benchmarks/                # Token-efficiency benchmark harness (ADR-018)
-evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1); docs/EVALS.md
+evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1), impact/ (does `check` name what a change breaks); docs/EVALS.md
 self_test/
 ├── demo_mcp.py            # End-to-end demo exercising the 8 tools and the Python API
 └── README.md              # Usage, sample project, troubleshooting
@@ -148,8 +162,8 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 ## Key Decisions
 
 - LanceDB replaces ChromaDB (mmap, disk-backed vectors) — [ADR-002](docs/adr/ADR-002-lancedb-over-chromadb.md)
-- ONNX Runtime replaces PyTorch — [ADR-003](docs/adr/ADR-003-onnx-runtime-over-pytorch.md); made true for the default model by [ADR-026](docs/adr/ADR-026-cpu-only-onnx-embeddings.md)
-- bge-small-en default — [ADR-004](docs/adr/ADR-004-bge-small-default-model.md); int8 ONNX on the CPU, PyTorch optional for a GPU, jina-code removed in 3.0.0 — [ADR-026](docs/adr/ADR-026-cpu-only-onnx-embeddings.md)
+- ONNX Runtime replaces PyTorch — [ADR-003](docs/adr/ADR-003-onnx-runtime-over-pytorch.md); made true for the default model by [ADR-029](docs/adr/ADR-029-cpu-only-onnx-embeddings.md)
+- bge-small-en default — [ADR-004](docs/adr/ADR-004-bge-small-default-model.md); int8 ONNX on the CPU, PyTorch optional for a GPU, jina-code removed in 3.0.0 — [ADR-029](docs/adr/ADR-029-cpu-only-onnx-embeddings.md)
 - Dual parsing: tree-sitter (symbols) + ast-grep (graph) — [ADR-005](docs/adr/ADR-005-dual-parser-strategy.md)
 - rustworkx for graph algorithms (Rust-backed) — [ADR-006](docs/adr/ADR-006-rustworkx-graph-engine.md)
 - LanceDB schema: 12-column PyArrow, flat search — [ADR-007](docs/adr/ADR-007-lancedb-schema-design.md)
@@ -167,6 +181,9 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 - Adopter evaluation in the package (`eval`), ground truth from the parser — [ADR-020](docs/adr/ADR-020-adopter-evaluation.md)
 - One source for published numbers; opt-in sharing, no telemetry — [ADR-021](docs/adr/ADR-021-results-publishing-and-sharing.md)
 - Server lifecycle: idle timeout (3 h), orphan exit, `os._exit` after a bounded cleanup — [ADR-022](docs/adr/ADR-022-server-lifecycle-and-exit.md)
+- Boundary edges: routes, edge functions and SQL tables join code with no call between them — [ADR-026](docs/adr/ADR-026-boundary-edges.md)
+- Stop hook and a user-started `check` skill in the plugin; silent unless a new `high` finding exists — [ADR-027](docs/adr/ADR-027-change-hook-and-skill.md)
+- Change-safety benchmark: tasks with hidden tests and a scorer with no model; the live runner is a dry run unless `--go` — [ADR-028](docs/adr/ADR-028-change-safety-benchmark.md)
 - MIT licence, commercial licence key removed again — [ADR-023](docs/adr/ADR-023-commercial-licence-check.md) (superseded by [ADR-024](docs/adr/ADR-024-mit-licence.md))
 
 ## Gotchas
@@ -194,7 +211,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 15. `schemas/` was removed (dead code, never wired into any tool); FastMCP tool signatures + the `validate_*` helpers in core_api.py are the only validation
 16. New exceptions (AuthenticationError, AuthorizationError, RateLimitError) in exceptions.py
 17. Only registered embedding models are supported; custom model names raise ConfigurationError (`jina-code` gives a removal message)
-18. The ONNX model (`bge-small-en`) runs on the CPU only. The PyTorch model (`bge-small-en-torch`) uses a GPU when present: `NEXUS_EMBEDDING_DEVICE` defaults to `auto` (CUDA, then MPS, then CPU) and applies to the PyTorch model only. A GPU value for the ONNX model is ignored with a warning; a GPU that is not present falls back to the CPU with a warning. The model name is the identity of the index: `bge-small-en` and `bge-small-en-torch` differ a little, so a switch rebuilds the index. `ONNX_MAX_BATCH` (1) caps one ONNX call: a batch of 32 peaked above 1.3 GB, and the int8 model quantizes with one scale for each batch, so a chunk's vector changed with its batch. Do not raise it without re-reading ADR-026
+18. The ONNX model (`bge-small-en`) runs on the CPU only. The PyTorch model (`bge-small-en-torch`) uses a GPU when present: `NEXUS_EMBEDDING_DEVICE` defaults to `auto` (CUDA, then MPS, then CPU) and applies to the PyTorch model only. A GPU value for the ONNX model is ignored with a warning; a GPU that is not present falls back to the CPU with a warning. The model name is the identity of the index: `bge-small-en` and `bge-small-en-torch` differ a little, so a switch rebuilds the index. `ONNX_MAX_BATCH` (1) caps one ONNX call: a batch of 32 peaked above 1.3 GB, and the int8 model quantizes with one scale for each batch, so a chunk's vector changed with its batch. Do not raise it without re-reading ADR-029
 19. Multi-folder indexing processes each folder sequentially; `state.codebase_paths` tracks all roots, `state.codebase_path` is the first root for backward compat
 20. `NEXUS_AUTO_WATCH` (default `true`) starts a debounced file watcher per indexed root after `index()` completes; on change it triggers a background incremental reindex (skipped, not queued, if one is already in flight)
 21. `status()`/`search()` run a throttled staleness check (`NEXUS_STALENESS_CHECK_INTERVAL`, default 15s) and surface `stale`/`staleness_warning`/`warning` fields; a stale result still returns immediately and kicks a background reindex rather than blocking
@@ -207,7 +224,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 | BGE Small EN v1.5, int8 | `bge-small-en` | 384 | 512 | ONNX Runtime, CPU | **Default**. 32 MB file from `Xenova/bge-small-en-v1.5`, pinned commit |
 | BGE Small EN v1.5, fp32 | `bge-small-en-torch` | 384 | 512 | PyTorch, GPU when present (CUDA, MPS), else CPU | Optional: `pip install 'nexus-mcp-ci[torch]'`. About 2 times faster than the default on Apple Silicon (MPS) |
 
-`jina-code` was removed in 3.0.0 (ADR-026).
+`jina-code` was removed in 3.0.0 (ADR-029).
 
 ### Changing the embedding model
 

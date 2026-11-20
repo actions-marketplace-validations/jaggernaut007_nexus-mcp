@@ -268,7 +268,7 @@ Nexus-MCP runs one embedding model at a time. Only registered model names are ac
 | `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, on a GPU (CUDA or Apple MPS) when present, else the CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 2 times faster than the default on Apple Silicon |
 
 The two models give slightly different vectors, so a switch rebuilds the index. The device
-setting `NEXUS_EMBEDDING_DEVICE` applies to the PyTorch model only. See [ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
+setting `NEXUS_EMBEDDING_DEVICE` applies to the PyTorch model only. See [ADR-029](adr/ADR-029-cpu-only-onnx-embeddings.md).
 
 ## Best Practices
 

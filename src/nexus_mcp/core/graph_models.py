@@ -70,6 +70,21 @@ class RelationshipType(Enum):
     USES = "uses"
 
 
+# The name of the node that owns the calls of a file that sit outside every function
+# (`Deno.serve(...)`, `app = FastAPI()`, `describe(...)`). It is not an identifier, so no
+# call can resolve to it.
+MODULE_BODY_NAME = "<top-level>"
+
+
+def is_module_body(node: "UniversalNode") -> bool:
+    """True for the per-file node of the loose calls at module level.
+
+    Code that counts functions (smells, dead code, quality metrics) must skip it: it
+    spans the whole file and nothing calls it.
+    """
+    return bool(node.metadata.get("module_body"))
+
+
 @dataclass(frozen=True, slots=True)
 class UniversalLocation:
     """Location information for code elements. Immutable after creation."""

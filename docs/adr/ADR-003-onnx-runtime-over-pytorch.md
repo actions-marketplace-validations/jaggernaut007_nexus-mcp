@@ -1,6 +1,6 @@
 # ADR-003: ONNX Runtime over PyTorch for Inference
 
-**Status:** Accepted. Made true for the default model by [ADR-026](ADR-026-cpu-only-onnx-embeddings.md) (2026-11-17). Until then, only the deprecated `jina-code` ran on ONNX Runtime, and `bge-small-en` ran on PyTorch. The "2.5x faster" claim below has no source; ADR-026 has measurements.
+**Status:** Accepted. Made true for the default model by [ADR-029](ADR-029-cpu-only-onnx-embeddings.md) (2026-11-17). Until then, only the deprecated `jina-code` ran on ONNX Runtime, and `bge-small-en` ran on PyTorch. The "2.5x faster" claim below has no source; ADR-029 has measurements.
 **Date:** 2026-03-11
 **Decision makers:** Shreyas Jagannath
 

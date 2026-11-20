@@ -110,7 +110,7 @@ def test_default_model_is_in_registry():
 
 @pytest.mark.parametrize("device", [None, "auto", "cpu", "cuda", "mps"])
 def test_onnx_service_device_is_always_cpu(device):
-    """ADR-026: the ONNX model runs on the CPU only. A GPU device is ignored, not an error."""
+    """ADR-029: the ONNX model runs on the CPU only. A GPU device is ignored, not an error."""
     assert EmbeddingService(device=device).device == "cpu"
 
 
