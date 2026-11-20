@@ -15,7 +15,7 @@
 
 **Priority: High** | **Difficulty: Medium**
 
-Currently Nexus-MCP supports two local models (jina-code, bge-small-en) with GPU/MPS auto-detection. Add support for external embedding providers so users can trade latency for quality.
+Currently Nexus-MCP supports one local model on the CPU (`bge-small-en`, int8 ONNX) and one optional PyTorch variant that uses a GPU (`bge-small-en-torch`). Add support for external embedding providers so users can trade latency for quality.
 
 **Targets:**
 - OpenAI `text-embedding-3-small` / `text-embedding-3-large`

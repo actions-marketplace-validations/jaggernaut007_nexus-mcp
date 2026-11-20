@@ -14,7 +14,7 @@ your own code, and compares two ways to reach the right file:
 - **Nexus-MCP**: one `search` call, plus file reads only when the search misses.
 
 It prints a verdict ("Strong fit", "Likely fit" or "Weak fit"), a table, and a "Data in this run"
-block. The first run downloads the embedding model once (about 130 MB).
+block. The first run downloads the embedding model once (about 32 MB).
 
 ## Choose what to evaluate
 

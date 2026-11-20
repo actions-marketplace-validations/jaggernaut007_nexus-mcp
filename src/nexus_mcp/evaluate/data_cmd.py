@@ -58,13 +58,17 @@ def locations(project: Path) -> List[Dict[str, Any]]:
     ]
     out = []
     for key, label, path, holds_code in rows:
-        size, files = paths.dir_size(path)
+        # `clear --models` deletes the folder of every registered model, so `where` must count
+        # them all. The path shown is the one of the default model.
+        folders = paths.model_dirs() if key == "models" else [path]
+        sizes = [paths.dir_size(folder) for folder in folders]
+        size, files = sum(s for s, _ in sizes), sum(f for _, f in sizes)
         out.append(
             {
                 "target": key,
                 "label": label,
                 "path": str(path),
-                "exists": Path(path).exists(),
+                "exists": any(Path(folder).exists() for folder in folders),
                 "bytes": size,
                 "files": files,
                 "holds_code": holds_code,
@@ -105,7 +109,7 @@ def _paths_for(project: Path, target: str) -> List[Path]:
         "graph": [store / "graph.db"],
         "evals": [paths.eval_home()],
         "clones": [paths.eval_cache() / "repos"],
-        "models": [paths.model_dir()],
+        "models": paths.model_dirs(),
     }[target]
 
 

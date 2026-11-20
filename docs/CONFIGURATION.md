@@ -10,9 +10,9 @@ Set these as environment variables of the server, for example `claude mcp add ne
 |---|---|---|
 | `NEXUS_STORAGE_DIR` | `.nexus` | Folder for the index, memories and graph. A relative path is in the folder the server starts in, or in the indexed project when that is outside it. |
 | `NEXUS_GIT_EXCLUDE` | `true` | Add the index folder to `.git/info/exclude` when it is in a git work tree and no ignore rule covers it. The tracked `.gitignore` does not change. |
-| `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | Embedding model key. Only registered models load. Re-index after a change. |
-| `NEXUS_EMBEDDING_DEVICE` | `auto` | `auto`, `cpu`, `cuda` or `mps`. |
-| `NEXUS_EMBEDDING_BATCH_SIZE` | `32` | Chunks embedded in one batch. |
+| `NEXUS_EMBEDDING_MODEL` | `bge-small-en` | `bge-small-en` (int8 ONNX, the default) or `bge-small-en-torch` (fp32 on PyTorch, needs `pip install 'nexus-mcp-ci[torch]'`). The index rebuilds after a change. |
+| `NEXUS_EMBEDDING_DEVICE` | `auto` | `auto`, `cpu`, `cuda` or `mps`. It applies to the PyTorch model (`bge-small-en-torch`): `auto` picks CUDA, then MPS, then the CPU. The default ONNX model runs on the CPU only and ignores a GPU value with a warning. |
+| `NEXUS_EMBEDDING_BATCH_SIZE` | `32` | Chunks embedded and stored in one step. The ONNX model runs one chunk in each call (`ONNX_MAX_BATCH`), so this value does not change its speed. |
 | `NEXUS_MAX_FILE_SIZE_MB` | `10` | Skip files larger than this. |
 | `NEXUS_MAX_WORKERS` | unset | Parser threads. Empty means the default of the thread pool. |
 | `NEXUS_CHUNK_MAX_CHARS` | `4000` | Largest code snippet stored for one chunk. |
@@ -21,7 +21,7 @@ Set these as environment variables of the server, for example `claude mcp add ne
 | `NEXUS_SEARCH_MODE` | `hybrid` | `hybrid`, `vector` or `bm25`. |
 | `NEXUS_FUSION_WEIGHT_VECTOR` | `0.5` | Weight of vector results in Reciprocal Rank Fusion. |
 | `NEXUS_FUSION_WEIGHT_BM25` | `0.3` | Weight of BM25 results in Reciprocal Rank Fusion. |
-| `NEXUS_MAX_MEMORY_MB` | `350` | Memory budget in MB (about 90 MB idle, 460 MB with the model loaded). |
+| `NEXUS_MAX_MEMORY_MB` | `350` | Memory budget in MB (about 90 MB idle, 270 MB with the model loaded). |
 | `NEXUS_AUTO_RESTORE` | `true` | Attach the stored index when a new server process starts. |
 | `NEXUS_WARM_START` | `true` | Load the index and the model in the background while the server starts. |
 | `NEXUS_AUTO_WATCH` | `true` | Watch indexed folders and reindex changed files in the background. |
@@ -34,7 +34,6 @@ Set these as environment variables of the server, for example `claude mcp add ne
 | `NEXUS_LIFECYCLE_CHECK_INTERVAL` | `5.0` | Seconds between the idle and parent-process checks. |
 | `NEXUS_LOG_LEVEL` | `INFO` | `DEBUG`, `INFO`, `WARNING` or `ERROR`. |
 | `NEXUS_LOG_FORMAT` | `text` | `text` or `json`. |
-| `NEXUS_TRUST_REMOTE_CODE` | `true` | Needed only by the deprecated `jina-code` model. |
 | `NEXUS_AUTH_MODE` | `none` | `none` or `local`. |
 | `NEXUS_PERMISSION_LEVEL` | `full` | `full`, or `read` to block tools that change the index or memory. |
 | `NEXUS_AUDIT_ENABLED` | `true` | Log each tool call with a correlation id. Secret fields are redacted. |

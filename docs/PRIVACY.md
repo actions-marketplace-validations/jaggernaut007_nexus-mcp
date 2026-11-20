@@ -10,7 +10,7 @@ Only the flows below cross the network. Each one is named in the CLI output befo
 | Flow | Direction | When | What | How to stop it |
 |---|---|---|---|---|
 | Package install | in | `pip install` or `uvx`, once | the wheel from PyPI | install from a local wheel |
-| Embedding model | in | the first index, once | `BAAI/bge-small-en-v1.5` from Hugging Face (~130 MB) | set `NEXUS_OFFLINE=1` after the first download, or copy the model cache |
+| Embedding model | in | the first index, once | `Xenova/bge-small-en-v1.5` from Hugging Face: the int8 ONNX file and the tokenizer (~32 MB, one pinned commit). With the optional `torch` extra: `BAAI/bge-small-en-v1.5` (~130 MB) | set `NEXUS_OFFLINE=1` after the first download, or copy the model cache |
 | Repo URL source | in | `eval <url>` only | `git clone --depth 1` of that public repo | use a local path |
 | Agent tier | **out** | `eval --agent` only, after you answer yes | the prompts and the code that the agent reads, sent through **your own** `claude` or `codex` CLI to Anthropic or OpenAI | do not use `--agent`; the quick tier sends nothing |
 | Share | **out** | `eval share`, after you answer yes to the exact payload | allow-listed numbers only: no paths, no code, no question text | do not run `share` |
@@ -73,6 +73,8 @@ Shell commands that do the same, if you prefer not to run our code to remove our
 ```bash
 rm -rf .nexus
 rm -rf ~/.nexus-mcp ~/.cache/nexus-mcp
+rm -rf ~/.cache/huggingface/hub/models--Xenova--bge-small-en-v1.5
+# with the torch extra:
 rm -rf ~/.cache/huggingface/hub/models--BAAI--bge-small-en-v1.5
 uv cache clean nexus-mcp-ci
 ```

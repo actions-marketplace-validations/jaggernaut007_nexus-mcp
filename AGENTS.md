@@ -4,12 +4,12 @@
 [![jaggernaut007/Nexus-MCP MCP server](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP/badges/score.svg)](https://glama.ai/mcp/servers/jaggernaut007/Nexus-MCP)
 
 ## Architecture
-Single MCP server consolidating CodeGrok + code-graph-mcp. 8 tools (`index`, `status`, `search`, `find_symbol`, `graph`, `analyze`, `map`, `memory`), ~90MB idle and ~460MB with the model loaded (docs/MEMORY.md). `server.py` holds thin MCP wrappers; the tool logic lives in `core_api.py`.
+Single MCP server consolidating CodeGrok + code-graph-mcp. 8 tools (`index`, `status`, `search`, `find_symbol`, `graph`, `analyze`, `map`, `memory`), ~90MB idle and ~270MB with the model loaded (docs/MEMORY.md). `server.py` holds thin MCP wrappers; the tool logic lives in `core_api.py`.
 
 ## Stack
 - **LanceDB**: vectors + FTS (replaces ChromaDB)
-- **ONNX Runtime**: inference for the deprecated `jina-code` only
-- **bge-small-en**: default embedding model (384d, ~50MB download, PyTorch backend)
+- **ONNX Runtime**: runs the default embedding model on the CPU (no PyTorch in the default install)
+- **bge-small-en**: default embedding model (384d, int8 ONNX file, 32MB download). `bge-small-en-torch` is the optional PyTorch model (extra `torch`), which uses a GPU when present
 - **rustworkx**: in-memory directed graph
 - **tree-sitter + ast-grep**: dual parsing
 

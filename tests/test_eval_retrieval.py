@@ -97,12 +97,22 @@ class TestCandidates:
             cand.register("nope", {})
 
     def test_every_candidate_has_the_required_registry_keys(self):
-        required = {"hf_name", "dimensions", "max_seq_length", "trust_remote_code",
-                    "prompt_prefix", "query_prefix", "backend"}
+        required = {"hf_name", "dimensions", "max_seq_length", "prompt_prefix", "query_prefix",
+                    "backend", "onnx_file", "pooling"}
         for name, config in cand.CANDIDATES.items():
             if config is not None:
                 assert required <= set(config), name
-                assert config["trust_remote_code"] is False, name
+                assert config["backend"] == "onnx", name
+                assert config["pooling"] in ("cls", "mean"), name
+                assert "trust_remote_code" not in config, name
+
+    def test_every_candidate_has_the_keys_of_the_default_registry_entry(self):
+        from nexus_mcp.indexing.embedding_service import DEFAULT_MODEL, EMBEDDING_MODELS
+
+        required = set(EMBEDDING_MODELS[DEFAULT_MODEL]) - {"revision"}  # the pin is optional
+        for name, config in cand.CANDIDATES.items():
+            if config is not None:
+                assert required <= set(config), name
 
     def test_candidates_never_touch_the_shipped_registry(self):
         from nexus_mcp.indexing.embedding_service import EMBEDDING_MODELS

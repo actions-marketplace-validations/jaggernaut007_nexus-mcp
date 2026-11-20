@@ -48,7 +48,11 @@ SKIP_DIRS: Set[str] = {
 # 8: tree-sitter symbols for Rust, PHP and C#; ast-grep function and class nodes for C, C++,
 # C# and PHP; a C declarator inside a function body gives no chunk; Python, JavaScript and
 # TypeScript classes carry `bases` (needed by the `overrides` of `graph`).
-CHUNK_FORMAT = 8
+# 9: `bge-small-en` is the int8 ONNX model (3.0.0). Before, it was the fp32 model on PyTorch,
+# and the vectors differ a little (cosine 0.994 at the lowest). An index of format 8 holds the
+# fp32 vectors, so its chunks are rebuilt, and no chunk table mixes the two. Stored memories
+# are not re-embedded: the memory store checks the vector width only (see ADR-029).
+CHUNK_FORMAT = 9
 
 
 @dataclass

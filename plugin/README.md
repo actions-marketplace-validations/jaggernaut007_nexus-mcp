@@ -16,8 +16,8 @@ the method: [benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.ht
 
 - [uv](https://docs.astral.sh/uv/). The plugin starts the server with
   `uvx --python 3.12 nexus-mcp-ci==<version>`, so there is no `pip install`.
-- The first index downloads the embedding model `BAAI/bge-small-en-v1.5` from Hugging Face
-  (about 130 MB), once.
+- The first index downloads the embedding model `Xenova/bge-small-en-v1.5` from Hugging Face
+  (about 32 MB), once.
 
 ## What is in the plugin
 

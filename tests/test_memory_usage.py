@@ -23,7 +23,7 @@ class TestMemoryMonitoring:
         result = asyncio.run(_call_tool(mcp, "status"))
         rss_mb = result["memory"]["peak_rss_mb"]
         # Only verify the value is reported correctly; absolute thresholds are
-        # unreliable in test suites where PyTorch/optimum inflate the process.
+        # unreliable in test suites that run in one process with other tests.
         assert rss_mb > 0, "peak_rss_mb should be positive"
 
     def test_rss_under_350mb_after_index(self, mini_codebase, tmp_path):

@@ -2,9 +2,12 @@
 
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
-MODEL_DIR_NAME = "models--BAAI--bge-small-en-v1.5"
+
+def _hub_folder(hf_name: str) -> str:
+    """Hub cache folder of a model repo: ``org/name`` -> ``models--org--name``."""
+    return "models--" + hf_name.replace("/", "--")
 
 
 def eval_home() -> Path:
@@ -25,7 +28,18 @@ def hf_hub_dir() -> Path:
 
 
 def model_dir() -> Path:
-    return hf_hub_dir() / MODEL_DIR_NAME
+    """Cache folder of the default embedding model."""
+    from nexus_mcp.indexing.embedding_service import DEFAULT_MODEL, EMBEDDING_MODELS
+
+    return hf_hub_dir() / _hub_folder(EMBEDDING_MODELS[DEFAULT_MODEL]["hf_name"])
+
+
+def model_dirs() -> List[Path]:
+    """Cache folders of every registered embedding model (the default, and the torch one)."""
+    from nexus_mcp.indexing.embedding_service import EMBEDDING_MODELS
+
+    names = sorted({config["hf_name"] for config in EMBEDDING_MODELS.values()})
+    return [hf_hub_dir() / _hub_folder(name) for name in names]
 
 
 def project_store(project: Path) -> Path:
