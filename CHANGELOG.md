@@ -4,6 +4,186 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added (linked repos, phase 2.2)
+
+- **`search` and `find_symbol` look in the linked repos.** The query is embedded one time.
+  Each linked store gives vector and BM25 results, which merge by score before the same RRF as
+  before. A result of a linked repo has the repo name first in its path (`backend/src/app.py`).
+  `find_symbol` looks in the graph of each repo, the primary project first; `detail="full"`
+  adds a `repo` field. A stale linked repo gives `changed_since_index` and a warning that names
+  `nexus-mcp-ci link --refresh`. No new tool and no new parameter.
+- **The BM25 engine of a linked store is read-only** (`IndexingPipeline(read_only=True)`). It
+  never creates the full-text index, so a search never writes to a linked store.
+- **Audit fixes.** A folder that two stores both hold (a link to a sub-folder of the project)
+  gives one result, not two. One failing linked graph does not stop `find_symbol`. The stale
+  code warning of `find_symbol` names `nexus-mcp-ci link --refresh` for a linked repo.
+- **North-star gate, no link (2026-11-18, `python -m evals.retrieval.run`, `bge-small-en`).**
+  The 2.2 code gives the same hit@1 as the 2.1 code in all four modes, on the same paths:
+  `nexus_mcp` hybrid 0.708 before and 0.708 after (24 queries), `shop_repo` hybrid 0.625 and
+  0.625 (8 queries). Two checkouts at different paths gave `shop_repo` hybrid 0.625 and 0.750:
+  chunk ids come from absolute paths, so ties order differently. This is not a code effect.
+  Tokens with no link: the code path is the same (no `query_vector`, one list to the merge),
+  and the tests show the same output as before. **Not run:** the live benchmark (it needs a
+  login and costs API money), the flask suite and the language suites (they need clones of
+  `benchmarks/setup_repos.sh`), the private jobscout suite. **Not measured:** a project with
+  links. BM25 scores are scaled in each store, so the stores interleave; the result for a
+  project with links needs its own eval.
+
+### Added (linked repos, phase 2.1)
+
+- **Repo identity.** Each index stores `repo_id` (made one time, kept through reindexes),
+  `repo_name` and `extractor_version` in `index_metadata.json`. An index made before this
+  version is built again one time when it is linked.
+- **`nexus-mcp-ci link <path> [--name]`, `unlink <name>`, `links` and `link --refresh`.** Link
+  other repos to a project. Each repo keeps its own index. The links are in a user-level
+  file, `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`), outside every repo. `data where` and
+  `data clear --links` know the file. See [ADR-030](docs/adr/ADR-030-linked-repos.md).
+- **The server attaches linked stores read-only** at restore and after `index`, and `status`
+  lists each linked repo with its file count, stale flag and skip reason. No new tool and no
+  new parameter. With no link nothing changes, so the benchmark tokens and hit@1 do not move.
+  Search and graph across repos come in phases 2.2 to 2.4.
+
+### Breaking (3.0.0)
+
+- **The default embedding model runs on the CPU with ONNX Runtime.** The default model `bge-small-en` is now the int8
+  ONNX file of `Xenova/bge-small-en-v1.5` (32 MB, pinned to a commit). A native encoder
+  (`tokenizers` and `onnxruntime`) runs it. `torch`, `sentence-transformers`, `optimum` and
+  the CUDA packages are no longer dependencies. See [ADR-029](docs/adr/ADR-029-cpu-only-onnx-embeddings.md).
+- **PyTorch is the optional GPU model.** Install `nexus-mcp-ci[torch]` and set
+  `NEXUS_EMBEDDING_MODEL=bge-small-en-torch` (fp32 weights). It uses a GPU when one is present
+  (CUDA, then Apple MPS) and the CPU if not. On Apple Silicon the MPS GPU is about 2 times
+  faster than the default model. Switching between the two models rebuilds the index.
+- **The ONNX model is CPU only.** `NEXUS_EMBEDDING_DEVICE` defaults to `auto`. It applies to
+  `bge-small-en-torch` only. For `bge-small-en` a GPU value is ignored with a warning. The
+  `gpu` extra is removed: `nexus-mcp-ci[torch]` is the GPU install.
+- **`jina-code` is removed**, with `trust_remote_code`, `NEXUS_TRUST_REMOTE_CODE`, the `onnx`
+  extra and the code that only they used. `NEXUS_EMBEDDING_MODEL=jina-code` now gives an
+  error that tells you to use `bge-small-en`.
+- **Every existing index rebuilds one time** (chunk format 9). The int8 vectors differ a little
+  from the fp32 vectors of 2.x, and a chunk table must not hold both. Stored memories are not
+  re-embedded (the memory store checks the vector width only); the difference is small (cosine
+  0.993 at the lowest).
+- **Offline and air-gapped setups: upgrade note.** The default model comes from another
+  Hugging Face repo (`Xenova/bge-small-en-v1.5`, 32 MB) than in 2.x (`BAAI/bge-small-en-v1.5`).
+  With `NEXUS_OFFLINE=1`, allow the download once, or copy `~/.cache/huggingface` from a machine
+  that has it. The error now names the model and the way out. The 2.x cache is still used by
+  `bge-small-en-torch`.
+- The ONNX model runs one chunk in each call. With 32 the peak memory of an index was above
+  1.3 GB, and the int8 vector of a chunk changed with the other chunks in its batch (cosine
+  0.9933). The speed on a CPU does not change.
+
+Before and after (north-star gate; Apple Silicon laptop, CPU, 2026-11-17):
+
+| Measure | 2.4.6 (torch fp32) | 3.0.0 (int8 ONNX) |
+|---|---|---|
+| Download size of the wheels, macOS arm64 | 336 MB | 157 MB |
+| Download size of the wheels, Linux x86_64 | 1,054 MB | 185 MB |
+| Model download | 133 MB | 32 MB |
+| Peak RSS, `search` (`docs/MEMORY.md`) | 483 MB | 270 MB |
+| Peak RSS, index of `src/nexus_mcp` (`docs/MEMORY.md`) | 801 MB | 311 MB |
+| Eval run of `src/nexus_mcp`, process peak RSS | 820 MB | 289 MB |
+| Eval run of `src/nexus_mcp`, index time | 92.8 s | 71.1 s |
+| hit@1 `nexus_mcp`, hybrid (24 queries) | 0.79 | 0.79 |
+| hit@1 `shop_repo`, hybrid (8 queries) | 0.62 | 0.62 |
+| hit@1 vector only, `nexus_mcp` / `shop_repo` | 0.58 / 0.75 | 0.54 / 0.75 |
+| hit@5 hybrid, `nexus_mcp` / `shop_repo` | 0.88 / 1.00 | 0.92 / 1.00 |
+| Vector agreement, cosine min / mean | 1 | 0.9934 / 0.9966 |
+
+The `flask` and `jobscout` suites are not run yet, so the accuracy gate is open for them. The
+speed of `torch` on Apple Silicon is higher than ONNX Runtime for the same chunks (24.9 against
+19.8 chunks/s for int8 in the final run; over several runs 18.8 to 26.7 against 16.5 to 22.3, on
+a shared machine). Linux speed is not measured.
+
+### Added
+
+- **Change-safety benchmark (ADR-028).** `benchmarks/change_safety/`: four tasks (a new
+  required parameter and a renamed route in Python, a renamed function and a changed edge
+  function response in TypeScript), a scorer with no model (hidden tests, left-behind sites), a
+  live runner that is a dry run unless `--go` is given, and a report. The tasks prove
+  themselves offline: the start state fails, the reference change is safe, the partial change
+  is not. `nexus-mcp-ci check` names every visible left-behind site of the four partial
+  changes (the computed route name stays a miss). Not run live: cost, wall time and the safe
+  rate of a real agent need the owner's go-ahead (24 runs, $36 at most by the cap).
+- **Stop hook and `check` skill in the plugin (ADR-027).** `nexus-mcp-ci check --hook` runs at
+  the end of an agent turn. It prints a block decision only for a new `high` finding (6
+  findings at most, one line each, and 5 tests), then holds the same finding by a digest. It
+  is silent for a clean turn, no index, no git, `stop_hook_active` and `NEXUS_HOOK=off`, and it
+  always exits 0. The hook command ends in `|| true`, so a pinned release without the flag does
+  nothing. The skill `check` is started by the user only (`disable-model-invocation`). No new
+  tool, no new parameter, no change in any tool result: the tokens of a session do not change,
+  except about 100 to 300 once for a new `high` finding. Not run: the live benchmark. The hook
+  costs about 1.2 s of wall time at each turn end on a small project (measured in the tests).
+  A change-context field in `graph` was left out: it repeats the files that `graph` lists.
+- **`nexus-mcp-ci check`**: reads the git diff, maps changed lines to symbols, and lists the
+  callers, references and tests that the diff did not update (exit 0 clean, 1 finding at
+  `--fail-on`, 2 usage or git error, 3 no or stale index). It runs outside the model, so it
+  adds no tokens to a session. `nexus-mcp-ci index` builds the index without an agent.
+- **Stable symbol keys** (`core/keys.py`): `<file>::<type>::<qualified name>`, the same on
+  every index run. Node ids stay random.
+- **Seeded breakage set** (`python -m evals.impact.run`): 10 cases, 5 Python and 5
+  TypeScript. First run: recall 0.867, precision 1.000, tests recall 1.000 (Python 0.750,
+  TypeScript 1.000). The misses stay in the set: a computed `getattr` name, and a method
+  call whose receiver has the name of an imported module file (no edge; precision first).
+
+- **Boundary edges** ([ADR-026](docs/adr/ADR-026-boundary-edges.md)): `DEPENDS_ON` edges from
+  the code that uses a route (`fetch`, `axios`, `requests`, a test client), an edge function
+  (`supabase.functions.invoke`) or a SQL table (`.from`, `.table`) to the code that provides
+  it. Providers: Python route decorators, Express-style `app.post("/x", handler)`,
+  `supabase/functions/<name>/index.ts`, and `create table` or `create view` in `.sql` files
+  (read without a grammar; no search chunks). `check` reports `boundary_untouched` (`high` for a
+  removed provider, a changed key or signature, dropped columns or a destructive `alter`);
+  `graph` lists `boundary_callers` when users exist, and `transitive=true` follows them.
+  A changed decorator line now maps to its function.
+- **Boundary breakage set** (`python -m evals.impact.run --cases evals/impact/boundary_cases.yaml`):
+  6 cases. Recall 0.889, precision 1.000, tests recall 1.000; with the boundary findings off the
+  same set gives recall 0.000. The miss stays in the set: a computed URL (`BASE + "/orders"`).
+  `cases.yaml` is unchanged (recall 0.867, precision 1.000).
+- **`index` keeps the index folder out of git.** The index holds code and can be about 1 GB.
+  Before this change, only the docs told the user to add `.nexus/` to `.gitignore`.
+  - When the index folder is in a git work tree and no ignore rule covers it
+    (`git check-ignore`), `index` adds the line `.nexus/` to `.git/info/exclude` of that repo.
+    The tracked `.gitignore` does not change.
+  - In a linked git worktree, the line goes into the exclude file of the common git dir.
+  - A custom `NEXUS_STORAGE_DIR` inside the repo gets a line with its path from the repo
+    root. A folder outside a git repo gets no line.
+  - An index made by an older version gets the line at the next reindex.
+  - A failure of this step does not stop the index run. The server logs a warning.
+  - `NEXUS_GIT_EXCLUDE=false` turns it off.
+  - New module `src/nexus_mcp/indexing/git_exclude.py`.
+  - No tool description, tool schema or tool result changes. The north-star numbers
+    (tokens, cost, hit@1) do not move, so there is no before and after pair to record.
+
+### Changed
+
+- **TypeScript imports with an extension give call edges.** `import { f } from "./cart.ts"`
+  (Node type stripping, Deno) and `"./cart.js"` (TypeScript with NodeNext) named no module, so a
+  renamed function was found only by text search at `medium`. The resolver strips a script
+  extension from a relative import; `./cart.json` stays as it is. Found by the change-safety
+  tasks; four tests failed before the fix. Offline numbers: impact set recall 0.867 and
+  precision 1.000 before and after; retrieval code did not change, so hit@1 did not change.
+  Live cost and wall time were not run.
+- **Boundary edges, offline numbers.** hit@1 (`bge-small-en`, `hybrid-exact`): `shop_repo` 0.750
+  to 0.750. `nexus_mcp` 17 of 24 to 16 of 24, because the new module `parsing/boundaries.py`
+  outranks `call_resolver.py` for one query ("connect each call site to the function that it
+  invokes"); the new code on the old corpus gives 17 of 24, so ranking did not change. Live
+  cost and wall time were not run. Fast suite: 1,859 passed.
+- **More functions and edges for Python and JS/TS.** Graph nodes and search symbols for
+  `export const f = () => {}`, function expressions, class-field arrows, members of a named
+  top-level object, `module.exports.x = ...`, `X.prototype.y = ...`, default exports (named
+  from the file, or the folder for `index`) and assigned Python lambdas. A `<top-level>`
+  node per file owns the calls outside every function (`Deno.serve(...)`, `app = FastAPI()`).
+  Python decorators count as calls of the decorated function. pytest fixtures get `USES`
+  edges from the tests that name them. Default, aliased, namespace and `require` imports,
+  and re-exports (3 hops), resolve calls. `.tsx` uses the tsx grammar. A callback inside a
+  class is no longer a symbol named after its first parameter.
+- **Offline numbers, before and after** (live cost and wall time were not run; they need the
+  owner's go-ahead). Graph coverage: shop fixture Python functions 36 to 38, CALLS edges 32
+  to 34; `src` Python functions 625 to 692, CALLS edges 844 to 936. hit@1 (`bge-small-en`,
+  hybrid): `shop_repo` 0.625 to 0.750 (same 60 chunks; the old code gave 0.625 on a rerun);
+  `nexus_mcp` 0.625 to 0.750, but the corpus differs between the runs (927 and 975 chunks);
+  vector-only on `nexus_mcp` 0.667 to 0.625 (one query of 24). Not added: an
+  `affected_tests` field in `graph`, because its token cost is unmeasured.
+
 ### Benchmarks
 
 - **Head to head with four other code tools on Django and Home Assistant.** Nexus-MCP,

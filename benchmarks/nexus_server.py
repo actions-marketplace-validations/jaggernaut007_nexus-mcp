@@ -1,6 +1,6 @@
 """Start nexus-mcp for a benchmark run, with a candidate embedding model if one is named.
 
-The shipped registry holds `bge-small-en` (and the deprecated `jina-code`). The candidates in
+The shipped registry holds `bge-small-en` and `bge-small-en-torch`. The candidates in
 evals/retrieval/candidates.py (for example `granite-97m-r2-int8`) exist only inside the
 evals. This entry point adds the one named in NEXUS_EMBEDDING_MODEL to the in-memory
 registry of this process, then runs the normal server. Nothing on disk changes.

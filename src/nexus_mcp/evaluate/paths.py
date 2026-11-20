@@ -2,14 +2,22 @@
 
 import os
 from pathlib import Path
-from typing import Tuple
+from typing import List, Tuple
 
-MODEL_DIR_NAME = "models--BAAI--bge-small-en-v1.5"
+
+def _hub_folder(hf_name: str) -> str:
+    """Hub cache folder of a model repo: ``org/name`` -> ``models--org--name``."""
+    return "models--" + hf_name.replace("/", "--")
 
 
 def eval_home() -> Path:
     """Saved eval results. Set ``NEXUS_EVAL_HOME`` to move them."""
     return Path(os.environ.get("NEXUS_EVAL_HOME") or Path.home() / ".nexus-mcp" / "evals")
+
+
+def links_file() -> Path:
+    """The registry of linked repos (ADR-030). Set ``NEXUS_LINKS_FILE`` to move it."""
+    return Path(os.environ.get("NEXUS_LINKS_FILE") or Path.home() / ".nexus-mcp" / "links.json")
 
 
 def eval_cache() -> Path:
@@ -25,7 +33,18 @@ def hf_hub_dir() -> Path:
 
 
 def model_dir() -> Path:
-    return hf_hub_dir() / MODEL_DIR_NAME
+    """Cache folder of the default embedding model."""
+    from nexus_mcp.indexing.embedding_service import DEFAULT_MODEL, EMBEDDING_MODELS
+
+    return hf_hub_dir() / _hub_folder(EMBEDDING_MODELS[DEFAULT_MODEL]["hf_name"])
+
+
+def model_dirs() -> List[Path]:
+    """Cache folders of every registered embedding model (the default, and the torch one)."""
+    from nexus_mcp.indexing.embedding_service import EMBEDDING_MODELS
+
+    names = sorted({config["hf_name"] for config in EMBEDDING_MODELS.values()})
+    return [hf_hub_dir() / _hub_folder(name) for name in names]
 
 
 def project_store(project: Path) -> Path:

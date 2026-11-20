@@ -25,9 +25,13 @@ class Settings:
     # clients, such as Cline, start the server in `/`, where `.nexus` cannot be written.
     # It is not an environment variable.
     storage_base: str = ""
+    # Add the index folder to `.git/info/exclude` when it is inside a git work tree and no
+    # ignore rule covers it (see indexing/git_exclude.py). The index holds code.
+    git_exclude: bool = True
 
     # Embedding model
-    embedding_model: str = "bge-small-en"
+    embedding_model: str = "bge-small-en"  # or "bge-small-en-torch" (the `torch` extra)
+    # "auto": the PyTorch model uses a GPU when present; the ONNX model is CPU only (ADR-029)
     embedding_device: str = "auto"
     embedding_batch_size: int = 32
 
@@ -73,7 +77,6 @@ class Settings:
     log_format: str = "text"  # "text" or "json"
 
     # Security
-    trust_remote_code: bool = True
     auth_mode: str = "none"  # "none", "local", "oauth" (oauth deferred)
     default_permission_level: str = "full"  # "read" or "full"
 
@@ -92,6 +95,7 @@ class Settings:
             return v.lower() in ("true", "1", "yes")
         env_map = {
             "NEXUS_STORAGE_DIR": ("storage_dir", str),
+            "NEXUS_GIT_EXCLUDE": ("git_exclude", _bool),
             "NEXUS_EMBEDDING_MODEL": ("embedding_model", str),
             "NEXUS_EMBEDDING_DEVICE": ("embedding_device", str),
             "NEXUS_EMBEDDING_BATCH_SIZE": ("embedding_batch_size", int),
@@ -116,7 +120,6 @@ class Settings:
             "NEXUS_LIFECYCLE_CHECK_INTERVAL": ("lifecycle_check_interval_s", float),
             "NEXUS_LOG_LEVEL": ("log_level", str),
             "NEXUS_LOG_FORMAT": ("log_format", str),
-            "NEXUS_TRUST_REMOTE_CODE": ("trust_remote_code", _bool),
             "NEXUS_AUTH_MODE": ("auth_mode", str),
             "NEXUS_PERMISSION_LEVEL": ("default_permission_level", str),
             "NEXUS_AUDIT_ENABLED": ("audit_enabled", _bool),

@@ -8,8 +8,8 @@
 # Install from PyPI
 pip install nexus-mcp-ci
 
-# Optional: with GPU (CUDA) support
-pip install nexus-mcp-ci[gpu]
+# Optional: with PyTorch (the model bge-small-en-torch, faster on Apple Silicon, large install)
+pip install 'nexus-mcp-ci[torch]'
 ```
 
 Or install from source for development:
@@ -98,6 +98,22 @@ status()
 ```
 
 Returns version, indexing state, chunk counts, graph stats, peak RSS memory and a `hint` field. If files changed since the last index, the result includes `stale` and `staleness_warning`, and the server starts a background reindex. The staleness check runs at most once every `NEXUS_STALENESS_CHECK_INTERVAL` seconds (default 15).
+
+When the project has linked repos, the result also has a `linked` list. Each entry has `name`, `path`, `files`, `stale` and `skip_reason`. `skip_reason` is `null` when the repo is attached. A skipped link does not stop the project. When a linked repo is stale, the result has `linked_warning`. The server never changes a linked index. Run `nexus-mcp-ci link --refresh` to index it again.
+
+#### Linked repos
+Link another repo, such as the back end of a front end, from the folder of the project:
+
+```bash
+nexus-mcp-ci link ../backend --name backend   # index it if needed, then save the link
+nexus-mcp-ci links                            # show the links and their state
+nexus-mcp-ci link --refresh                   # index the changed files of every linked repo
+nexus-mcp-ci unlink backend                   # remove the link; the index stays on disk
+```
+
+`search` and `find_symbol` also look in the linked repos. A result of a linked repo shows the link name first in its path (`backend/src/app.py`). `find_symbol` with `detail="full"` adds a `repo` field. If a file of a linked repo changed after its index, the result has no snippet for it and the `warning` tells you to run `nexus-mcp-ci link --refresh`. `graph` does not cross repos yet.
+
+The links are in `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`). Each repo keeps its own index in `<repo>/.nexus`. See [ADR-030](adr/ADR-030-linked-repos.md).
 
 #### `map`
 Project overview: files, languages, modules and structure. Use it before you list directories or open files one by one.
@@ -225,9 +241,9 @@ Set via environment variables before starting the server:
 
 ```bash
 # Embedding model selection
-export NEXUS_EMBEDDING_MODEL=bge-small-en       # Default: bge-small-en (384d, lightweight)
-                                                 # jina-code (768d) is deprecated
-export NEXUS_EMBEDDING_DEVICE=auto               # auto (CUDA > MPS > CPU), cuda, mps, cpu
+export NEXUS_EMBEDDING_MODEL=bge-small-en       # Default: bge-small-en (384d, int8 ONNX, CPU)
+                                                 # bge-small-en-torch needs the `torch` extra
+export NEXUS_EMBEDDING_DEVICE=auto               # PyTorch model only: auto, cpu, cuda, mps. ONNX is CPU only
 
 # Search tuning
 export NEXUS_SEARCH_MODE=hybrid          # hybrid, vector, or bm25
@@ -260,14 +276,15 @@ See [CONFIGURATION.md](CONFIGURATION.md) for every variable.
 
 ### Embedding Models
 
-Nexus-MCP recommends one embedding model, `bge-small-en`. `jina-code` still loads, with a warning, so an existing index keeps working; it is deprecated. Only registered model names are accepted; custom model names raise a `ConfigurationError`.
+Nexus-MCP runs one embedding model at a time. Only registered model names are accepted; custom model names raise a `ConfigurationError`. `jina-code` was removed in 3.0.0: use `bge-small-en` and re-index.
 
 | Model | HuggingFace ID | Dims | Code-specific? | Notes |
 |-------|---------------|------|:-:|---|
-| `bge-small-en` (default) | `BAAI/bge-small-en-v1.5` | 384 | No | Smallest download (~50MB), general text, PyTorch backend |
-| `jina-code` (deprecated) | `jinaai/jina-embeddings-v2-base-code` | 768 | Yes | ONNX, needs `trust_remote_code` and a 612 MiB download; slow CPU index. Removal in a future major release |
+| `bge-small-en` (default) | `Xenova/bge-small-en-v1.5` | 384 | No | int8 ONNX file, 32 MB download, ONNX Runtime on the CPU, no PyTorch |
+| `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, on a GPU (CUDA or Apple MPS) when present, else the CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 2 times faster than the default on Apple Silicon |
 
-GPU/MPS auto-detection (`NEXUS_EMBEDDING_DEVICE=auto`) tries CUDA first, then Apple MPS, then falls back to CPU. For explicit GPU support, install with `pip install -e ".[gpu]"`.
+The two models give slightly different vectors, so a switch rebuilds the index. The device
+setting `NEXUS_EMBEDDING_DEVICE` applies to the PyTorch model only. See [ADR-029](adr/ADR-029-cpu-only-onnx-embeddings.md).
 
 ## Best Practices
 

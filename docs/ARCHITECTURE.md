@@ -28,7 +28,7 @@ flowchart TB
         direction TB
         Parse["parsing/\ntree-sitter (symbols, parallel) +\nast-grep (relationships, sequential) +\nfile_watcher (NEXUS_AUTO_WATCH)"]
         Chunk["indexing/chunker.py\nsymbols → CodeChunks"]
-        Embed["indexing/embedding_service.py\nbge-small-en (PyTorch)"]
+        Embed["indexing/embedding_service.py\nbge-small-en (int8 ONNX, CPU)"]
         Parse --> Chunk --> Embed
     end
 
@@ -77,10 +77,10 @@ The 8-step pipeline transforms source code into searchable indexes:
 
 1. **Discover** — Walk directory tree, filter by extension/size/.gitignore
 2. **Parse symbols** — tree-sitter extracts functions, classes, methods (parallel)
-3. **Parse graph** — ast-grep extracts functions, classes and import relationships as `CONTAINS`/`IMPORTS` edges (sequential). It also records the callee names inside each function. After the last batch, `indexing/call_resolver.py` turns those names into `CALLS` edges. No parser creates `INHERITS` edges yet.
+3. **Parse graph** — ast-grep extracts functions, classes and import relationships as `CONTAINS`/`IMPORTS` edges (sequential). It also records the callee names inside each function. After the last batch, `indexing/call_resolver.py` turns those names into `CALLS` edges, and adds `USES` edges from pytest tests to their fixtures. Python and JS/TS files also get a `<top-level>` node for the calls outside every function (ADR-019). No parser creates `INHERITS` edges yet. `indexing/boundary_resolver.py` adds `DEPENDS_ON` edges from the code that uses a route, an edge function or a SQL table to the code that provides it (ADR-026; `.sql` files give `CLASS` nodes, no chunks). `nexus-mcp-ci check` reads the stored graph to compare a git diff with the callers and the boundary users (ADR-025, ADR-026).
 4. **Transfer graph** — Populate rustworkx graph from ast-grep results
 5. **Chunk** — Convert symbols to CodeChunks with deterministic IDs
-6. **Embed** — generates vectors (384-dim bge-small-en, PyTorch; the deprecated 768-dim jina-code still loads, on ONNX Runtime)
+6. **Embed** — generates vectors (384-dim bge-small-en, int8 ONNX file on ONNX Runtime, CPU only; the optional model `bge-small-en-torch` runs on PyTorch, on a GPU when present)
 7. **Store** — Write chunks to LanceDB, rebuild FTS index
 8. **Cleanup** — Unload embedding model, save metadata for incremental reindex
 
@@ -139,7 +139,7 @@ After `index()` finishes, `core_api._ensure_file_watcher` starts a debounced wat
 ```
 Source files → tree-sitter → Symbols → Chunker → CodeChunks
                                                       ↓
-Source files → ast-grep → UniversalGraph → rustworkx   embed (PyTorch / ONNX)
+Source files → ast-grep → UniversalGraph → rustworkx   embed (ONNX, CPU)
                                                       ↓
                                               LanceDB (chunks table)
 ```
@@ -152,12 +152,13 @@ Query →       → BM25 search (Tantivy)     ┴→ RRF Fusion → exact names 
 
 ## Memory Budget
 
-Measured: about 90MB idle and 460MB with the model loaded (docs/MEMORY.md). The footprint comes from:
-- ONNX Runtime is used only by the deprecated jina-code; the bge-small-en default uses PyTorch
+Measured: about 90MB idle and 270MB with the model loaded (docs/MEMORY.md). The footprint comes from:
+- ONNX Runtime runs the default model (int8 file, 32MB). The default install has no PyTorch
+- One ONNX call runs one chunk (`ONNX_MAX_BATCH = 1`): a call of 32 kept more than 1.3GB in the memory arena, and the int8 vector of a chunk then depends on the batch
 - LanceDB mmap (vectors stay on disk, ~20-50MB overhead)
 - Lazy model loading — embedding model loaded during indexing, unloaded after
-- GPU/MPS auto-detection (`NEXUS_EMBEDDING_DEVICE=auto`) for faster inference when available
-- One recommended model: bge-small-en (384d). jina-code (768d) is deprecated
+- The ONNX model runs on the CPU only. The PyTorch model uses a GPU when present (`NEXUS_EMBEDDING_DEVICE=auto`: CUDA, MPS, CPU) ([ADR-029](adr/ADR-029-cpu-only-onnx-embeddings.md))
+- One recommended model: bge-small-en (384d). `bge-small-en-torch` is the optional PyTorch variant
 
 ## Thread Safety
 
@@ -177,7 +178,7 @@ This table was in the README before 2026-11-08.
 | Layer | Technology | Why |
 |-------|-----------|-----|
 | **Vector store** | LanceDB | mmap, disk-backed: about 20–50 MB overhead against the in-memory model of ChromaDB. Native Tantivy FTS gives one store for vectors and BM25. ([ADR-002](adr/ADR-002-lancedb-over-chromadb.md)) |
-| **Embeddings** | bge-small-en | 384 dimensions, no `trust_remote_code`. Lazy load and unload keep RAM flat after indexing. ([ADR-004](adr/ADR-004-bge-small-default-model.md)) |
+| **Embeddings** | bge-small-en | 384 dimensions, int8 ONNX file, CPU only, no `trust_remote_code`. Lazy load and unload keep RAM flat after indexing. ([ADR-004](adr/ADR-004-bge-small-default-model.md), [ADR-029](adr/ADR-029-cpu-only-onnx-embeddings.md)) |
 | **Graph engine** | rustworkx PyDiGraph | Rust-backed, O(1) node lookup, PageRank and centrality. Thread-safe with an RLock. ([ADR-006](adr/ADR-006-rustworkx-graph-engine.md)) |
 | **Symbol parser** | tree-sitter | 25+ languages, AST-level symbol extraction, parallel through a thread pool. ([ADR-005](adr/ADR-005-dual-parser-strategy.md)) |
 | **Graph parser** | ast-grep | Containment and import edges; call edges are resolved after the last batch ([ADR-019](adr/ADR-019-call-edge-resolution.md)). Runs in sequence for graph consistency. |

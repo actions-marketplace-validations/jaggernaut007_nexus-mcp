@@ -33,7 +33,7 @@
       },
       "NEXUS_MAX_MEMORY_MB": {
         "type": "string",
-        "description": "Memory budget in MB (about 90 MB idle, 460 MB with the embedding model loaded)",
+        "description": "Memory budget in MB (about 90 MB idle, 270 MB with the embedding model loaded)",
         "default": "350"
       },
       "NEXUS_CHUNK_MAX_CHARS": {
@@ -48,7 +48,7 @@
       },
       "NEXUS_EMBEDDING_DEVICE": {
         "type": "string",
-        "description": "Device for embeddings: auto, cuda, mps, cpu",
+        "description": "Device for the PyTorch model (bge-small-en-torch): auto, cpu, cuda or mps. The default ONNX model is CPU only",
         "default": "auto"
       },
       "NEXUS_MAX_FILE_SIZE_MB": {

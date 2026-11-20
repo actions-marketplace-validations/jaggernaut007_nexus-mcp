@@ -18,6 +18,26 @@ jobs:
           args: eval . --questions 30
 ```
 
+## Check a pull request
+
+`check` lists the callers, references and tests that a diff did not update. It needs an index,
+so build one first. The step fails the job when a finding has the severity of `--fail-on`
+(default `high`).
+
+```yaml
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # check needs the base commit
+      - uses: jaggernaut007/Nexus-MCP@v2
+        with:
+          args: index .
+      - uses: jaggernaut007/Nexus-MCP@v2
+        with:
+          args: check . --base origin/${{ github.base_ref }} --fail-on high
+```
+
+The result is a lower bound: edges are static and name-based. Reference: [CLI.md](CLI.md).
+
 ## Inputs
 
 | Input | Default | Meaning |
@@ -29,6 +49,6 @@ jobs:
 ## Notes
 
 - The action installs `uv` with `astral-sh/setup-uv`, then runs `uvx`. The first run downloads
-  the packages and the embedding model (about 130 MB). Cache `~/.cache/huggingface` to avoid
+  the packages (about 160 to 190 MB) and the embedding model (about 32 MB). Cache `~/.cache/huggingface` to avoid
   the model download on later runs.
 - The inputs reach the shell as environment variables, not as text in the script.

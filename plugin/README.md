@@ -16,8 +16,8 @@ the method: [benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.ht
 
 - [uv](https://docs.astral.sh/uv/). The plugin starts the server with
   `uvx --python 3.12 nexus-mcp-ci==<version>`, so there is no `pip install`.
-- The first index downloads the embedding model `BAAI/bge-small-en-v1.5` from Hugging Face
-  (about 130 MB), once.
+- The first index downloads the embedding model `Xenova/bge-small-en-v1.5` from Hugging Face
+  (about 32 MB), once.
 
 ## What is in the plugin
 
@@ -26,6 +26,8 @@ the method: [benchmarks](https://jaggernaut007.github.io/nexus-mcp/benchmarks.ht
 | MCP server `nexus-mcp` | 5 tools: `index`, `search`, `find_symbol`, `graph`, `map`. Set `NEXUS_EXTRA_TOOLS=all` to add `status`, `analyze` and `memory`. |
 | Skill `nexus-mcp` | Tells Claude when to use the tools instead of reading files one by one. |
 | Skill `evaluate` | Runs the free offline check `nexus-mcp-ci eval` on your project and explains the verdict. |
+| Skill `check` | You start it with `/nexus-mcp:check`. Runs `nexus-mcp-ci check` on your change and explains each caller, route user, table user and test that the diff did not update. |
+| Stop hook | At the end of a turn it runs `nexus-mcp-ci check --hook`. It is silent unless a new `high` finding exists, for example a changed signature with callers that were not updated. Set `NEXUS_HOOK=off` to turn it off. It needs an index and a git repository. |
 | Agent `nexus-evaluator` | Runs the same offline check and returns only the summary. |
 
 ## Data and privacy

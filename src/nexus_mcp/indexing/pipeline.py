@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -20,6 +21,7 @@ from nexus_mcp.engines.vector_engine import LanceDBVectorEngine
 from nexus_mcp.indexing.call_resolver import resolve_calls
 from nexus_mcp.indexing.chunker import create_chunks
 from nexus_mcp.indexing.embedding_service import get_embedding_service, model_dimensions
+from nexus_mcp.indexing.git_exclude import ensure_git_exclude
 from nexus_mcp.indexing.parallel_indexer import parallel_parse_files
 from nexus_mcp.parsing.astgrep_parser import AstGrepParser
 from nexus_mcp.parsing.language_registry import get_supported_extensions
@@ -47,7 +49,17 @@ SKIP_DIRS: Set[str] = {
 # 8: tree-sitter symbols for Rust, PHP and C#; ast-grep function and class nodes for C, C++,
 # C# and PHP; a C declarator inside a function body gives no chunk; Python, JavaScript and
 # TypeScript classes carry `bases` (needed by the `overrides` of `graph`).
-CHUNK_FORMAT = 8
+# 9: `bge-small-en` is the int8 ONNX model (3.0.0). Before, it was the fp32 model on PyTorch,
+# and the vectors differ a little (cosine 0.994 at the lowest). An index of format 8 holds the
+# fp32 vectors, so its chunks are rebuilt, and no chunk table mixes the two. Stored memories
+# are not re-embedded: the memory store checks the vector width only (see ADR-029).
+CHUNK_FORMAT = 9
+
+# The version of the facts that the ast-grep extractor writes into the graph nodes. A linked
+# repo is trusted only when its index has this version or a newer one (ADR-030). An index
+# with no version was built before links existed. Raise it when the extractor starts to
+# write a new kind of fact, so that `nexus-mcp-ci link` builds the older indexes again.
+EXTRACTOR_VERSION = 1
 
 
 @dataclass
@@ -191,7 +203,9 @@ class IndexingPipeline:
     8. Unload embedding model to free RAM
     """
 
-    def __init__(self, settings: Optional[Settings] = None):
+    def __init__(self, settings: Optional[Settings] = None, read_only: bool = False):
+        """``read_only`` is for a linked repo (ADR-030): the BM25 engine then never writes
+        its full-text index. The caller must not call the index methods of such a pipeline."""
         self._settings = settings or get_settings()
         self._embedding_service = get_embedding_service(
             self._settings.embedding_model,
@@ -205,10 +219,32 @@ class IndexingPipeline:
         )
         self._bm25_engine = LanceDBBM25Engine(
             db_path=str(self._settings.lancedb_path),
+            read_only=read_only,
         )
         self._graph_engine = RustworkxCodeGraph()
         self._astgrep = AstGrepParser()
         self._metadata_path = self._settings.storage_path / "index_metadata.json"
+        # The repo_id of a store whose metadata file is about to be deleted (see
+        # `_remember_repo_id`), so that the rebuilt index keeps its identity.
+        self._kept_repo_id: Optional[str] = None
+        self._git_exclude_done = False
+
+    def _prepare_storage(self) -> None:
+        """Make the storage folder and keep it out of git."""
+        self._settings.storage_path.mkdir(parents=True, exist_ok=True)
+        self._keep_storage_out_of_git()
+
+    def _keep_storage_out_of_git(self) -> None:
+        """Add the storage folder to `.git/info/exclude`, one time for each pipeline.
+
+        `incremental_index` calls it too: an index made by an older version gets the line
+        at the next reindex. `NEXUS_GIT_EXCLUDE=false` turns it off.
+        """
+        storage = self._settings.storage_path
+        if self._git_exclude_done or not self._settings.git_exclude or not storage.is_dir():
+            return
+        self._git_exclude_done = True
+        ensure_git_exclude(storage)
 
     @property
     def vector_engine(self) -> LanceDBVectorEngine:
@@ -248,8 +284,7 @@ class IndexingPipeline:
         start = time.time()
         codebase_path = Path(codebase_path).resolve()
 
-        # Ensure storage dir exists
-        self._settings.storage_path.mkdir(parents=True, exist_ok=True)
+        self._prepare_storage()
 
         # Step 1: Discover files
         files = discover_files(codebase_path, self._settings)
@@ -340,6 +375,29 @@ class IndexingPipeline:
             "chunk_format": CHUNK_FORMAT,
         }
 
+    def _remember_repo_id(self) -> None:
+        """Keep the repo_id of the stored metadata in memory, before the file is deleted."""
+        repo_id = (self._load_metadata_raw() or {}).get("repo_id")
+        if isinstance(repo_id, str) and repo_id:
+            self._kept_repo_id = repo_id
+
+    def _identity_metadata(self, primary_root: Path) -> Dict[str, Any]:
+        """The identity of this store: a repo_id made one time, the name, the extractor version.
+
+        The repo_id stays the same through every reindex of the store (ADR-030). A link
+        in the registry names it, so that a link to a folder that now holds another repo
+        is found. The name is the folder name of the first root.
+        """
+        repo_id = (self._load_metadata_raw() or {}).get("repo_id")
+        if not (isinstance(repo_id, str) and repo_id):
+            repo_id = self._kept_repo_id or uuid.uuid4().hex
+        self._kept_repo_id = repo_id
+        return {
+            "repo_id": repo_id,
+            "repo_name": Path(primary_root).name,
+            "extractor_version": EXTRACTOR_VERSION,
+        }
+
     def _persist_graph(self) -> None:
         """Save the graph after a full build, so a restart can load it.
 
@@ -352,13 +410,14 @@ class IndexingPipeline:
         except Exception as e:  # noqa: BLE001 - persistence must not fail an index
             logger.warning("Could not save graph: %s", e)
 
-    def _restore_graph(self) -> bool:
+    def _restore_graph(self, read_only: bool = False) -> bool:
         """Make sure the graph engine holds the graph that matches the stored index.
 
         Returns True when the engine already has nodes, or when the graph saved at
         shutdown was loaded into it. Returns False when no saved graph exists or
         when it is older than the index metadata (a crash left a stale file), so
-        the caller falls back to a full rebuild.
+        the caller falls back to a full rebuild. `read_only` opens the saved graph without
+        any write (the store of a linked repo).
         """
         if self._graph_engine.nodes:
             return True
@@ -368,7 +427,7 @@ class IndexingPipeline:
                 return False
             if graph_path.stat().st_mtime < self._metadata_path.stat().st_mtime:
                 return False
-            loaded = GraphPersistence(str(graph_path)).load()
+            loaded = GraphPersistence(str(graph_path)).load(read_only=read_only)
         except Exception as e:  # noqa: BLE001 - a bad graph file must not block indexing
             logger.warning("Could not load saved graph: %s", e)
             return False
@@ -429,10 +488,12 @@ class IndexingPipeline:
         """Incrementally re-index only changed/new/deleted files."""
         start = time.time()
         codebase_path = Path(codebase_path).resolve()
+        self._keep_storage_out_of_git()
 
         # Validate existing index integrity
         if not self._validate_index():
             logger.warning("Corrupt index detected, performing full rebuild.")
+            self._remember_repo_id()
             try:
                 self._metadata_path.unlink(missing_ok=True)
             except OSError:
@@ -686,8 +747,7 @@ class IndexingPipeline:
         start = time.time()
         resolved_paths = [Path(p).resolve() for p in codebase_paths]
 
-        # Ensure storage dir exists
-        self._settings.storage_path.mkdir(parents=True, exist_ok=True)
+        self._prepare_storage()
 
         # Incremental path: only if a valid index exists for this exact root set
         if self._validate_index():
@@ -813,6 +873,7 @@ class IndexingPipeline:
             "codebase_path": str(codebase_paths[0]),
             "mtimes": mtimes,
             **self._embedding_metadata(),
+            **self._identity_metadata(codebase_paths[0]),
         }
         self._metadata_path.parent.mkdir(parents=True, exist_ok=True)
         self._metadata_path.write_text(json.dumps(metadata))
@@ -830,6 +891,7 @@ class IndexingPipeline:
             "codebase_path": str(codebase_path),
             "mtimes": mtimes,
             **self._embedding_metadata(),
+            **self._identity_metadata(codebase_path),
         }
         self._metadata_path.parent.mkdir(parents=True, exist_ok=True)
         self._metadata_path.write_text(json.dumps(metadata))

@@ -41,6 +41,7 @@ def test_check_versions_reports_a_uvx_launch_with_no_python_pin(tmp_path, monkey
         "plugin/.claude-plugin/plugin.json",
         "plugin/.cursor-plugin/plugin.json",
         "plugin/.mcp.json",
+        "plugin/hooks/hooks.json",
         "mcpb/manifest.json",
         "mcpb/pyproject.toml",
         "gemini-extension.json",

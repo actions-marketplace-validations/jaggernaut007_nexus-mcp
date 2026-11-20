@@ -17,7 +17,7 @@ OUT = ROOT / "docs" / "CLI.md"
 def build() -> str:
     os.environ["COLUMNS"] = "100"  # a fixed width, so the output does not depend on the terminal
     from nexus_mcp import setup_clients
-    from nexus_mcp.evaluate import cli
+    from nexus_mcp.evaluate import cli, link_cmd
 
     data = cli._data_parser()
     parts = [
@@ -38,6 +38,36 @@ def build() -> str:
         "",
         "```text",
         setup_clients._parser().format_help().rstrip(),
+        "```",
+        "",
+        "## nexus-mcp-ci index",
+        "",
+        "```text",
+        cli._index_parser().format_help().rstrip(),
+        "```",
+        "",
+        "## nexus-mcp-ci check",
+        "",
+        "```text",
+        cli._check_parser().format_help().rstrip(),
+        "```",
+        "",
+        "## nexus-mcp-ci link",
+        "",
+        "```text",
+        link_cmd.link_parser().format_help().rstrip(),
+        "```",
+        "",
+        "## nexus-mcp-ci unlink",
+        "",
+        "```text",
+        link_cmd.unlink_parser().format_help().rstrip(),
+        "```",
+        "",
+        "## nexus-mcp-ci links",
+        "",
+        "```text",
+        link_cmd.links_parser().format_help().rstrip(),
         "```",
         "",
         "## nexus-mcp-ci data",

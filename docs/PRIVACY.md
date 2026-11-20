@@ -10,7 +10,7 @@ Only the flows below cross the network. Each one is named in the CLI output befo
 | Flow | Direction | When | What | How to stop it |
 |---|---|---|---|---|
 | Package install | in | `pip install` or `uvx`, once | the wheel from PyPI | install from a local wheel |
-| Embedding model | in | the first index, once | `BAAI/bge-small-en-v1.5` from Hugging Face (~130 MB) | set `NEXUS_OFFLINE=1` after the first download, or copy the model cache |
+| Embedding model | in | the first index, once | `Xenova/bge-small-en-v1.5` from Hugging Face: the int8 ONNX file and the tokenizer (~32 MB, one pinned commit). With the optional `torch` extra: `BAAI/bge-small-en-v1.5` (~130 MB) | set `NEXUS_OFFLINE=1` after the first download, or copy the model cache |
 | Repo URL source | in | `eval <url>` only | `git clone --depth 1` of that public repo | use a local path |
 | Agent tier | **out** | `eval --agent` only, after you answer yes | the prompts and the code that the agent reads, sent through **your own** `claude` or `codex` CLI to Anthropic or OpenAI | do not use `--agent`; the quick tier sends nothing |
 | Share | **out** | `eval share`, after you answer yes to the exact payload | allow-listed numbers only: no paths, no code, no question text | do not run `share` |
@@ -32,13 +32,27 @@ Defaults that protect you:
 | Code graph (SQLite) | `<project>/.nexus/graph.db` | symbol names and paths | `NEXUS_STORAGE_DIR` |
 | Embedding model | `~/.cache/huggingface/hub/` | no | `HF_HOME` |
 | Audit log | stderr (your MCP client log); a file only if you set one | tool arguments, with secrets redacted | `NEXUS_AUDIT_LOG_FILE`, `NEXUS_AUDIT_ENABLED` |
+| Links registry: names, paths and repo ids of linked repos | `~/.nexus-mcp/links.json` | no: paths only | `NEXUS_LINKS_FILE` |
 | Eval results | `~/.nexus-mcp/evals/` | no: numbers only; question text stays local | `NEXUS_EVAL_HOME` |
 | Eval index | the OS temp folder, deleted at exit | yes, while the eval runs | `--keep-index` writes it to `<project>/.nexus/` |
 | Eval clones | `~/.cache/nexus-mcp/eval/repos/` | the public repo | `NEXUS_EVAL_CACHE` |
 | `uvx` package cache | the `uv` cache folder | no | `uv cache clean nexus-mcp-ci` |
 
-The index holds code. Add `.nexus/` to `.gitignore` (or to `.git/info/exclude`, which is never
-committed). `nexus-mcp-ci data where` warns when `.nexus/` is not ignored.
+The index holds code, so it must not go into a commit. `index` keeps it out of git for you:
+
+- When the index folder is in a git work tree and no ignore rule covers it, `index` adds the
+  line `.nexus/` to `.git/info/exclude` of that repo.
+- That file is local to your clone and git never commits it. Your tracked `.gitignore` does
+  not change.
+- In a linked git worktree, the line goes into the exclude file of the main repo. It then
+  applies to all worktrees.
+- A custom `NEXUS_STORAGE_DIR` inside the repo gets a line with its path from the repo root.
+  A folder outside a git repo gets no line.
+- Set `NEXUS_GIT_EXCLUDE=false` to turn this off.
+
+The exclude line protects only your clone. Add `.nexus/` to `.gitignore` when you want the
+same rule for each person on the team. `nexus-mcp-ci data where` warns when the index folder
+is not ignored.
 
 ## See and remove your data
 
@@ -59,7 +73,9 @@ Shell commands that do the same, if you prefer not to run our code to remove our
 
 ```bash
 rm -rf .nexus
-rm -rf ~/.nexus-mcp ~/.cache/nexus-mcp
+rm -rf ~/.nexus-mcp ~/.cache/nexus-mcp   # also removes the links registry
+rm -rf ~/.cache/huggingface/hub/models--Xenova--bge-small-en-v1.5
+# with the torch extra:
 rm -rf ~/.cache/huggingface/hub/models--BAAI--bge-small-en-v1.5
 uv cache clean nexus-mcp-ci
 ```

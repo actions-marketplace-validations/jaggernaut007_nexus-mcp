@@ -163,7 +163,8 @@ Your code stays on your machine. The server makes no network calls and has no te
   `NEXUS_OFFLINE=1` after that.
 - **Out:** nothing, unless you run `eval --agent` (through your own Claude or Codex CLI) or
   `eval share` (numbers only). Both ask first.
-- **Stored:** the index in `<project>/.nexus/` (add it to `.gitignore`).
+- **Stored:** the index in `<project>/.nexus/`. `index` adds it to `.git/info/exclude`, so
+  git does not commit it.
   `nexus-mcp-ci data where` lists every file; `nexus-mcp-ci data clear` removes them.
 
 Details: [docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md).
@@ -176,7 +177,7 @@ Details: [docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/
   dispatch, callbacks and reflection do not show, so treat `graph` results as a lower bound.
 - **C and Rust live runs used more tokens** than Grep and Read on the older 2.2.2 build (see
   Results). A rerun on the current build is pending.
-- **Memory:** about 90 MB idle and about 460 MB with the embedding model loaded
+- **Memory:** about 90 MB idle, about 270 MB with the embedding model loaded and about 310 MB while indexing a small project
   ([measurements](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/MEMORY.md)).
 - **Freshness:** edits are picked up after a debounce of a few seconds, not instantly.
 - **Transport:** stdio only.

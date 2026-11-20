@@ -27,8 +27,8 @@ finds the index out of date.
 ## The embedding model
 
 **The first index is slow or fails with a network error.** The first run downloads
-`BAAI/bge-small-en-v1.5` (about 130 MB) from Hugging Face. Check the network, or copy
-`~/.cache/huggingface/hub/models--BAAI--bge-small-en-v1.5` from another machine.
+`Xenova/bge-small-en-v1.5` (about 32 MB) from Hugging Face. Check the network, or copy
+`~/.cache/huggingface/hub/models--Xenova--bge-small-en-v1.5` from another machine.
 
 **I must work offline.** After one download, set `NEXUS_OFFLINE=1`. If the model is not cached,
 the load fails with a clear error instead of a network call. `nexus-mcp-ci eval doctor` shows
@@ -43,11 +43,23 @@ field means a background reindex is running.
 **The index is corrupt or from another model.** It is rebuilt on the next `index` call. To start
 again: `nexus-mcp-ci data clear --index --graph --yes`, then call `index`.
 
-**Memory use is high.** About 90 MB idle and 460 MB with the model loaded
+**Memory use is high.** About 90 MB idle and 270 MB with the model loaded
 ([MEMORY.md](MEMORY.md)). The model unloads after indexing.
 
-**`.nexus/` shows in `git status`.** Add `.nexus/` to `.gitignore`. The index holds code.
-`nexus-mcp-ci data where` warns about this.
+**`.nexus/` shows in `git status`.** The index holds code. Do not commit it. `index` adds
+`.nexus/` to `.git/info/exclude` by itself, so this shows only in these conditions:
+
+- `NEXUS_GIT_EXCLUDE=false` is set. Remove it, or add `.nexus/` to `.gitignore`.
+- A rule such as `!.nexus/` in `.gitignore` cancels the exclude line. Remove that rule.
+- `git` was not on the `PATH` of the server, or the exclude file was read-only. The server
+  log then has the warning "Could not add the index folder". Add `.nexus/` to `.gitignore`.
+- An older version made the index and no reindex ran since the upgrade. Call `index` again.
+
+`nexus-mcp-ci data where` tells you if git ignores the folder.
+
+**`.nexus/` is already in a commit.** An ignore rule does not remove tracked files. Run
+`git rm -r --cached .nexus` and commit. If the commit is pushed, the code snippets stay in
+the history of the remote.
 
 ## The eval
 
