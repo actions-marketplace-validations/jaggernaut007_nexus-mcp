@@ -75,6 +75,7 @@ def _trigger_background_reindex(
             state.vector_engine = _pipeline.vector_engine
             state.bm25_engine = _pipeline.bm25_engine
             state.graph_engine = _pipeline.graph_engine
+            _rebuild_bridge(state)
             state._staleness_cache = None  # force a fresh check on next status()/search()
             logger.info("Background reindex complete for %s", codebase_path)
         except Exception as e:
@@ -324,6 +325,32 @@ def _attach_linked(state, settings) -> None:
     except Exception as e:  # noqa: BLE001 - the primary project must keep working
         logger.warning("Could not attach the linked repos: %s", e)
         state.linked = []
+    _rebuild_bridge(state)
+
+
+def _rebuild_bridge(state) -> None:
+    """Join the client calls and the routes of the repos of the session again (ADR-030).
+
+    The edges stay in memory: no graph holds them and none is saved with them. Run it after
+    the repos are attached and after a reindex of the primary project. A failure leaves the
+    session with no cross-repo edge, and `graph` then answers as it does with no link.
+    """
+    from nexus_mcp.indexing.service_resolver import PRIMARY, resolve_services
+
+    attached = _attached_linked(state)
+    if not attached or state.graph_engine is None:
+        state.bridge = None
+        return
+    try:
+        graphs = {PRIMARY: state.graph_engine}
+        roots = {PRIMARY: list(state.codebase_paths or [state.codebase_path])}
+        for repo in attached:
+            graphs[repo.name] = repo.graph_engine
+            roots[repo.name] = [repo.path]
+        state.bridge = resolve_services(graphs, roots)
+    except Exception as e:  # noqa: BLE001 - cross-repo edges are an addition, never a failure
+        logger.warning("Could not join the client calls with the routes: %s", e)
+        state.bridge = None
 
 
 def _restore_locked(state, settings, roots) -> bool:
@@ -1023,9 +1050,9 @@ def _merge_by_score(lists: list[list[dict]]) -> list[dict]:
     """One list from the lists of several stores, best score first.
 
     The score is the same kind in every store: the vector score is 1 / (1 + distance) of
-    one model, and the BM25 score is divided by the best score of its store, so the best
-    keyword result of each store has the score 1. The sort is stable: on a tie the
-    primary project comes first. One list is returned as it is.
+    one model. A BM25 list is scaled by `_merge_bm25` first, because a store divides its BM25
+    scores by its own best one. The sort is stable: on a tie the primary project comes first.
+    One list is returned as it is.
     """
     if len(lists) == 1:
         return lists[0]
@@ -1043,6 +1070,42 @@ def _merge_by_score(lists: list[list[dict]]) -> list[dict]:
             seen.add(rid)
         unique.append(r)
     return unique
+
+
+PROJECT_BM25_BONUS = 1.25  # a project hit counts this much more than a linked one of the same score
+
+
+def _merge_bm25(lists: list[list[dict]]) -> list[dict]:
+    """One BM25 list from the lists of several stores, scaled together.
+
+    A store divides its scores by its own best score, so the best hit of each store has the
+    score 1 however weak it is, and a weak linked match outranked the second result of the
+    project (the 2.5 eval, `evals/linked/with_link.py`). Here every list is divided by the
+    best raw score of all lists. The raw scores of two stores are not equal for one text: the
+    IDF term of BM25 grows with the number of chunks of the store (one document scored 0.85
+    alone, 6.4 among 10, 13.0 among 100 and 20.0 among 1000), so a bigger store scores a
+    little higher for the same match, and a large linked repo next to a small project can
+    outrank it. The effect is much smaller than two scores of 1, and a rule that corrects the
+    size (ln of the chunk count) kept a result of the project worse in one run of six. A hit
+    with no raw score keeps its score. One list is returned as it is.
+
+    The project wins a near tie (owner decision, 2026-11-20): a hit of the project (no `_repo`
+    tag) counts `PROJECT_BM25_BONUS` times its raw score. A linked hit with a score above
+    that still comes first.
+    """
+    if len(lists) == 1:
+        return lists[0]
+
+    def weight(r: dict) -> float:
+        return r["_raw_score"] * (1.0 if "_repo" in r else PROJECT_BM25_BONUS)
+
+    top = max((weight(r) for found in lists for r in found if "_raw_score" in r), default=0.0)
+    if top > 0:
+        for found in lists:
+            for r in found:
+                if "_raw_score" in r:
+                    r["score"] = weight(r) / top
+    return _merge_by_score(lists)
 
 
 def _search_linked(
@@ -1066,7 +1129,7 @@ def _search_linked(
                 logger.warning("Vector search of linked repo %r failed: %s", repo.name, e)
         if mode in ("hybrid", "bm25") and repo.bm25_engine:
             try:
-                found = repo.bm25_engine.search(query, limit=limit, **kwargs)
+                found = repo.bm25_engine.search(query, limit=limit, keep_raw=True, **kwargs)
                 if found:
                     bm25_lists.append(_tag_repo(found, repo))
             except Exception as e:  # noqa: BLE001
@@ -1196,7 +1259,9 @@ def search(
     bm25_lists: list[list[dict]] = []
     if mode in ("hybrid", "bm25") and state.bm25_engine:
         try:
-            bm25_results = state.bm25_engine.search(query, limit=overfetch, **kwargs)
+            bm25_results = state.bm25_engine.search(
+                query, limit=overfetch, keep_raw=bool(linked_repos), **kwargs
+            )
             if bm25_results:
                 bm25_lists.append(bm25_results)
         except Exception as e:
@@ -1213,7 +1278,7 @@ def search(
         ranked_lists["vector"] = _merge_by_score(vector_lists)[:overfetch]
         engines_used.append("vector")
     if bm25_lists:
-        ranked_lists["bm25"] = _merge_by_score(bm25_lists)[:overfetch]
+        ranked_lists["bm25"] = _merge_bm25(bm25_lists)[:overfetch]
         engines_used.append("bm25")
 
     # Each list: source before tests, then the same length that fusion always got. A
@@ -1318,6 +1383,7 @@ def search(
     linked_changed: dict[str, set] = {}  # a linked repo is checked once, if it has a result
     for rank, r in enumerate(results):
         r.pop("vector", None)
+        r.pop("_raw_score", None)
         repo = repo_by_name.get(r.pop("_repo", None))
         if repo is not None and repo.name not in linked_changed:
             from nexus_mcp import linked
@@ -1807,12 +1873,174 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
     return result
 
 
+Hop = tuple[str, UniversalNode, Any]  # (repo key, node, the bridge edge that led here)
+
+
+def _scope_of(state, key: str):
+    """The session state (`PRIMARY`) or the linked repo of this key, or None when gone."""
+    from nexus_mcp.indexing.service_resolver import PRIMARY
+
+    if key == PRIMARY:
+        return state
+    return next((repo for repo in _attached_linked(state) if repo.name == key), None)
+
+
+def _linked_starts(state, symbol_name: str) -> list[tuple[str, UniversalNode]]:
+    """The nodes of a name in the linked repos, as (repo key, node). [] when there is no link."""
+    return [
+        (repo.name, node)
+        for repo in _attached_linked(state)
+        for node in _resolve_in_scope(state, repo, symbol_name, True)
+    ]
+
+
+def _neighbours(
+    state, key: str, node_id: str, direction: str, calls: bool = True
+) -> list[Hop]:
+    """The nodes next to a node, as (repo key, node, edge).
+
+    With `calls`, first its callers or callees in its own graph (edge None; the callers
+    include the users over a boundary edge of ADR-026). Then the other end of its bridge
+    edges (ADR-030): the client nodes for `callers`, the route handlers for `callees`. A
+    bridge edge ends in another repo.
+    """
+    scope = _scope_of(state, key)
+    if scope is None:
+        return []
+    graph = scope.graph_engine
+    hops: list[Hop] = []
+    if calls:
+        if direction == "callers":
+            related = list(graph.get_callers(node_id))
+            related += [user for user, _kind, _key in graph.get_boundary_users(node_id)]
+        else:
+            related = graph.get_callees(node_id)
+        hops = [(key, n, None) for n in related]
+    bridge = getattr(state, "bridge", None)
+    if bridge:
+        if direction == "callers":
+            edges = [(e.client_repo, e.client_id, e) for e in bridge.callers_of(key, node_id)]
+        else:
+            edges = [(e.route_repo, e.route_id, e) for e in bridge.callees_of(key, node_id)]
+        for other_key, other_id, edge in edges:
+            other_scope = _scope_of(state, other_key)
+            other = other_scope.graph_engine.get_node(other_id) if other_scope else None
+            if other is not None:
+                hops.append((other_key, other, edge))
+    return hops
+
+
+def _repo_path(key: str, path: str) -> str:
+    """A path of a linked repo starts with the repo name, as in `search` (`backend/api.py`)."""
+    from nexus_mcp.indexing.service_resolver import PRIMARY
+
+    return path if key == PRIMARY or path.startswith("/") else f"{key}/{path}"
+
+
+def _compact_hop(state, hop: Hop, line: bool = True) -> tuple[str, str]:
+    """(file, `name:line`) of a hop, or (file, `name`) with line=False (the transitive list).
+
+    A hop over a bridge edge ends with `via METHOD /path`. A repo that a parallel `index()`
+    detached has no root: its paths are shown as the graph holds them.
+    """
+    key, node, edge = hop
+    scope = _scope_of(state, key)
+    short = _serialize_node_compact(node, scope.codebase_path if scope is not None else None)
+    label = f"{short['name']}:{short['start_line']}" if line else short["name"]
+    if edge is not None:
+        label += f" via {edge.via}"
+    return _repo_path(key, short["file"]), label
+
+
+def _group_hops(state, hops: list[Hop], line: bool = True) -> dict[str, list[str]]:
+    """Hops as `file -> ["name:line", ...]`, in the order given, with no file cut."""
+    grouped: dict[str, list[str]] = {}
+    for hop in hops:
+        file, label = _compact_hop(state, hop, line)
+        grouped.setdefault(file, []).append(label)
+    return grouped
+
+
+def _serialize_hop(state, hop: Hop) -> dict[str, Any]:
+    """The `detail="full"` entry of a hop: the node, and the repo and edge when they matter."""
+    from nexus_mcp.indexing.service_resolver import PRIMARY
+
+    key, node, edge = hop
+    scope = _scope_of(state, key)
+    out = _serialize_node(node, scope.codebase_path if scope is not None else None)
+    if key != PRIMARY:
+        out["location"]["file"] = _repo_path(key, out["location"]["file"])
+        out["repo"] = key
+    if edge is not None:
+        out["via"] = edge.via
+        out["resolution"] = edge.tier
+    return out
+
+
+def _defined_in_linked(state, starts: list[tuple[str, UniversalNode]]) -> Optional[dict]:
+    """`defined_in` for nodes of linked repos: each file starts with the repo name."""
+    if not starts or len(starts) > MAX_DEFINED_IN:
+        return None
+    grouped: dict[str, list[str]] = {}
+    for key, node in starts:
+        file, label = _compact_hop(state, (key, node, None))
+        owner = (node.metadata or {}).get("parent_class")
+        grouped.setdefault(file, []).append(f"{owner}.{label}" if owner else label)
+    return grouped
+
+
+def _dedupe(hops: list[Hop]) -> list[Hop]:
+    seen: set[tuple[str, str]] = set()
+    out: list[Hop] = []
+    for hop in hops:
+        if (hop[0], hop[1].id) not in seen:
+            seen.add((hop[0], hop[1].id))
+            out.append(hop)
+    return out
+
+
+def _linked_hops(
+    state, matches: list[UniversalNode], starts: list[tuple[str, UniversalNode]], direction: str
+) -> list[Hop]:
+    """The hops that the answer for the primary project does not list (ADR-030).
+
+    For a symbol of the primary project these are the other ends of its bridge edges. For a
+    symbol of a linked repo they are its callers or callees in that repo, and its bridge edges.
+    """
+    from nexus_mcp.indexing.service_resolver import PRIMARY
+
+    hops: list[Hop] = []
+    for node in matches:
+        hops += _neighbours(state, PRIMARY, node.id, direction, calls=False)
+    for key, node in starts:
+        hops += _neighbours(state, key, node.id, direction)
+    return _dedupe(hops)
+
+
 def _graph_immediate(
     state, symbol_name: str, direction: str, detail: str = "compact"
 ) -> dict[str, Any]:
     matches = _resolve_symbol(state.graph_engine, symbol_name, exact=True)
-    if not matches:
+    starts = _linked_starts(state, symbol_name)
+    if not matches and not starts:
         return _references_only(state, symbol_name, direction)
+
+    result: dict[str, Any] = {"symbol": symbol_name}
+    if not matches:
+        # A symbol that only a linked repo defines: its own callers or callees, and its
+        # bridge edges, with the repo name in front of each path.
+        hops = _linked_hops(state, [], starts, direction)
+        defined_in = _defined_in_linked(state, starts)
+        if defined_in:
+            result["defined_in"] = defined_in
+        if detail == "compact":
+            listed, omitted = _cap_files(_group_hops(state, hops))
+        else:
+            listed, omitted = [_serialize_hop(state, h) for h in hops[:MAX_FULL_NODES]], None
+        result |= {"direction": direction, "total": len(hops), direction: listed}
+        if omitted:
+            result[f"{direction}_not_listed"] = omitted
+        return result
 
     get_related = (
         state.graph_engine.get_callers if direction == "callers" else state.graph_engine.get_callees
@@ -1825,7 +2053,6 @@ def _graph_immediate(
                 seen.add(related.id)
                 related_nodes.append(related)
 
-    result: dict[str, Any] = {"symbol": symbol_name}
     defined_in = _defined_in(state, matches)
     if defined_in:
         result["defined_in"] = defined_in
@@ -1846,7 +2073,26 @@ def _graph_immediate(
         _add_overrides(result, state, matches)
         _add_boundary_users(result, state, matches)
         _add_references(result, state, symbol_name, matches)
+    _add_linked(result, state, _linked_hops(state, matches, starts, direction), direction, detail)
     return result
+
+
+def _add_linked(
+    result: dict[str, Any], state, hops: list[Hop], direction: str, detail: str
+) -> None:
+    """Add the hops in the linked repos, as `linked_callers` or `linked_callees` (ADR-030).
+
+    The field is left out when there is none, so it costs no tokens when no repo is linked.
+    """
+    if not hops:
+        return
+    if detail == "compact":
+        listed, omitted = _cap_files(_group_hops(state, hops))
+        result[f"linked_{direction}"] = listed
+        if omitted:
+            result[f"linked_{direction}_not_listed"] = omitted
+    else:
+        result[f"linked_{direction}"] = [_serialize_hop(state, h) for h in hops[:MAX_FULL_NODES]]
 
 
 MAX_BOUNDARY_USERS = 20  # users of a route, an edge function or a table that `graph` lists
@@ -1992,16 +2238,77 @@ def _add_references(
 _IMPACT_EDGES = frozenset({RelationshipType.CALLS, RelationshipType.DEPENDS_ON})
 
 
+def _walk_callers(state, key: str, node_id: str, max_depth: int) -> list[Hop]:
+    """The callers of a node, level by level, over call edges, boundary edges and bridge edges.
+
+    The same walk as `RustworkxCodeGraph.get_transitive_callers`, but it can leave a graph
+    over a bridge edge (ADR-030). A hop is (repo key, node, edge).
+    """
+    visited: set[tuple[str, str]] = set()
+    found: list[Hop] = []
+    queue = [(key, node_id)]
+    depth = 0
+    while queue and depth < max_depth:
+        next_queue = []
+        for current in queue:
+            if current in visited:
+                continue
+            visited.add(current)
+            for hop in _neighbours(state, current[0], current[1], "callers"):
+                if (hop[0], hop[1].id) not in visited:
+                    found.append(hop)
+                    next_queue.append((hop[0], hop[1].id))
+        queue = next_queue
+        depth += 1
+    return found
+
+
+def _linked_impact(
+    state, matches: list[UniversalNode], starts: list[tuple[str, UniversalNode]], max_depth: int
+) -> list[Hop]:
+    """The impacted nodes that the answer for the primary project does not hold (ADR-030).
+
+    From a symbol of the primary project: the nodes of the other repos. From a symbol of a
+    linked repo: all the nodes that reach it.
+    """
+    from nexus_mcp.indexing.service_resolver import PRIMARY
+
+    hops: list[Hop] = []
+    for node in matches if getattr(state, "bridge", None) else []:
+        hops += [h for h in _walk_callers(state, PRIMARY, node.id, max_depth) if h[0] != PRIMARY]
+    for key, node in starts:
+        hops += _walk_callers(state, key, node.id, max_depth)
+    return _dedupe(hops)
+
+
 def _graph_transitive_impact(
     state, symbol_name: str, max_depth: int, detail: str = "compact"
 ) -> dict[str, Any]:
     max_depth = max(1, min(max_depth, 50))
 
     matches = _resolve_symbol(state.graph_engine, symbol_name, exact=True)
-    if not matches:
+    starts = _linked_starts(state, symbol_name)
+    if not matches and not starts:
         return _references_only(state, symbol_name, "callers")
 
     compact = detail == "compact"
+    if not matches:
+        hops = _linked_impact(state, [], starts, max_depth)
+        result: dict[str, Any] = {"symbol": symbol_name}
+        defined_in = _defined_in_linked(state, starts)
+        if defined_in:
+            result["defined_in"] = defined_in
+        files, omitted = _cap_files(_group_hops(state, hops, line=False))
+        result |= {
+            "direction": "callers", "transitive": True, "max_depth": max_depth,
+            "total_impacted": len(hops), "impacted_files": files,
+        }
+        if omitted:
+            result["impacted_not_listed"] = omitted
+        if not compact:
+            result["impacted_symbols"] = [_serialize_hop(state, h) for h in hops[:MAX_FULL_NODES]]
+        return result
+
     serialize = _serialize_node_compact if compact else _serialize_node
     all_impacted = []
     by_file: dict[str, list[str]] = {}
@@ -2016,7 +2323,7 @@ def _graph_transitive_impact(
                 short = _serialize_node_compact(caller, state.codebase_path)
                 by_file.setdefault(short["file"], []).append(short["name"])
 
-    result: dict[str, Any] = {"symbol": symbol_name}
+    result = {"symbol": symbol_name}
     defined_in = _defined_in(state, matches)
     if defined_in:
         result["defined_in"] = defined_in
@@ -2043,6 +2350,12 @@ def _graph_transitive_impact(
         )
     _add_overrides(result, state, matches)
     _add_references(result, state, symbol_name, matches)
+    linked_hops = _linked_impact(state, matches, starts, max_depth)
+    if linked_hops:
+        files, omitted = _cap_files(_group_hops(state, linked_hops, line=False))
+        result["linked_impacted"] = files
+        if omitted:
+            result["linked_impacted_not_listed"] = omitted
     return result
 
 

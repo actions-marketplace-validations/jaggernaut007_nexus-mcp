@@ -30,6 +30,7 @@ from nexus_mcp.core.graph_models import (
 from nexus_mcp.parsing.boundaries import (
     KIND_TABLE,
     collect_facts,
+    nest_route_serves,
     python_route_serves,
 )
 from nexus_mcp.parsing.language_registry import (
@@ -1084,6 +1085,8 @@ class AstGrepParser:
         uses, serves = collect_facts(sg_node, language, include)
         if language == "python" and sg_node.kind() == "function_definition":
             serves = python_route_serves(sg_node) + serves
+        if language in ("javascript", "typescript") and sg_node.kind() == "method_definition":
+            serves = nest_route_serves(sg_node) + serves
         if uses:
             meta["boundary_uses"] = uses
         if serves:

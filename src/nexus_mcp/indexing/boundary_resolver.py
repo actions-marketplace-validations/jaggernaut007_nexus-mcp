@@ -18,7 +18,8 @@ from __future__ import annotations
 import logging
 import re
 from collections import defaultdict
-from typing import Dict, List, Optional, Set, Tuple
+from pathlib import Path
+from typing import Dict, List, Optional, Sequence, Set, Tuple
 
 from nexus_mcp.core.graph_models import (
     NodeType,
@@ -28,13 +29,17 @@ from nexus_mcp.core.graph_models import (
 )
 from nexus_mcp.engines.graph_engine import RustworkxCodeGraph
 from nexus_mcp.indexing.call_resolver import _Index, _resolve_one
-from nexus_mcp.parsing.boundaries import KIND_FUNCTION
+from nexus_mcp.parsing.boundaries import HTTP_METHODS, KIND_FUNCTION, KIND_ROUTE
 
 logger = logging.getLogger(__name__)
 
 BOUNDARY_STRENGTH = 0.8
 # `supabase/functions/<name>/index.ts`; `_shared` holds code that no request reaches.
 _EDGE_FUNCTION = re.compile(r"(?:^|/)supabase/functions/([^/_][^/]*)/index\.(?:[cm]?[jt]sx?)$")
+
+# A Next.js app-router file: `app/api/orders/[id]/route.ts` serves the verbs that it exports.
+_NEXT_ROUTE_FILE = re.compile(r"^route\.[cm]?[jt]sx?$")
+_NEXT_DYNAMIC = re.compile(r"^\[([^\].]+)\]$")
 
 Key = Tuple[str, str]
 
@@ -45,7 +50,54 @@ def edge_function_name(file_path: str) -> str:
     return found.group(1) if found else ""
 
 
-def _providers(graph: RustworkxCodeGraph, index: _Index) -> Dict[Key, List[UniversalNode]]:
+def next_route_key(file_path: str, name: str, roots: Sequence[Path | str] = ()) -> str:
+    """`GET /api/orders/{}` for a function `GET` in a Next.js `app/**/route.ts` file, or "".
+
+    The path is the folders below the one `app` folder. A path with two gives no key. With
+    `roots` the path below the repo root is read, so a folder above the root counts for
+    nothing. A route group `(shop)` is no part of the URL, and a folder `[id]` is a
+    parameter. A catch-all `[...slug]`, a private folder (`_x`) and a parallel-route folder
+    (`@slot`) give no key, because the URL is not one path (precision first).
+    Only a function named as an HTTP verb serves.
+    """
+    if name.lower() not in HTTP_METHODS or name != name.upper():
+        return ""
+    parts = file_path.replace("\\", "/").split("/")
+    if roots:  # a folder above the repo root is no part of the URL
+        for root in roots:
+            base = str(root).replace("\\", "/").rstrip("/") + "/"
+            if file_path.replace("\\", "/").startswith(base):
+                parts = file_path.replace("\\", "/")[len(base):].split("/")
+                break
+    if not parts or not _NEXT_ROUTE_FILE.match(parts[-1]) or parts[:-1].count("app") != 1:
+        return ""  # two `app` folders: the URL is not certain, so no key
+    last_app = parts[:-1].index("app")
+    segments: List[str] = []
+    for folder in parts[last_app + 1 : -1]:
+        if folder.startswith("(") and folder.endswith(")"):
+            continue
+        if folder.startswith(("_", "@", "[...", "[[")):
+            return ""
+        segments.append("{}" if _NEXT_DYNAMIC.match(folder) else folder)
+    return f"{name} /" + "/".join(segments)
+
+
+def route_providers(
+    graph: RustworkxCodeGraph, roots: Sequence[Path | str] = ()
+) -> Dict[str, List[UniversalNode]]:
+    """The nodes that serve each route key (`GET /orders/{}`) of one graph.
+
+    The join across linked repos (`service_resolver.py`) reads this table, so it sees the
+    same providers as the edges inside one repo.
+    """
+    with graph._lock:
+        served = _providers(graph, _Index(graph), roots)
+    return {key: nodes for (kind, key), nodes in served.items() if kind == KIND_ROUTE}
+
+
+def _providers(
+    graph: RustworkxCodeGraph, index: _Index, roots: Sequence[Path | str] = ()
+) -> Dict[Key, List[UniversalNode]]:
     """Every node that serves a key, by (kind, key)."""
     served: Dict[Key, List[UniversalNode]] = defaultdict(list)
 
@@ -65,6 +117,10 @@ def _providers(graph: RustworkxCodeGraph, index: _Index) -> Dict[Key, List[Unive
             continue
         if node.node_type not in (NodeType.FUNCTION, NodeType.CLASS):
             continue
+        if node.node_type == NodeType.FUNCTION:
+            next_key = next_route_key(node.location.file_path, node.name, roots)
+            if next_key:
+                add((KIND_ROUTE, next_key), node)
         for fact in node.metadata.get("boundary_serves", ()):
             target = node
             handler = fact.get("handler")
