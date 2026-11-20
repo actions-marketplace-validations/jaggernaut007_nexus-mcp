@@ -4,6 +4,36 @@ All notable changes to this project will be documented in this file.
 
 ## [Unreleased]
 
+### Added (linked repos, phases 2.3 to 2.5, on the boundary facts of ADR-026)
+
+- **One extractor.** The first build of phase 2.3 had its own extractor of routes and client
+  calls. It is replaced by the boundary facts of ADR-026. `parsing/boundaries.py` now also
+  reads: the router prefix that the same file sets (FastAPI `APIRouter(prefix=)`, Flask
+  `Blueprint(url_prefix=)`, `include_router(prefix=)`), NestJS controllers, Next.js app-router
+  route files (by path, in `boundary_resolver`), a client URL that starts with a base-URL
+  variable (an open key, `GET {}/orders`, used only for the join across repos), and `$fetch`
+  and `ofetch`. `EXTRACTOR_VERSION` is 2. Inside one repo these reads also add or change ADR-026 keys: a router prefix is part of the key (`APIRouter(prefix="/orders")` with `@router.get("/")` serves `GET /orders`, not `GET /`), `$fetch` and `ofetch` are users, NestJS methods and Next.js verbs are providers, and a decorator path with no leading slash gets one. A route stays `GET /` for `@app.get("/")`.
+- **`graph` follows the client calls of linked repos to their routes.** `indexing/service_resolver.py`
+  joins the `boundary_uses` of one repo with the routes of the others (exact, or suffix for a
+  prefix that another file sets; precision first, so two fitting routes give no edge). The
+  edges are in memory (`state.bridge`) and built at attach and after a reindex. `graph` adds
+  `linked_callers`, `linked_callees` and, with `transitive=True`, `linked_impacted`
+  (`name via GET /orders/{}`), and finds a symbol that only a linked repo defines. No new tool
+  and no new parameter. With no link, no field is added.
+- **`search` scales the BM25 lists of all stores together.** Each store divided its BM25 scores
+  by its own best, so a weak linked match scored 1.0. The raw score is kept (`keep_raw`) and
+  `_merge_bm25` divides all lists by the best raw score. With no link the path is the same.
+  **Before and after, hit@1 of `shop_repo` with a linked bookshop, 6 runs:** 0.75, 0.75, 0.625,
+  0.625, 0.5, 0.75 before; 0.75 in all six after. **Cost:** four queries about the linked repo
+  found a linked file first in a mean of 0.79 before and 0.54 after (two are ambiguous with the
+  project and now go to the project). A large linked repo could still outrank a small project, so the owner decided
+  (2026-11-20) that the project wins near ties: a project hit counts 1.25 times its raw BM25
+  score. After it: hit@1 with the link 0.75 in 3 of 3 runs, linked side 0.5.
+- **Fixture and evals.** `tests/fixtures/linked` (FastAPI backend, TypeScript frontend, decoys),
+  `python -m evals.linked.run` (edge precision and recall against hand labels: precision 1.0,
+  recall 0.9 on the fixture, gate 0.9) and `python -m evals.linked.with_link`.
+- **Quality gate, no link (2026-11-20, `python -m evals.retrieval.run`, `bge-small-en`).** Hybrid hit@1: `nexus_mcp` 0.71 (24 queries), `shop_repo` 0.75 (8 queries). The ranking path is not changed; earlier checkouts gave 0.667 to 0.708 and 0.625 to 0.750, because chunk ids use absolute paths and ties order differently. **Not run:** the live benchmark, the routing eval, the flask, language and jobscout suites, and a project with a linked repo in the benchmark.
+
 ### Added (linked repos, phase 2.2)
 
 - **`search` and `find_symbol` look in the linked repos.** The query is embedded one time.

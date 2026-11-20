@@ -22,6 +22,26 @@ High-quality coding changes, at a lower cost, in faster sessions. Set by the own
 - **Gap on 2026-11-17:** Nexus-MCP costs less on 9 of 11 live repos but is slower on 8
   of 11, with fewer turns (`benchmarks/published/results.json`). Wall time is now a target.
 
+## Linked repos with service-call edges (ADR-030) — 2.1 and 2.2 merged; 2.3 to 2.5 reworked
+
+Owner decision 2026-11-17: repos connect by service calls (HTTP), not by package imports; each
+repo keeps its own index; a person links repos with the CLI.
+
+- [x] 2.1 Repo identity, link registry (`~/.nexus-mcp/links.json`), `link`/`links`/`unlink`, read-only attach (PR 54, merged)
+- [x] 2.2 `search` and `find_symbol` across linked repos, read-only BM25 (PR 55, merged)
+- [x] 2.3 to 2.5 reworked on main's boundary facts (ADR-026), one extractor. `boundaries.py` reads
+  router prefixes, NestJS, Next.js route files and open client keys; `service_resolver` joins the
+  facts across repos into `state.bridge` (memory only); `graph` adds `linked_callers`,
+  `linked_callees`, `linked_impacted`; BM25 lists of all stores are scaled together; fixture
+  `tests/fixtures/linked`, edge eval (`evals/linked/run.py`), with-link eval (`evals/linked/with_link.py`)
+- [ ] **Owner:** the first build of 2.3 to 2.5 is in the draft PRs 56 to 58, which the rework replaces. Close them when the new PR is open.
+- [x] Owner decision 2026-11-20: the project wins ambiguous queries (BM25 bonus 1.25); open client keys keep the suffix tier
+- [ ] **Todo:** label the edges of one public full-stack project by hand (needs a clone), run the edge eval on it, add it as a suite in `evals/linked/labels.yaml`
+- [ ] **Todo:** the live benchmark with a linked repo (needs a login and API money); the routing eval
+- [ ] **Later:** package-import edges across repos, a background refresh with a lock between
+  processes, Express mounts in another file, Django, Go, Java, gRPC, `find_symbol` hops, a line in
+  the server instructions (measure the tokens first)
+
 ## Context engine, phases 1 and 2 — 2026-11-17 (branch `worktree-context-engine`)
 
 Plan: Python and JS/TS function coverage, then a post-change check. Decisions: ADR-019
