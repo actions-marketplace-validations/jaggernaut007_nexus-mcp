@@ -111,7 +111,10 @@ The owner decided on 2026-11-17:
   BM25 score grows with the size of its store (0.85 for one chunk, 6.4 among 10, 13.0 among
   100, 20.0 among 1000), so a large linked repo can still outrank a small project. A
   correction by the size of the store lost a project result in one run of six and was not
-  adopted. Whether the project must win ambiguous queries is the decision of the owner.
+  adopted. The owner decided on 2026-11-20 that the project wins ambiguous queries: a project hit counts
+  `PROJECT_BM25_BONUS` (1.25) times its raw score. With the bonus, hit@1 with the link is 0.75
+  in 3 of 3 runs (the same as without the link), and the linked side is 0.5. A linked match that
+  is clearly stronger still comes first.
 - **Evals** (phase 2.5). `evals/linked/run.py` scores the edges of the join against hand
   labels on the fixture `tests/fixtures/linked` (a FastAPI backend and a TypeScript
   frontend with decoys): precision 1.0, recall 0.9 (one labelled miss: a path in a table).

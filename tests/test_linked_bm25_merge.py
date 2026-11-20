@@ -35,6 +35,25 @@ def test_merge_bm25_a_strong_linked_match_still_comes_first():
     assert [r["id"] for r in core_api._merge_bm25([primary, linked])] == ["l1", "p1"]
 
 
+def _linked_hit(name, raw):
+    return {**_hit(name, raw), "_repo": "backend"}
+
+
+def test_merge_bm25_the_project_wins_a_near_tie():
+    """The owner decided on 2026-11-20: on an ambiguous query the project wins. A raw BM25
+    score grows with the size of its store, so a large linked repo scores a little higher
+    for the same match."""
+    primary = [_hit("p1", 10.0)]
+    linked = [_linked_hit("l1", 11.0)]
+    assert [r["id"] for r in core_api._merge_bm25([linked, primary])] == ["p1", "l1"]
+
+
+def test_merge_bm25_a_much_stronger_linked_match_still_wins():
+    primary = [_hit("p1", 10.0)]
+    linked = [_linked_hit("l1", 20.0)]
+    assert [r["id"] for r in core_api._merge_bm25([primary, linked])] == ["l1", "p1"]
+
+
 def test_merge_bm25_one_list_is_returned_as_it_is():
     only = [{"id": "a", "score": 1.0}]
     assert core_api._merge_bm25([only]) is only

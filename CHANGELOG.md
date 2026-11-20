@@ -26,8 +26,9 @@ All notable changes to this project will be documented in this file.
   **Before and after, hit@1 of `shop_repo` with a linked bookshop, 6 runs:** 0.75, 0.75, 0.625,
   0.625, 0.5, 0.75 before; 0.75 in all six after. **Cost:** four queries about the linked repo
   found a linked file first in a mean of 0.79 before and 0.54 after (two are ambiguous with the
-  project and now go to the project). A large linked repo can still outrank a small project;
-  the policy is the decision of the owner (ADR-030).
+  project and now go to the project). A large linked repo could still outrank a small project, so the owner decided
+  (2026-11-20) that the project wins near ties: a project hit counts 1.25 times its raw BM25
+  score. After it: hit@1 with the link 0.75 in 3 of 3 runs, linked side 0.5.
 - **Fixture and evals.** `tests/fixtures/linked` (FastAPI backend, TypeScript frontend, decoys),
   `python -m evals.linked.run` (edge precision and recall against hand labels: precision 1.0,
   recall 0.9 on the fixture, gate 0.9) and `python -m evals.linked.with_link`.

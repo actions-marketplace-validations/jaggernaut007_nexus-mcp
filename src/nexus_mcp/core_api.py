@@ -1072,6 +1072,9 @@ def _merge_by_score(lists: list[list[dict]]) -> list[dict]:
     return unique
 
 
+PROJECT_BM25_BONUS = 1.25  # a project hit counts this much more than a linked one of the same score
+
+
 def _merge_bm25(lists: list[list[dict]]) -> list[dict]:
     """One BM25 list from the lists of several stores, scaled together.
 
@@ -1085,15 +1088,23 @@ def _merge_bm25(lists: list[list[dict]]) -> list[dict]:
     outrank it. The effect is much smaller than two scores of 1, and a rule that corrects the
     size (ln of the chunk count) kept a result of the project worse in one run of six. A hit
     with no raw score keeps its score. One list is returned as it is.
+
+    The project wins a near tie (owner decision, 2026-11-20): a hit of the project (no `_repo`
+    tag) counts `PROJECT_BM25_BONUS` times its raw score. A linked hit with a score above
+    that still comes first.
     """
     if len(lists) == 1:
         return lists[0]
-    top = max((r.get("_raw_score", 0.0) for found in lists for r in found), default=0.0)
+
+    def weight(r: dict) -> float:
+        return r["_raw_score"] * (1.0 if "_repo" in r else PROJECT_BM25_BONUS)
+
+    top = max((weight(r) for found in lists for r in found if "_raw_score" in r), default=0.0)
     if top > 0:
         for found in lists:
             for r in found:
                 if "_raw_score" in r:
-                    r["score"] = r["_raw_score"] / top
+                    r["score"] = weight(r) / top
     return _merge_by_score(lists)
 
 

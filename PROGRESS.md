@@ -35,7 +35,7 @@ repo keeps its own index; a person links repos with the CLI.
   `linked_callees`, `linked_impacted`; BM25 lists of all stores are scaled together; fixture
   `tests/fixtures/linked`, edge eval (`evals/linked/run.py`), with-link eval (`evals/linked/with_link.py`)
 - [ ] **Owner:** the first build of 2.3 to 2.5 is in the draft PRs 56 to 58, which the rework replaces. Close them when the new PR is open.
-- [ ] **Owner:** policy for ambiguous queries when a linked repo is large (ADR-030, BM25 trade-off)
+- [x] Owner decision 2026-11-20: the project wins ambiguous queries (BM25 bonus 1.25); open client keys keep the suffix tier
 - [ ] **Todo:** label the edges of one public full-stack project by hand (needs a clone), run the edge eval on it, add it as a suite in `evals/linked/labels.yaml`
 - [ ] **Todo:** the live benchmark with a linked repo (needs a login and API money); the routing eval
 - [ ] **Later:** package-import edges across repos, a background refresh with a lock between
