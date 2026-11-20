@@ -87,7 +87,7 @@ src/nexus_mcp/
 ├── setup_clients.py       # `nexus-mcp-ci setup`: add the server and the skill to an MCP client
 ├── links.py               # Link registry (user-level file, atomic write), ADR-030
 ├── linked.py              # Attach linked repo stores read-only, skip reasons, staleness
-├── state.py               # Session state singleton (+ `linked` list) + shutdown()
+├── state.py               # Session state singleton (+ `linked` list, `bridge`) + shutdown()
 ├── lifecycle.py           # Idle timeout, orphan exit, signals; finish() always ends the process
 ├── core/
 │   ├── models.py          # Symbol, ParsedFile, CodebaseIndex, Memory
@@ -98,7 +98,7 @@ src/nexus_mcp/
 ├── parsing/
 │   ├── treesitter_parser.py   # Symbol extraction → embeddings
 │   ├── astgrep_parser.py      # Structural analysis → graph
-│   ├── boundaries.py          # Route, edge function and table facts of a file (ADR-026)
+│   ├── boundaries.py          # Route, edge function and table facts of a file (ADR-026); router prefixes, NestJS, open client keys (ADR-030)
 │   ├── sql_boundaries.py      # `.sql` tables and views for the graph, no grammar (ADR-026)
 │   ├── language_registry.py   # Merged language support (25+ langs)
 │   └── file_watcher.py        # Debounced watchdog
@@ -116,7 +116,8 @@ src/nexus_mcp/
 │   ├── embedding_service.py   # Embeddings: OnnxEncoder (int8 bge-small-en, CPU only); TorchEncoder (extra `torch`, GPU when present)
 │   ├── parallel_indexer.py    # ThreadPool
 │   ├── call_resolver.py       # CALLS edges from callee names, after the last parse batch (ADR-019)
-│   ├── boundary_resolver.py   # DEPENDS_ON edges: route, edge function and table users to providers (ADR-026)
+│   ├── boundary_resolver.py   # DEPENDS_ON edges: route, edge function and table users to providers (ADR-026); Next.js route files, `route_providers`
+│   ├── service_resolver.py    # Join of client calls and routes across linked repos, `ServiceBridge`, in memory (ADR-030)
 │   ├── pipeline.py            # discover → parse → chunk → embed → store + corrupt index detection + multi-folder
 │   ├── git_exclude.py         # Add the index folder to `.git/info/exclude` (NEXUS_GIT_EXCLUDE)
 │   └── chunker.py             # Symbol → CodeChunk
@@ -132,7 +133,7 @@ src/nexus_mcp/
 │   └── store.py               # SQLite graph persistence
 └── evaluate/                  # `nexus-mcp-ci eval` (quick + agent tier), `data`, `share` (ADR-020, ADR-021), `index`, `check` (ADR-025, ADR-026)
 benchmarks/                # Token-efficiency benchmark harness (ADR-018)
-evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1), impact/ (does `check` name what a change breaks); docs/EVALS.md
+evals/                     # routing/ (does the agent pick the right tool), retrieval/ (hit@1), impact/ (does `check` name what a change breaks), linked/ (edge precision across repos, search with a link); docs/EVALS.md
 self_test/
 ├── demo_mcp.py            # End-to-end demo exercising the 8 tools and the Python API
 └── README.md              # Usage, sample project, troubleshooting
@@ -186,7 +187,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 - Boundary edges: routes, edge functions and SQL tables join code with no call between them — [ADR-026](docs/adr/ADR-026-boundary-edges.md)
 - Stop hook and a user-started `check` skill in the plugin; silent unless a new `high` finding exists — [ADR-027](docs/adr/ADR-027-change-hook-and-skill.md)
 - Change-safety benchmark: tasks with hidden tests and a scorer with no model; the live runner is a dry run unless `--go` — [ADR-028](docs/adr/ADR-028-change-safety-benchmark.md)
-- Linked repos: one index per repo, a user-level registry, service calls as the connection (draft, phases 2.1 and 2.2) — [ADR-030](docs/adr/ADR-030-linked-repos.md)
+- Linked repos: one index per repo, a user-level registry, service calls as the connection (draft, built in phases 2.1 to 2.5) — [ADR-030](docs/adr/ADR-030-linked-repos.md)
 - MIT licence, commercial licence key removed again — [ADR-023](docs/adr/ADR-023-commercial-licence-check.md) (superseded by [ADR-024](docs/adr/ADR-024-mit-licence.md))
 
 ## Gotchas
@@ -219,7 +220,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 20. `NEXUS_AUTO_WATCH` (default `true`) starts a debounced file watcher per indexed root after `index()` completes; on change it triggers a background incremental reindex (skipped, not queued, if one is already in flight)
 21. `status()`/`search()` run a throttled staleness check (`NEXUS_STALENESS_CHECK_INTERVAL`, default 15s) and surface `stale`/`staleness_warning`/`warning` fields; a stale result still returns immediately and kicks a background reindex rather than blocking
 22. `multi_index()` is now incremental-aware: it only does a full rebuild the first time or when the set of indexed roots changes; otherwise it mtime-diffs like `incremental_index()`
-23. Linked repos (ADR-030): `nexus-mcp-ci link <path>` writes `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`), keyed by the root of the project that you run it in. The server attaches each linked store read-only into `state.linked` (restore and `index`), never writes to it, and trusts nothing in it: roots and `repo_id` must match the registry. A bad link is skipped with a `skip_reason` that `status` shows. A linked store is always `<repo>/.nexus`; `NEXUS_STORAGE_DIR` does not apply to it. `search` and `find_symbol` also look in each attached linked repo (phase 2.2): the query is embedded once, results show `<name>/<path>`, and the linked BM25 engine is read-only (`IndexingPipeline(read_only=True)`), so a search never writes to a linked store. `graph` does not cross repos yet
+23. Linked repos (ADR-030): `nexus-mcp-ci link <path>` writes `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`), keyed by the root of the project that you run it in. The server attaches each linked store read-only into `state.linked` (restore and `index`), never writes to it, and trusts nothing in it: roots and `repo_id` must match the registry. A bad link is skipped with a `skip_reason` that `status` shows. A linked store is always `<repo>/.nexus`; `NEXUS_STORAGE_DIR` does not apply to it. `search` and `find_symbol` also look in each attached linked repo (phase 2.2): the query is embedded once, results show `<name>/<path>`, and the linked BM25 engine is read-only (`IndexingPipeline(read_only=True)`), so a search never writes to a linked store. `search` scales the BM25 lists of all stores by the best raw score of all (`_merge_bm25`), not by the best of each store (phase 2.5). `graph` crosses repos (phase 2.4): `service_resolver` joins the `boundary_uses` of one repo with the routes of the others (the facts of ADR-026, no second extractor) into `state.bridge`, in memory, never saved, built at attach and after a background reindex. The answer adds `linked_callers`, `linked_callees` or `linked_impacted` (`name:line via GET /orders/{}`), and finds a symbol that only a linked repo defines. Inside one repo the `DEPENDS_ON` edges of ADR-026 stay the only edges
 
 ## Embedding Models
 

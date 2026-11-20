@@ -22,6 +22,9 @@ class SessionState:
     # Linked repos of the project, attached read-only (see linked.py, ADR-030). A link that
     # could not be attached stays in the list, with its `skip_reason`.
     linked: list = field(default_factory=list)
+    # The edges between the client calls and the routes of different repos (ADR-030), in
+    # memory only. None when there is no linked repo or the join failed.
+    bridge: Any = None
     started_at: float = field(default_factory=time.time)
 
     # Engine references (populated during indexing)

@@ -59,7 +59,8 @@ CHUNK_FORMAT = 9
 # repo is trusted only when its index has this version or a newer one (ADR-030). An index
 # with no version was built before links existed. Raise it when the extractor starts to
 # write a new kind of fact, so that `nexus-mcp-ci link` builds the older indexes again.
-EXTRACTOR_VERSION = 1
+# 2: route prefixes of a router, NestJS and Next.js routes, open client keys (`GET {}/orders`).
+EXTRACTOR_VERSION = 2
 
 
 @dataclass
