@@ -102,6 +102,7 @@ src/nexus_mcp/
 │   ├── parallel_indexer.py    # ThreadPool
 │   ├── call_resolver.py       # CALLS edges from callee names, after the last parse batch (ADR-019)
 │   ├── pipeline.py            # discover → parse → chunk → embed → store + corrupt index detection + multi-folder
+│   ├── git_exclude.py         # Add the index folder to `.git/info/exclude` (NEXUS_GIT_EXCLUDE)
 │   └── chunker.py             # Symbol → CodeChunk
 ├── formatting/
 │   ├── token_budget.py        # Token counting/truncation

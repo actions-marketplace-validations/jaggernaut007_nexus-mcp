@@ -163,7 +163,8 @@ Your code stays on your machine. The server makes no network calls and has no te
   `NEXUS_OFFLINE=1` after that.
 - **Out:** nothing, unless you run `eval --agent` (through your own Claude or Codex CLI) or
   `eval share` (numbers only). Both ask first.
-- **Stored:** the index in `<project>/.nexus/` (add it to `.gitignore`).
+- **Stored:** the index in `<project>/.nexus/`. `index` adds it to `.git/info/exclude`, so
+  git does not commit it.
   `nexus-mcp-ci data where` lists every file; `nexus-mcp-ci data clear` removes them.
 
 Details: [docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md).
