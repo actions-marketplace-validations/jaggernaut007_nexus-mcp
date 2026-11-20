@@ -78,6 +78,8 @@ def check_versions() -> List[str]:
     }
     for where, args in launches.items():
         found[f"{where} launch"] = args[-1].split("==")[-1]
+    hooks = (ROOT / "plugin" / "hooks" / "hooks.json").read_text()
+    found["plugin/hooks/hooks.json launch"] = re.search(r"nexus-mcp-ci==([0-9.]+)", hooks).group(1)
     errors = [
         f"{where}: version {v}, pyproject.toml says {want}"
         for where, v in found.items()

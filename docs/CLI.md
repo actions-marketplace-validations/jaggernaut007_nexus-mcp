@@ -74,6 +74,55 @@ options:
   --project PROJECT     Project folder for project-level files (default: .)
 ```
 
+## nexus-mcp-ci index
+
+```text
+usage: nexus-mcp-ci index [-h] [path]
+
+Build the index of a project without an agent: for `check` in a script or in CI. The index goes to
+<project>/.nexus (or NEXUS_STORAGE_DIR). Nothing leaves your machine; the first run downloads the
+embedding model.
+
+positional arguments:
+  path        The project folder (default: .)
+
+options:
+  -h, --help  show this help message and exit
+```
+
+## nexus-mcp-ci check
+
+```text
+usage: nexus-mcp-ci check [-h] [--base BASE] [--staged] [--depth DEPTH] [--format {markdown,json}]
+                          [--fail-on {high,medium,low,never}] [--max-findings MAX_FINDINGS]
+                          [--hook]
+                          [path]
+
+Check a change against the call graph. Reads the git diff, finds the symbols that it changes, and
+lists the callers and references that the diff did not update, with the tests that it can break.
+Runs offline and adds no tokens to an agent session. Needs an index of the project.
+
+positional arguments:
+  path                  The project folder (default: .)
+
+options:
+  -h, --help            show this help message and exit
+  --base BASE           Commit to compare with (default: the merge base with the default branch)
+  --staged              Check the staged changes against HEAD
+  --depth DEPTH         How many call levels to follow (default: 3)
+  --format {markdown,json}
+  --fail-on {high,medium,low,never}
+                        Exit 1 when a finding has this severity or more (default: high)
+  --max-findings MAX_FINDINGS
+                        Findings to print (default: 50)
+  --hook                Run as a Claude Code Stop hook: read the hook JSON from stdin and print a
+                        block decision only for a new high finding. Always exits 0 and is silent
+                        otherwise (NEXUS_HOOK=off disables it)
+
+Exit codes: 0 clean, 1 a finding reached --fail-on, 2 usage or git error, 3 no index or a stale
+index. The result is a lower bound: edges are static and name-based.
+```
+
 ## nexus-mcp-ci data
 
 ```text

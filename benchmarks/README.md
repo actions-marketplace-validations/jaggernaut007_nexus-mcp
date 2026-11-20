@@ -7,6 +7,11 @@ Claude Code (built-in `Read`/`Grep`/`Glob` only) on 1,000+ file repositories.
 This is dev tooling, not part of the shipped `nexus-mcp-ci` package. Install
 its one extra dependency with `pip install -e ".[bench]"`.
 
+> **Change safety.** `benchmarks/change_safety/` is a second task type: the agent edits a
+> project and a script counts the call sites and tests that it left behind
+> ([ADR-028](../docs/adr/ADR-028-change-safety-benchmark.md), `docs/BENCHMARKING.md`). It is a
+> dry run unless you pass `--go`.
+
 ## Why this exists
 
 The 2026 competitive landscape settled on: agentic grep is the default
