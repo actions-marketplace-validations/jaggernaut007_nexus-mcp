@@ -129,7 +129,8 @@ claude mcp add nexus-mcp -- nexus-mcp-ci
 ```
 
 Run the eval with `--keep-index` first, and the index in `.nexus/` is ready when the server
-starts. Add `.nexus/` to `.gitignore`: the index holds code snippets.
+starts. The index holds code snippets, so the eval adds `.nexus/` to `.git/info/exclude` of
+the repo. Git then does not commit the folder.
 
 ## Remove everything
 

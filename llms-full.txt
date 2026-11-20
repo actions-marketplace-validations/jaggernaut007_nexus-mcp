@@ -173,7 +173,8 @@ Your code stays on your machine. The server makes no network calls and has no te
   `NEXUS_OFFLINE=1` after that.
 - **Out:** nothing, unless you run `eval --agent` (through your own Claude or Codex CLI) or
   `eval share` (numbers only). Both ask first.
-- **Stored:** the index in `<project>/.nexus/` (add it to `.gitignore`).
+- **Stored:** the index in `<project>/.nexus/`. `index` adds it to `.git/info/exclude`, so
+  git does not commit it.
   `nexus-mcp-ci data where` lists every file; `nexus-mcp-ci data clear` removes them.
 
 Details: [docs/PRIVACY.md](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md).
@@ -361,7 +362,8 @@ claude mcp add nexus-mcp -- nexus-mcp-ci
 ```
 
 Run the eval with `--keep-index` first, and the index in `.nexus/` is ready when the server
-starts. Add `.nexus/` to `.gitignore`: the index holds code snippets.
+starts. The index holds code snippets, so the eval adds `.nexus/` to `.git/info/exclude` of
+the repo. Git then does not commit the folder.
 
 ## Remove everything
 
@@ -426,8 +428,21 @@ Defaults that protect you:
 | Eval clones | `~/.cache/nexus-mcp/eval/repos/` | the public repo | `NEXUS_EVAL_CACHE` |
 | `uvx` package cache | the `uv` cache folder | no | `uv cache clean nexus-mcp-ci` |
 
-The index holds code. Add `.nexus/` to `.gitignore` (or to `.git/info/exclude`, which is never
-committed). `nexus-mcp-ci data where` warns when `.nexus/` is not ignored.
+The index holds code, so it must not go into a commit. `index` keeps it out of git for you:
+
+- When the index folder is in a git work tree and no ignore rule covers it, `index` adds the
+  line `.nexus/` to `.git/info/exclude` of that repo.
+- That file is local to your clone and git never commits it. Your tracked `.gitignore` does
+  not change.
+- In a linked git worktree, the line goes into the exclude file of the main repo. It then
+  applies to all worktrees.
+- A custom `NEXUS_STORAGE_DIR` inside the repo gets a line with its path from the repo root.
+  A folder outside a git repo gets no line.
+- Set `NEXUS_GIT_EXCLUDE=false` to turn this off.
+
+The exclude line protects only your clone. Add `.nexus/` to `.gitignore` when you want the
+same rule for each person on the team. `nexus-mcp-ci data where` warns when the index folder
+is not ignored.
 
 ## See and remove your data
 
