@@ -1,6 +1,6 @@
 # ADR-030: Linked Repos: One Index per Repo, a User-Level Registry, Service Calls as the Connection
 
-## Status: Draft (Part 2, phase 2.1 of 5)
+## Status: Draft (Part 2, phases 2.1 and 2.2 of 5)
 ## Date: 2026-11-17
 
 ## Context
@@ -38,6 +38,24 @@ The owner decided on 2026-11-17:
   corrupt, the embedding model differs, the repo id changed, the index was built for another
   folder, or the saved graph is missing or older than the metadata. A skipped link never
   stops the primary project.
+- **`search` and `find_symbol` look in the linked repos** (phase 2.2). `search` embeds the
+  query one time (`embed_query`, then `query_vector`) and runs the vector and BM25 search in
+  each attached store. It merges the vector lists by score and the BM25 lists by score, then
+  uses the same RRF, test-file order and exact-name rule as before. The BM25 score is divided
+  by the best score of its store, so the best keyword result of each store has the score 1:
+  the stores are interleaved, not ranked against each other. A result of a linked repo has the
+  repo name first in its path (`backend/src/app.py`). `find_symbol` resolves a name in the
+  graph of each repo, the primary project first, and applies the same sort and the same cap
+  (`MAX_MATCHES_PER_NAME`) to all matches. With `detail="full"` an entry has a `repo` field.
+  The live-grep fallback of `search` still reads the primary roots only. `graph` does not
+  cross repos until phase 2.4.
+- **The BM25 engine of a linked store is read-only.** `IndexingPipeline(read_only=True)`
+  gives `LanceDBBM25Engine(read_only=True)`: it never calls `create_fts_index`. It uses the
+  full-text index that `link` made at index time. A store with no such index gives no keyword
+  results, and the vector results remain.
+- **A stale linked repo is reported, not fixed.** A `search` result in a changed file of a
+  linked repo has no snippet and `changed_since_index`, and the `warning` names the repo and
+  says `nexus-mcp-ci link --refresh`. A search never starts a reindex of a linked repo.
 - **No new MCP tool and no new tool parameter.** `status` lists each linked repo (name, path,
   file count, stale flag, skip reason). With no link, every result is the same as before.
 - **`nexus-mcp-ci link <path>` indexes the target** when it has no index, or an index with no
@@ -60,9 +78,14 @@ The owner decided on 2026-11-17:
   linked until its `.nexus` folder is removed.
 - Two processes can write to the registry at the same time. The write is atomic, but the
   second writer can overwrite the first one's change. A lock is not in scope.
-- The BM25 engine creates its full-text index on the first search of a process
-  (`ensure_fts_index(replace=True)`). That is a write. Phase 2.2 must not do this for a linked
-  store: it must use an existing index or skip the keyword search for that store.
+- The BM25 engine of a normal store creates its full-text index on the first search of a
+  process (`ensure_fts_index(replace=True)`). That is a write. A linked store uses a read-only
+  engine (phase 2.2), so a search never changes it. A linked store without a full-text index
+  gives vector results only, until `link --refresh` runs.
+- A link name is the first part of a result path. A name equal to a top-level folder of the
+  primary project makes two paths look the same. Use `--name` to choose another one.
+- Each search of a project with links reads every attached store, so a search costs a little
+  more time for each link. With no link the code path is the same as before.
 - The run of `link --refresh` while a server reads the same store is not locked. LanceDB
   readers see a consistent version, but the graph file is replaced. A lock between processes
   is in the "later" list of the plan.

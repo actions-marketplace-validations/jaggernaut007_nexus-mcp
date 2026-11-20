@@ -27,15 +27,22 @@ class LanceDBBM25Engine(IEngine):
     Shares the same `chunks` table as the vector engine but only reads.
     The add/delete/clear methods are no-ops since the vector engine
     owns the table lifecycle.
+
+    With ``read_only=True`` the engine never creates the full-text index: the first search
+    of a normal engine writes it (`create_fts_index(replace=True)`), and a linked repo's
+    store must not change (ADR-030). It uses the index that the index run made. When there
+    is none, the keyword list of that store is empty.
     """
 
     def __init__(
         self,
         db_path: str,
         table_name: str = "chunks",
+        read_only: bool = False,
     ):
         self._db_path = str(db_path)
         self._table_name = table_name
+        self._read_only = read_only
         self._lock = threading.RLock()
         self._db = lancedb.connect(self._db_path)
         self._table: Optional[Any] = None
@@ -69,6 +76,8 @@ class LanceDBBM25Engine(IEngine):
         """
         if self._fts_index_created:
             return True
+        if self._read_only:
+            return False
 
         with self._lock:
             if self._fts_index_created:
@@ -104,8 +113,9 @@ class LanceDBBM25Engine(IEngine):
         if table is None or table.count_rows() == 0:
             return []
 
-        # Ensure FTS index exists before searching
-        if not self._fts_index_created:
+        # Ensure FTS index exists before searching. A read-only engine does not make it:
+        # it tries the index on disk, and an error (no index) gives an empty list below.
+        if not self._fts_index_created and not self._read_only:
             if not self.ensure_fts_index():
                 return []
 
@@ -133,7 +143,10 @@ class LanceDBBM25Engine(IEngine):
 
             return results
         except Exception as e:
-            logger.warning("BM25 search failed: %s", e)
+            if self._read_only:
+                logger.debug("BM25: no full-text index to read in %s: %s", self._db_path, e)
+            else:
+                logger.warning("BM25 search failed: %s", e)
             return []
 
     def add(self, items: List[Dict[str, Any]]) -> None:

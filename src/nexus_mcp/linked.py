@@ -37,6 +37,22 @@ class LinkedRepo:
     _staleness_checked_at: float = field(default=0.0, repr=False)
 
     @property
+    def codebase_path(self) -> Path:
+        """The root of this repo. With `codebase_paths` it lets the helpers of `core_api`
+        that take a session state (path display, code reads) take a linked repo too."""
+        return self.path
+
+    @property
+    def codebase_paths(self) -> List[Path]:
+        """The roots of this repo: a list with the one root, as `codebase_path`."""
+        return [self.path]
+
+    @property
+    def attached(self) -> bool:
+        """True when the stores of this repo are open (it was not skipped)."""
+        return self.pipeline is not None
+
+    @property
     def vector_engine(self):
         return self.pipeline.vector_engine if self.pipeline else None
 
@@ -117,7 +133,7 @@ def _attach_one(link: links.Link, base_settings) -> LinkedRepo:
         reason = check_store(link, base_settings)
         if reason:
             return _skipped(link, reason)
-        pipeline = IndexingPipeline(links.settings_for(path, base_settings))
+        pipeline = IndexingPipeline(links.settings_for(path, base_settings), read_only=True)
         if not pipeline._validate_index():
             return _skipped(link, f"the index is corrupt or from another version. {REFRESH_HINT}")
         if not pipeline._restore_graph(read_only=True):

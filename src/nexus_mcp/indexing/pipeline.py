@@ -203,7 +203,9 @@ class IndexingPipeline:
     8. Unload embedding model to free RAM
     """
 
-    def __init__(self, settings: Optional[Settings] = None):
+    def __init__(self, settings: Optional[Settings] = None, read_only: bool = False):
+        """``read_only`` is for a linked repo (ADR-030): the BM25 engine then never writes
+        its full-text index. The caller must not call the index methods of such a pipeline."""
         self._settings = settings or get_settings()
         self._embedding_service = get_embedding_service(
             self._settings.embedding_model,
@@ -217,6 +219,7 @@ class IndexingPipeline:
         )
         self._bm25_engine = LanceDBBM25Engine(
             db_path=str(self._settings.lancedb_path),
+            read_only=read_only,
         )
         self._graph_engine = RustworkxCodeGraph()
         self._astgrep = AstGrepParser()
