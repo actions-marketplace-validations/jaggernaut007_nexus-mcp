@@ -1,5 +1,5 @@
 # ruff: noqa: F811  (a test takes an imported fixture as an argument of the same name)
-"""Edge cases of the ONNX encoder and the embedding service (test audit of Part 1, ADR-026).
+"""Edge cases of the ONNX encoder and the embedding service (test audit of Part 1, ADR-029).
 
 The fixtures come from `tests/test_embedding_loading.py`: a fake ONNX Runtime session, a fake
 download function and a real tokenizer.

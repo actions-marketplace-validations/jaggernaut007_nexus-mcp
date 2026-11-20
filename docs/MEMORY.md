@@ -23,7 +23,7 @@ resident memory (RSS), imports included.
   index peak above 1.3 GB, because the attention scores of 32 chunks of 512 tokens stay in the
   memory arena of ONNX Runtime, and a batch of 8 peaked at about 620 MB. The speed on a CPU is
   the same for every batch size. One chunk in each call also makes the vector of a chunk
-  depend only on that chunk (see ADR-026).
+  depend only on that chunk (see ADR-029).
 - Before 3.0.0 the figures came from a run on the GPU through MPS (idle 87 MB, restore 271 MB,
   search 460 MB, index 505 MB on a project of 485 chunks). The project has twice the chunks
   now, and the restore phase no longer imports PyTorch, so the old and new values do not
@@ -44,4 +44,4 @@ PYTHONPATH=src python scripts/measure_memory.py src/nexus_mcp --model bge-small-
 
 Embedding speed and vector agreement of the backends:
 `python scripts/measure_embedding_backends.py --torch` (needs the torch extra). See
-[ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
+[ADR-029](adr/ADR-029-cpu-only-onnx-embeddings.md).

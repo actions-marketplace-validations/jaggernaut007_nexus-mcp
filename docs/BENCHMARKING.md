@@ -101,8 +101,23 @@ The runner enforces these rules and stores the values on each result row.
 - `install_nexus.sh` installs one commit in its own venv. The row records the version and
   the commit. Uncommitted edits never reach a measured run.
 
+## Change safety
+
+The third part of the quality gate: does an agent leave call sites behind? The tasks, the
+scorer and the live runner are in `benchmarks/change_safety/` ([ADR-028](adr/ADR-028-change-safety-benchmark.md)).
+The tasks prove themselves with no model (`tests/test_change_safety.py`). The live runner is a
+dry run unless you pass `--go`:
+
+```bash
+python -m benchmarks.change_safety.run                  # the plan and the cost cap
+python -m benchmarks.change_safety.run --smoke --go     # 1 task, 1 rep, both conditions
+python -m benchmarks.change_safety.report benchmarks/results/change-safety.jsonl
+```
+
 ## The north-star gate
 
-A change is kept only when it lowers tokens and does not lower accuracy. Run the
+A change is kept only when it lowers cost or wall time, the other does not rise, and
+quality does not fall. Quality is the answer score and hit@1 now, and also impact recall
+on the seeded breakage set and the change-safety benchmark once they exist. Run the
 `before` and `after` labels with the same settings. Record both numbers in `CHANGELOG.md`.
 Do not tune a corpus or a task until Nexus-MCP wins. Report a weak result as it is.

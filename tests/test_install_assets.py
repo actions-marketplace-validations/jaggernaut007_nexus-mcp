@@ -175,6 +175,7 @@ def test_bump_version_changes_every_pinned_file(tmp_path, monkeypatch):
         "plugin/.claude-plugin/plugin.json",
         "plugin/.cursor-plugin/plugin.json",
         "plugin/.mcp.json",
+        "plugin/hooks/hooks.json",
         "mcpb/manifest.json",
         "mcpb/pyproject.toml",
         "gemini-extension.json",
@@ -202,6 +203,7 @@ def test_bump_version_changes_every_pinned_file(tmp_path, monkeypatch):
         args = json.loads((tmp_path / rel).read_text())["mcpServers"]["nexus-mcp"]["args"]
         assert args == ["--python", "3.12", "nexus-mcp-ci==9.8.7"]
     assert 'nexus-mcp-ci==9.8.7"' in (tmp_path / "mcpb" / "pyproject.toml").read_text()
+    assert "nexus-mcp-ci==9.8.7 " in (tmp_path / "plugin/hooks/hooks.json").read_text()
 
 
 def test_bump_version_rejects_a_bad_version(tmp_path, monkeypatch):
@@ -234,6 +236,10 @@ def test_check_docs_flags_a_channel_pin_that_drifted(tmp_path, monkeypatch):
         tmp_path / "plugin" / ".cursor-plugin" / "plugin.json",
     )
     shutil.copy(ROOT / "plugin" / ".mcp.json", tmp_path / "plugin" / ".mcp.json")
+    (tmp_path / "plugin" / "hooks").mkdir(parents=True)
+    shutil.copy(
+        ROOT / "plugin" / "hooks" / "hooks.json", tmp_path / "plugin" / "hooks" / "hooks.json"
+    )
     (tmp_path / "src" / "nexus_mcp").mkdir(parents=True)
     shutil.copy(
         ROOT / "src" / "nexus_mcp" / "__init__.py", tmp_path / "src" / "nexus_mcp" / "__init__.py"

@@ -113,7 +113,7 @@ nexus-mcp-ci unlink backend                   # remove the link; the index stays
 
 `search` and `find_symbol` also look in the linked repos. A result of a linked repo shows the link name first in its path (`backend/src/app.py`). `find_symbol` with `detail="full"` adds a `repo` field. If a file of a linked repo changed after its index, the result has no snippet for it and the `warning` tells you to run `nexus-mcp-ci link --refresh`. `graph` does not cross repos yet.
 
-The links are in `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`). Each repo keeps its own index in `<repo>/.nexus`. See [ADR-027](adr/ADR-027-linked-repos.md).
+The links are in `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`). Each repo keeps its own index in `<repo>/.nexus`. See [ADR-030](adr/ADR-030-linked-repos.md).
 
 #### `map`
 Project overview: files, languages, modules and structure. Use it before you list directories or open files one by one.
@@ -284,7 +284,7 @@ Nexus-MCP runs one embedding model at a time. Only registered model names are ac
 | `bge-small-en-torch` | `BAAI/bge-small-en-v1.5` | 384 | No | fp32 weights on PyTorch, on a GPU (CUDA or Apple MPS) when present, else the CPU. Needs `pip install 'nexus-mcp-ci[torch]'`. About 2 times faster than the default on Apple Silicon |
 
 The two models give slightly different vectors, so a switch rebuilds the index. The device
-setting `NEXUS_EMBEDDING_DEVICE` applies to the PyTorch model only. See [ADR-026](adr/ADR-026-cpu-only-onnx-embeddings.md).
+setting `NEXUS_EMBEDDING_DEVICE` applies to the PyTorch model only. See [ADR-029](adr/ADR-029-cpu-only-onnx-embeddings.md).
 
 ## Best Practices
 

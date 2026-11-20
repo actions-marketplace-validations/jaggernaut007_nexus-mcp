@@ -164,7 +164,7 @@ class GraphPersistence:
         """Deserialize the graph from SQLite. Returns None if DB doesn't exist.
 
         With `read_only`, the database is opened in read-only mode and nothing is written:
-        the store of a linked repo is not changed by the server (ADR-027).
+        the store of a linked repo is not changed by the server (ADR-030).
         """
         if not Path(self._db_path).exists():
             return None

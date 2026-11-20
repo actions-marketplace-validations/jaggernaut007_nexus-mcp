@@ -1,4 +1,4 @@
-"""Gap tests for linked repos (ADR-027): branches that the first test files do not reach."""
+"""Gap tests for linked repos (ADR-030): branches that the first test files do not reach."""
 
 import json
 from pathlib import Path

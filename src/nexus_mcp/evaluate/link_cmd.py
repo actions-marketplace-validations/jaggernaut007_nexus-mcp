@@ -1,4 +1,4 @@
-"""``nexus-mcp-ci link``, ``unlink`` and ``links``: link other repos to this project (ADR-027).
+"""``nexus-mcp-ci link``, ``unlink`` and ``links``: link other repos to this project (ADR-030).
 
 The project is the working folder. Each linked repo keeps its own index in ``<repo>/.nexus``.
 These commands are the only code that writes to the link registry and to the store of a

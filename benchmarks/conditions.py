@@ -177,6 +177,7 @@ def _common_args(
     max_budget_usd: float,
     effort: Optional[str] = None,
     allowed_tools: str = ALLOWED_TOOLS,
+    disallowed_tools: str = DISALLOWED_TOOLS,
 ) -> List[str]:
     effort_args = ["--effort", effort] if effort else []
     return [
@@ -196,7 +197,7 @@ def _common_args(
         "--max-budget-usd",
         str(max_budget_usd),
         "--disallowedTools",
-        DISALLOWED_TOOLS,
+        disallowed_tools,
     ]
 
 
@@ -211,6 +212,8 @@ def build_argv(
     builtin_tools: str = BASELINE_TOOLS,
     effort: Optional[str] = None,
     ext_tools_dir: Optional[Path] = None,
+    allowed_tools: str = ALLOWED_TOOLS,
+    disallowed_tools: str = DISALLOWED_TOOLS,
 ) -> List[str]:
     """Build the full argv for a `claude` invocation under the given condition.
 
@@ -229,7 +232,7 @@ def build_argv(
         raise ValueError(f"Unknown condition: {condition!r}, expected one of {KNOWN_CONDITIONS}")
     condition = base
 
-    argv = _common_args(model, max_budget_usd, effort)
+    argv = _common_args(model, max_budget_usd, effort, allowed_tools, disallowed_tools)
     argv += ["--tools", builtin_tools]
     # --strict-mcp-config ignores every MCP server except the ones in --mcp-config.
     # The plugin condition gets its server from the plugin itself, so it must not
@@ -344,6 +347,8 @@ def build_run(
     builtin_tools: str = BASELINE_TOOLS,
     mcp_config_path: Path = NEXUS_MCP_CONFIG,
     effort: Optional[str] = None,
+    allowed_tools: str = ALLOWED_TOOLS,
+    disallowed_tools: str = DISALLOWED_TOOLS,
 ) -> Dict[str, Any]:
     """Build the full (argv, env, isolation_mode) triple for one run."""
     argv = build_argv(
@@ -354,6 +359,8 @@ def build_run(
         mcp_config_path=mcp_config_path,
         builtin_tools=builtin_tools,
         effort=effort,
+        allowed_tools=allowed_tools,
+        disallowed_tools=disallowed_tools,
     )
     # --mcp-config, --tools and similar options take a list of values and swallow a
     # prompt that follows them. Take the prompt off, add the isolation flags, then put

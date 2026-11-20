@@ -94,7 +94,7 @@ class LanceDBVectorEngine(IEngine):
 
     def embed_query(self, query: str) -> List[float]:
         """The vector of a search query. `search` takes it as ``query_vector``, so that one
-        query is embedded one time for several stores (linked repos, ADR-027)."""
+        query is embedded one time for several stores (linked repos, ADR-030)."""
         return self._embedding_service.embed(query, is_query=True)
 
     def search(

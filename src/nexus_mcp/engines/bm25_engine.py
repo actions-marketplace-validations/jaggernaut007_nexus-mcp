@@ -30,7 +30,7 @@ class LanceDBBM25Engine(IEngine):
 
     With ``read_only=True`` the engine never creates the full-text index: the first search
     of a normal engine writes it (`create_fts_index(replace=True)`), and a linked repo's
-    store must not change (ADR-027). It uses the index that the index run made. When there
+    store must not change (ADR-030). It uses the index that the index run made. When there
     is none, the keyword list of that store is empty.
     """
 

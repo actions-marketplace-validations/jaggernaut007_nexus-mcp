@@ -1,4 +1,4 @@
-# ADR-027: Linked Repos: One Index per Repo, a User-Level Registry, Service Calls as the Connection
+# ADR-030: Linked Repos: One Index per Repo, a User-Level Registry, Service Calls as the Connection
 
 ## Status: Draft (Part 2, phases 2.1 and 2.2 of 5)
 ## Date: 2026-11-17

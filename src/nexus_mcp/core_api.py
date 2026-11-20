@@ -21,7 +21,12 @@ from pathlib import Path, PurePosixPath
 from typing import Any, Callable, List, Optional
 
 from nexus_mcp import __version__
-from nexus_mcp.core.graph_models import NodeType, UniversalNode, UniversalRelationship
+from nexus_mcp.core.graph_models import (
+    NodeType,
+    RelationshipType,
+    UniversalNode,
+    UniversalRelationship,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -308,7 +313,7 @@ def warm_up() -> bool:
 
 
 def _attach_linked(state, settings) -> None:
-    """Attach the linked repos of the project, read-only (see linked.py, ADR-027).
+    """Attach the linked repos of the project, read-only (see linked.py, ADR-030).
 
     A failure here never stops the primary project: the session then has no linked repo.
     """
@@ -1046,7 +1051,7 @@ def _search_linked(
     """Vector and BM25 results of each linked repo, as (vector lists, BM25 lists).
 
     A store that fails is left out with a warning. Nothing is written to a linked store:
-    its BM25 engine is read-only (ADR-027).
+    its BM25 engine is read-only (ADR-030).
     """
     vector_lists: list[list[dict]] = []
     bm25_lists: list[list[dict]] = []
@@ -1124,7 +1129,7 @@ def search(
     ``warning`` when the index is stale. ``detail="full"`` keeps scores, ids, absolute
     paths, the query, the engine names and snippets up to ``FULL_SNIPPET_CHARS``.
 
-    Linked repos (ADR-027): each attached linked repo is searched too. The query is embedded
+    Linked repos (ADR-030): each attached linked repo is searched too. The query is embedded
     one time. The vector lists and the BM25 lists of all stores merge by score before the RRF.
     A path of a linked repo starts with the repo name. A changed file of a linked repo gives
     ``changed_since_index`` and no snippet, and the ``warning`` names the repo. A search never
@@ -1179,7 +1184,7 @@ def search(
         try:
             search_args = {}
             if linked_repos:
-                # One embedding for every store (ADR-027).
+                # One embedding for every store (ADR-030).
                 query_vector = state.vector_engine.embed_query(query)
                 search_args["query_vector"] = query_vector
             vector_lists.append(
@@ -1359,7 +1364,7 @@ def search(
             r["changed_since_index"] = True
 
         if repo is not None:
-            # The repo name comes first. A multi-root index has no root prefix (ADR-027).
+            # The repo name comes first. A multi-root index has no root prefix (ADR-030).
             try:
                 r["filepath"] = f"{repo.name}/{Path(abs_path).relative_to(repo.path)}"
             except ValueError:
@@ -1654,7 +1659,7 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
     (`file -> ["name:line"]`, at most ``MAX_SYMBOL_RELATIONS`` each). ``detail="full"``
     gives every node field and the raw relationship records.
 
-    Linked repos (ADR-027): the graph of each attached linked repo is searched after the
+    Linked repos (ADR-030): the graph of each attached linked repo is searched after the
     primary project. A path of a linked repo starts with the repo name. With
     ``detail="full"`` an entry of a linked repo has a ``repo`` field. All matches of a name
     share the ``MAX_MATCHES_PER_NAME`` cap."""
@@ -1678,7 +1683,7 @@ def find_symbol(symbol_name: str, exact: bool = True, detail: str = "compact") -
     outlined = False
     budget = SYMBOL_CODE_BUDGET
     seen_places: set[tuple] = set()  # (file, start, end) of each symbol already in the result
-    # The primary project first, then each linked repo (ADR-027). Each symbol is read in the
+    # The primary project first, then each linked repo (ADR-030). Each symbol is read in the
     # scope that holds it: its graph, its chunk table and its root.
     scopes = [state, *_attached_linked(state)]
     for name in _split_symbol_names(symbol_name) or [symbol_name]:
@@ -1839,8 +1844,42 @@ def _graph_immediate(
         )
     if direction == "callers":
         _add_overrides(result, state, matches)
+        _add_boundary_users(result, state, matches)
         _add_references(result, state, symbol_name, matches)
     return result
+
+
+MAX_BOUNDARY_USERS = 20  # users of a route, an edge function or a table that `graph` lists
+
+
+def _add_boundary_users(result: dict[str, Any], state, matches: List[UniversalNode]) -> None:
+    """Add the code that reaches the matched symbols through a boundary (ADR-026).
+
+    `fetch("/orders")`, `supabase.functions.invoke("send-receipt")` and `.from("orders")` give
+    no call edge. The field is left out when no such user exists, so it costs no tokens
+    in the common case.
+    """
+    found: list[tuple[UniversalNode, str, str]] = []
+    seen: set[str] = set()
+    for node in matches:
+        for user, kind, key in state.graph_engine.get_boundary_users(node.id):
+            if user.id not in seen:
+                seen.add(user.id)
+                found.append((user, kind, key))
+    if not found:
+        return
+    grouped: dict[str, dict[str, list[str]]] = {}
+    for user, kind, key in found[:MAX_BOUNDARY_USERS]:
+        short = _serialize_node_compact(user, state.codebase_path)
+        files = grouped.setdefault(f"{kind} {key}", {})
+        files.setdefault(short["file"], []).append(f"{short['name']}:{short['start_line']}")
+    result["boundary_callers"] = grouped
+    if len(found) > MAX_BOUNDARY_USERS:
+        result["boundary_callers_not_listed"] = len(found) - MAX_BOUNDARY_USERS
+    result["boundary_note"] = (
+        "boundary_callers: code that reaches this symbol through a route, an edge function "
+        "or a table. It has no call in the code, so it is not in `callers`."
+    )
 
 
 def _references_only(state, symbol_name: str, direction: str) -> dict[str, Any]:
@@ -1950,6 +1989,9 @@ def _add_references(
     )
 
 
+_IMPACT_EDGES = frozenset({RelationshipType.CALLS, RelationshipType.DEPENDS_ON})
+
+
 def _graph_transitive_impact(
     state, symbol_name: str, max_depth: int, detail: str = "compact"
 ) -> dict[str, Any]:
@@ -1965,7 +2007,9 @@ def _graph_transitive_impact(
     by_file: dict[str, list[str]] = {}
     seen: set[str] = set()
     for node in matches:
-        for caller in state.graph_engine.get_transitive_callers(node.id, max_depth=max_depth):
+        for caller in state.graph_engine.get_transitive_callers(
+            node.id, max_depth=max_depth, edge_types=_IMPACT_EDGES
+        ):
             if caller.id not in seen:
                 seen.add(caller.id)
                 all_impacted.append(serialize(caller, state.codebase_path))

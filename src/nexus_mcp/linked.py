@@ -1,4 +1,4 @@
-"""Attach the linked repos of a project to the server session, read-only (ADR-027).
+"""Attach the linked repos of a project to the server session, read-only (ADR-030).
 
 Each linked repo keeps its own store in `<repo>/.nexus`. The server opens it for reading
 and never changes it: only `nexus-mcp-ci link` and `link --refresh` write to it. The

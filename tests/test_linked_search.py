@@ -1,4 +1,4 @@
-"""`search` and `find_symbol` look in the linked repos of the project (ADR-027, phase 2.2).
+"""`search` and `find_symbol` look in the linked repos of the project (ADR-030, phase 2.2).
 
 The stores are real (LanceDB, BM25, graph). Only the embedding model is replaced, so all
 vectors are equal and the BM25 list and the exact names decide the order.

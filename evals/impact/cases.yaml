@@ -1,0 +1,251 @@
+# Seeded breakage set for `nexus-mcp-ci check`.
+#
+# Each case is a tiny project (`files`), one change to it (`change`), and the places that
+# the change breaks, written down BEFORE the check runs:
+#   breaks        keys of the callers that must be updated (`file::function::name`)
+#   breaks_files  files that use the name only as text (a string, a registry)
+#   breaks_unseen places that break but that no static tool can see (a computed name)
+#   tests         test files that exercise the broken places
+# `python -m evals.impact.run` makes a git repository of the files, indexes it, applies
+# the change and runs the check. Recall is the share of expected places that the check
+# names. Precision is the share of what it names that is expected.
+#
+# Rules for this file: write the ground truth from the code, never from the output of
+# the check. Keep the cases that the check misses. Do not tune a case until it passes.
+
+cases:
+  - id: py-add-parameter
+    language: python
+    files:
+      lib.py: |
+        def total(a, b):
+            return a + b
+      app.py: |
+        from lib import total
+
+
+        def run():
+            return total(1, 2)
+      other.py: |
+        from lib import total
+
+
+        def side():
+            return total(3, 4)
+      tests/test_app.py: |
+        from app import run
+
+
+        def test_run():
+            assert run()
+    change:
+      lib.py: |
+        def total(a, b, c):
+            return a + b + c
+    breaks: [app.py::function::run, other.py::function::side]
+    tests: [tests/test_app.py]
+
+  - id: py-remove-function
+    language: python
+    files:
+      fees.py: |
+        def legacy_fee(amount):
+            return amount * 0.02
+
+
+        def current_fee(amount):
+            return amount * 0.01
+      billing.py: |
+        from fees import legacy_fee
+
+
+        def charge(amount):
+            return amount + legacy_fee(amount)
+      report.py: |
+        from fees import legacy_fee
+
+
+        def summary(amounts):
+            return [legacy_fee(a) for a in amounts]
+    change:
+      fees.py: |
+        def current_fee(amount):
+            return amount * 0.01
+    breaks: [billing.py::function::charge, report.py::function::summary]
+    tests: []
+
+  - id: py-rename-method
+    language: python
+    files:
+      cart.py: |
+        class Cart:
+            def __init__(self):
+                self.items = []
+
+            def add_item(self, sku):
+                self.items.append(sku)
+      checkout.py: |
+        from cart import Cart
+
+
+        def finish(cart):
+            cart.add_item("x")
+            return cart.items
+      report.py: |
+        def dump(cart, kind):
+            getattr(cart, "add_" + kind)("y")
+    change:
+      cart.py: |
+        class Cart:
+            def __init__(self):
+                self.items = []
+
+            def add(self, sku):
+                self.items.append(sku)
+    breaks: [checkout.py::function::finish]
+    breaks_unseen: [report.py::function::dump]
+    tests: []
+
+  - id: py-fixture-chain
+    language: python
+    files:
+      shop/__init__.py: ""
+      shop/db.py: |
+        def connect(url):
+            return url
+      tests/conftest.py: |
+        import pytest
+
+        from shop.db import connect
+
+
+        @pytest.fixture
+        def db():
+            return connect("x")
+      tests/test_a.py: |
+        def test_x(db):
+            assert db
+    change:
+      shop/db.py: |
+        def connect(url, timeout):
+            return url
+    breaks: [tests/conftest.py::function::db]
+    tests: [tests/conftest.py, tests/test_a.py]
+
+  - id: py-decorator
+    language: python
+    files:
+      limits.py: |
+        def rate_limit(calls):
+            return lambda f: f
+      api.py: |
+        from limits import rate_limit
+
+
+        @rate_limit(5)
+        def post_order():
+            return 1
+    change:
+      limits.py: |
+        def rate_limit(calls, window):
+            return lambda f: f
+    breaks: [api.py::function::post_order]
+    tests: []
+
+  - id: ts-add-parameter
+    language: typescript
+    files:
+      lib.ts: |
+        export const total = (a: number, b: number) => a + b;
+      app.ts: |
+        import { total } from './lib';
+
+        export const run = () => total(1, 2);
+      other.ts: |
+        import { total } from './lib';
+
+        export const side = () => total(3, 4);
+      app.test.ts: |
+        import { run } from './app';
+
+        describe('run', () => { run(); });
+    change:
+      lib.ts: |
+        export const total = (a: number, b: number, c: number) => a + b + c;
+    breaks: [app.ts::function::run, other.ts::function::side]
+    tests: [app.test.ts]
+
+  - id: ts-default-export-edge-function
+    language: typescript
+    files:
+      supabase/functions/send-email/index.ts: |
+        export default async (req: Request) => {
+          return new Response('ok');
+        };
+      web/notify.ts: |
+        import send from '../supabase/functions/send-email';
+
+        export const notify = (req: Request) => send(req);
+    change:
+      supabase/functions/send-email/index.ts: |
+        export default async (req: Request, ctx: Context) => {
+          return new Response('ok');
+        };
+    breaks: [web/notify.ts::function::notify]
+    tests: []
+
+  - id: ts-object-literal-member
+    language: typescript
+    files:
+      api.ts: |
+        export const api = {
+          get(id: number) { return id; },
+          list() { return []; },
+        };
+      page.ts: |
+        import { api } from './api';
+
+        export const show = () => api.get(1);
+    change:
+      api.ts: |
+        export const api = {
+          get(id: number, opts: object) { return id; },
+          list() { return []; },
+        };
+    breaks: [page.ts::function::show]
+    tests: []
+
+  - id: ts-module-level-caller
+    language: typescript
+    files:
+      validate.ts: |
+        export const validate = (req: Request) => req;
+      fn/index.ts: |
+        import { validate } from '../validate';
+
+        Deno.serve(async (req: Request) => {
+          return validate(req);
+        });
+    change:
+      validate.ts: |
+        export const validate = (req: Request, schema: object) => req;
+    breaks: ["fn/index.ts::function::<top-level>"]
+    tests: []
+
+  - id: ts-rename-with-registry
+    language: typescript
+    files:
+      calc.ts: |
+        export const total = (a: number) => a;
+      cart.ts: |
+        import { total } from './calc';
+
+        export const sum = () => total(1);
+      registry.ts: |
+        export const handlers = { "total": 1 };
+    change:
+      calc.ts: |
+        export const grandTotal = (a: number) => a;
+    breaks: [cart.ts::function::sum]
+    breaks_files: [registry.ts]
+    tests: []

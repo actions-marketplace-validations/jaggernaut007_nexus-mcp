@@ -1,4 +1,7 @@
-"""Command line for ``nexus-mcp-ci``: ``eval``, ``data``, ``setup`` and the link commands."""
+"""Command line for ``nexus-mcp-ci``.
+
+The subcommands are ``eval``, ``data``, ``index``, ``check``, ``setup`` and the link commands.
+"""
 
 import argparse
 import json
@@ -11,7 +14,7 @@ from typing import List, Optional
 from nexus_mcp.evaluate import data_cmd, doctor, paths, report, source, specs, store
 from nexus_mcp.privacy import apply_privacy_defaults
 
-SUBCOMMANDS = ("eval", "data", "setup", "link", "unlink", "links")
+SUBCOMMANDS = ("eval", "data", "index", "check", "setup", "link", "unlink", "links")
 VERSION_FLAGS = ("--version", "-V")
 
 
@@ -174,6 +177,131 @@ def _data_parser() -> argparse.ArgumentParser:
     return p
 
 
+def _index_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="nexus-mcp-ci index",
+        description=(
+            "Build the index of a project without an agent: for `check` in a script or in "
+            "CI. The index goes to <project>/.nexus (or NEXUS_STORAGE_DIR). Nothing leaves "
+            "your machine; the first run downloads the embedding model."
+        ),
+    )
+    p.add_argument("path", nargs="?", default=".", help="The project folder (default: .)")
+    return p
+
+
+def run_index(argv: List[str]) -> int:
+    args = _index_parser().parse_args(argv)
+    apply_privacy_defaults()
+    project = Path(args.path).resolve()
+    if not project.is_dir():
+        print(f"error: not a folder: {project}", file=sys.stderr)
+        return 2
+    store = paths.project_store(project)
+    try:
+        from nexus_mcp.evaluate.agent import build_index
+
+        info = build_index(project, store)
+    except RuntimeError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return 1
+    print(f"Indexed {info['files']} files into {store}")
+    return 0
+
+
+def _check_parser() -> argparse.ArgumentParser:
+    p = argparse.ArgumentParser(
+        prog="nexus-mcp-ci check",
+        description=(
+            "Check a change against the call graph. Reads the git diff, finds the symbols "
+            "that it changes, and lists the callers and references that the diff did not "
+            "update, with the tests that it can break. Runs offline and adds no tokens to "
+            "an agent session. Needs an index of the project."
+        ),
+        epilog=(
+            "Exit codes: 0 clean, 1 a finding reached --fail-on, 2 usage or git error, "
+            "3 no index or a stale index. The result is a lower bound: edges are static "
+            "and name-based."
+        ),
+    )
+    p.add_argument("path", nargs="?", default=".", help="The project folder (default: .)")
+    p.add_argument(
+        "--base",
+        help="Commit to compare with (default: the merge base with the default branch)",
+    )
+    p.add_argument(
+        "--staged", action="store_true", help="Check the staged changes against HEAD"
+    )
+    p.add_argument(
+        "--depth", type=int, default=3, help="How many call levels to follow (default: 3)"
+    )
+    p.add_argument(
+        "--format", choices=("markdown", "json"), default="markdown", dest="output_format"
+    )
+    p.add_argument(
+        "--fail-on",
+        choices=("high", "medium", "low", "never"),
+        default="high",
+        help="Exit 1 when a finding has this severity or more (default: high)",
+    )
+    p.add_argument(
+        "--max-findings", type=int, default=50, help="Findings to print (default: 50)"
+    )
+    p.add_argument(
+        "--hook",
+        action="store_true",
+        help=(
+            "Run as a Claude Code Stop hook: read the hook JSON from stdin and print a "
+            "block decision only for a new high finding. Always exits 0 and is silent "
+            "otherwise (NEXUS_HOOK=off disables it)"
+        ),
+    )
+    return p
+
+
+def run_hook(project: Path) -> int:
+    """The Stop hook: silent and exit 0 unless a new high finding exists."""
+    from nexus_mcp.evaluate import check
+
+    try:
+        payload = json.loads(sys.stdin.read() or "{}")
+    except (OSError, ValueError):
+        payload = {}
+    if not isinstance(payload, dict):
+        payload = {}
+    cwd = payload.get("cwd")
+    if isinstance(cwd, str) and Path(cwd).is_dir():
+        project = Path(cwd).resolve()
+    decision = check.hook_decision(project, paths.project_store(project), payload)
+    if decision:
+        print(json.dumps(decision))
+    return 0
+
+
+def run_check(argv: List[str]) -> int:
+    from nexus_mcp.evaluate import check
+
+    args = _check_parser().parse_args(argv)
+    if args.depth < 1 or args.max_findings < 1:
+        print("error: --depth and --max-findings must be 1 or more", file=sys.stderr)
+        return 2
+    apply_privacy_defaults()
+    project = Path(args.path).resolve()
+    if args.hook:
+        return run_hook(project)
+    try:
+        report_ = check.run_check(
+            project, paths.project_store(project), base=args.base, staged=args.staged,
+            depth=args.depth, max_findings=args.max_findings,
+        )
+    except check.CheckError as exc:
+        print(f"error: {exc}", file=sys.stderr)
+        return exc.code
+    render = check.render_json if args.output_format == "json" else check.render_markdown
+    print(render(report_), end="")
+    return check.exit_code(report_, args.fail_on)
+
+
 def run_eval(argv: List[str]) -> int:
     args = _eval_parser().parse_args(argv)
     if args.source == "list":
@@ -329,6 +457,10 @@ def dispatch(argv: List[str]) -> Optional[int]:
         from nexus_mcp.setup_clients import run_setup
 
         return run_setup(argv[1:])
+    if argv[0] == "check":
+        return run_check(argv[1:])
+    if argv[0] == "index":
+        return run_index(argv[1:])
     if argv[0] in ("link", "unlink", "links"):
         from nexus_mcp.evaluate import link_cmd
 
