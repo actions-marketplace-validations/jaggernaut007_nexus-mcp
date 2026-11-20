@@ -37,8 +37,21 @@ Defaults that protect you:
 | Eval clones | `~/.cache/nexus-mcp/eval/repos/` | the public repo | `NEXUS_EVAL_CACHE` |
 | `uvx` package cache | the `uv` cache folder | no | `uv cache clean nexus-mcp-ci` |
 
-The index holds code. Add `.nexus/` to `.gitignore` (or to `.git/info/exclude`, which is never
-committed). `nexus-mcp-ci data where` warns when `.nexus/` is not ignored.
+The index holds code, so it must not go into a commit. `index` keeps it out of git for you:
+
+- When the index folder is in a git work tree and no ignore rule covers it, `index` adds the
+  line `.nexus/` to `.git/info/exclude` of that repo.
+- That file is local to your clone and git never commits it. Your tracked `.gitignore` does
+  not change.
+- In a linked git worktree, the line goes into the exclude file of the main repo. It then
+  applies to all worktrees.
+- A custom `NEXUS_STORAGE_DIR` inside the repo gets a line with its path from the repo root.
+  A folder outside a git repo gets no line.
+- Set `NEXUS_GIT_EXCLUDE=false` to turn this off.
+
+The exclude line protects only your clone. Add `.nexus/` to `.gitignore` when you want the
+same rule for each person on the team. `nexus-mcp-ci data where` warns when the index folder
+is not ignored.
 
 ## See and remove your data
 

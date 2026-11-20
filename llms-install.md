@@ -95,8 +95,9 @@ you search, symbol lookup and a call graph. The server name in the client config
 
 ## Where the index is
 
-The index is in `<project>/.nexus/`. `setup` does not change `.gitignore`: ask the user to add
-`.nexus/` to it, and check it with `git check-ignore .nexus`. When the server starts in the
+The index is in `<project>/.nexus/`. `index` adds `.nexus/` to `.git/info/exclude` of the
+repo, so git does not commit it. The tracked `.gitignore` does not change. Check it with
+`git check-ignore .nexus`. When the server starts in the
 project folder, a new session attaches the index by itself. Some clients, such as Cline,
 start the server in another folder. Then call `index` once in each session, with the absolute
 project path: that path selects the project, and its index is in `<project>/.nexus/`. With an
@@ -128,7 +129,8 @@ with that version (`uvx --python 3.12 nexus-mcp-ci==<version> setup ...`). To re
 use `--uninstall` (below).
 
 `setup` changes only the files in this table, and the background index writes
-`<project>/.nexus/`. It does not change `.gitignore` or a project MCP file such as `.mcp.json`.
+`<project>/.nexus/` and one line in `.git/info/exclude` (local to the clone, never committed).
+It does not change `.gitignore` or a project MCP file such as `.mcp.json`.
 
 | Client | Server entry | Skill text |
 |---|---|---|
