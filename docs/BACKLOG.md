@@ -6,8 +6,9 @@ source, its dependency and a verdict. Done work is in `PROGRESS.md` and `CHANGEL
 Verdicts: **Next** (do soon), **Decide** (needs the owner), **Later**, **Parked** (revisit
 only if a concrete need appears).
 
-North star (2026-10-08): lower token use with the same accuracy. See `CLAUDE.md`. Rank
-each item below by the tokens that it can save.
+North star (2026-11-17): high-quality coding changes, at a lower cost, in faster sessions.
+See `CLAUDE.md`. Rank each item below by the cost and the wall time that it can save,
+without a loss of quality.
 
 ## Next
 

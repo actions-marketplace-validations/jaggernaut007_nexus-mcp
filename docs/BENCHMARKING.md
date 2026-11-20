@@ -103,6 +103,8 @@ The runner enforces these rules and stores the values on each result row.
 
 ## The north-star gate
 
-A change is kept only when it lowers tokens and does not lower accuracy. Run the
+A change is kept only when it lowers cost or wall time, the other does not rise, and
+quality does not fall. Quality is the answer score and hit@1 now, and also impact recall
+on the seeded breakage set and the change-safety benchmark once they exist. Run the
 `before` and `after` labels with the same settings. Record both numbers in `CHANGELOG.md`.
 Do not tune a corpus or a task until Nexus-MCP wins. Report a weak result as it is.
