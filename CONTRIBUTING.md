@@ -16,12 +16,15 @@ More detail: [docs/DEVELOPER_GUIDE.md](docs/DEVELOPER_GUIDE.md).
 
 ## The north-star gate
 
-The project aims at lower token use for an agent, with the same accuracy.
+The project aims at high-quality coding changes, at a lower cost, in faster sessions.
 
-- Measure: the tokens and the cost of a task in the live benchmark (`benchmarks/`), against the
-  Grep and Read condition.
-- Gate: hit@1 on the four retrieval suites (`python -m evals.retrieval.run`) must not fall, and
-  the benchmark answer score must not fall.
+- Measure: the cost (tokens and dollars) and the wall time of a task in the live benchmark
+  (`benchmarks/`), against the Grep and Read condition.
+- Gate: quality must not fall. The benchmark answer score and hit@1 on the retrieval
+  suites (`python -m evals.retrieval.run`) must not fall. When they exist, impact recall on
+  the seeded breakage set (`evals/impact/`) and the change-safety benchmark must not fall
+  either.
+- Keep a change only when it lowers cost or wall time and the other does not rise.
 - Record the before and after numbers in `CHANGELOG.md`.
 
 ## Published numbers

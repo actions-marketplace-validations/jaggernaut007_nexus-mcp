@@ -5,14 +5,22 @@
 
 ## North star
 
-Lower token use for an agent, with the same accuracy. Set by the owner on 2026-10-08.
+High-quality coding changes, at a lower cost, in faster sessions. Set by the owner on
+2026-11-17. It replaces "lower token use, same accuracy" (2026-10-08).
 
-- **Measure:** the tokens and the cost of a task in the live benchmark (`benchmarks/`),
-  against the Grep and Read condition.
-- **Gate:** accuracy must not fall. Check hit@1 on the four retrieval suites
-  (`python -m evals.retrieval.run`) and the answer score of the benchmark.
-- Keep a change only when it lowers the measure and passes the gate. Record the two
-  numbers, before and after, in `CHANGELOG.md`.
+- **Measure:** the cost (tokens and dollars) and the wall time of a task in the live
+  benchmark (`benchmarks/`), against the Grep and Read condition.
+- **Gate:** quality must not fall. Quality has three parts (owner, 2026-11-17):
+  1. Find the right code: the answer score of the benchmark and hit@1 on the retrieval
+     suites (`python -m evals.retrieval.run`). In use now.
+  2. See what a change touches: impact recall and precision on the seeded breakage set
+     (`evals/impact/`, Python and TypeScript). Comes with `nexus-mcp-ci check`.
+  3. Make the change without a break: missed call sites and failing tests in the
+     change-safety benchmark. Planned.
+- Keep a change only when it lowers cost or wall time, the other does not rise, and it
+  passes the gate. Record the numbers, before and after, in `CHANGELOG.md`.
+- **Gap on 2026-11-17:** Nexus-MCP costs less on 9 of 11 live repos but is slower on 8
+  of 11, with fewer turns (`benchmarks/published/results.json`). Wall time is now a target.
 
 ## Context engine, phases 1 and 2 — 2026-11-17 (branch `worktree-context-engine`)
 
