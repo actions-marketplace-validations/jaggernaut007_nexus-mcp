@@ -47,6 +47,7 @@ Set these as environment variables of the server, for example `claude mcp add ne
 | Variable | Default | Effect |
 |---|---|---|
 | `NEXUS_OFFLINE` | unset | Set to `1` to block the model download (sets `HF_HUB_OFFLINE` and `TRANSFORMERS_OFFLINE`). |
+| `NEXUS_LINKS_FILE` | `~/.nexus-mcp/links.json` | The registry of linked repos, kept outside every repo (see `nexus-mcp-ci link`). |
 | `NEXUS_EVAL_HOME` | `~/.nexus-mcp/evals` | Where `nexus-mcp-ci eval` saves its reports. |
 | `NEXUS_EVAL_CACHE` | `~/.cache/nexus-mcp/eval` | Where `eval <url>` keeps its clones. |
 | `NEXUS_EVAL_PRICING` | unset | A JSON file of Codex prices (USD per million tokens) for `eval --agent codex`. |

@@ -1,4 +1,7 @@
-"""Command line for ``nexus-mcp-ci eval``, ``data``, ``index``, ``check`` and ``setup``."""
+"""Command line for ``nexus-mcp-ci``.
+
+The subcommands are ``eval``, ``data``, ``index``, ``check``, ``setup`` and the link commands.
+"""
 
 import argparse
 import json
@@ -11,7 +14,7 @@ from typing import List, Optional
 from nexus_mcp.evaluate import data_cmd, doctor, paths, report, source, specs, store
 from nexus_mcp.privacy import apply_privacy_defaults
 
-SUBCOMMANDS = ("eval", "data", "index", "check", "setup")
+SUBCOMMANDS = ("eval", "data", "index", "check", "setup", "link", "unlink", "links")
 VERSION_FLAGS = ("--version", "-V")
 
 
@@ -458,4 +461,8 @@ def dispatch(argv: List[str]) -> Optional[int]:
         return run_check(argv[1:])
     if argv[0] == "index":
         return run_index(argv[1:])
+    if argv[0] in ("link", "unlink", "links"):
+        from nexus_mcp.evaluate import link_cmd
+
+        return link_cmd.run(argv[0], argv[1:])
     return run_eval(argv[1:]) if argv[0] == "eval" else run_data(argv[1:])

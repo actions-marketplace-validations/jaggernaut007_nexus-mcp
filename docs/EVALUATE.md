@@ -96,7 +96,7 @@ Run `nexus-mcp-ci eval doctor` first. It checks ripgrep, the cached model, the `
 ## Saved results
 
 Every run is saved in `~/.nexus-mcp/evals/<run-id>/` (`report.md`, `report.json`, `env.json`)
-and listed in `history.jsonl`.
+and listed in `history.jsonl`. The folder `~/.nexus-mcp/` also holds `links.json`, the registry of linked repos (see ADR-030).
 
 ```bash
 nexus-mcp-ci eval list

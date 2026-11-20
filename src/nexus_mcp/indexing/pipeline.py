@@ -8,6 +8,7 @@ import json
 import logging
 import os
 import time
+import uuid
 from dataclasses import asdict, dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional, Set
@@ -53,6 +54,12 @@ SKIP_DIRS: Set[str] = {
 # fp32 vectors, so its chunks are rebuilt, and no chunk table mixes the two. Stored memories
 # are not re-embedded: the memory store checks the vector width only (see ADR-029).
 CHUNK_FORMAT = 9
+
+# The version of the facts that the ast-grep extractor writes into the graph nodes. A linked
+# repo is trusted only when its index has this version or a newer one (ADR-030). An index
+# with no version was built before links existed. Raise it when the extractor starts to
+# write a new kind of fact, so that `nexus-mcp-ci link` builds the older indexes again.
+EXTRACTOR_VERSION = 1
 
 
 @dataclass
@@ -214,6 +221,9 @@ class IndexingPipeline:
         self._graph_engine = RustworkxCodeGraph()
         self._astgrep = AstGrepParser()
         self._metadata_path = self._settings.storage_path / "index_metadata.json"
+        # The repo_id of a store whose metadata file is about to be deleted (see
+        # `_remember_repo_id`), so that the rebuilt index keeps its identity.
+        self._kept_repo_id: Optional[str] = None
         self._git_exclude_done = False
 
     def _prepare_storage(self) -> None:
@@ -362,6 +372,29 @@ class IndexingPipeline:
             "chunk_format": CHUNK_FORMAT,
         }
 
+    def _remember_repo_id(self) -> None:
+        """Keep the repo_id of the stored metadata in memory, before the file is deleted."""
+        repo_id = (self._load_metadata_raw() or {}).get("repo_id")
+        if isinstance(repo_id, str) and repo_id:
+            self._kept_repo_id = repo_id
+
+    def _identity_metadata(self, primary_root: Path) -> Dict[str, Any]:
+        """The identity of this store: a repo_id made one time, the name, the extractor version.
+
+        The repo_id stays the same through every reindex of the store (ADR-030). A link
+        in the registry names it, so that a link to a folder that now holds another repo
+        is found. The name is the folder name of the first root.
+        """
+        repo_id = (self._load_metadata_raw() or {}).get("repo_id")
+        if not (isinstance(repo_id, str) and repo_id):
+            repo_id = self._kept_repo_id or uuid.uuid4().hex
+        self._kept_repo_id = repo_id
+        return {
+            "repo_id": repo_id,
+            "repo_name": Path(primary_root).name,
+            "extractor_version": EXTRACTOR_VERSION,
+        }
+
     def _persist_graph(self) -> None:
         """Save the graph after a full build, so a restart can load it.
 
@@ -374,13 +407,14 @@ class IndexingPipeline:
         except Exception as e:  # noqa: BLE001 - persistence must not fail an index
             logger.warning("Could not save graph: %s", e)
 
-    def _restore_graph(self) -> bool:
+    def _restore_graph(self, read_only: bool = False) -> bool:
         """Make sure the graph engine holds the graph that matches the stored index.
 
         Returns True when the engine already has nodes, or when the graph saved at
         shutdown was loaded into it. Returns False when no saved graph exists or
         when it is older than the index metadata (a crash left a stale file), so
-        the caller falls back to a full rebuild.
+        the caller falls back to a full rebuild. `read_only` opens the saved graph without
+        any write (the store of a linked repo).
         """
         if self._graph_engine.nodes:
             return True
@@ -390,7 +424,7 @@ class IndexingPipeline:
                 return False
             if graph_path.stat().st_mtime < self._metadata_path.stat().st_mtime:
                 return False
-            loaded = GraphPersistence(str(graph_path)).load()
+            loaded = GraphPersistence(str(graph_path)).load(read_only=read_only)
         except Exception as e:  # noqa: BLE001 - a bad graph file must not block indexing
             logger.warning("Could not load saved graph: %s", e)
             return False
@@ -456,6 +490,7 @@ class IndexingPipeline:
         # Validate existing index integrity
         if not self._validate_index():
             logger.warning("Corrupt index detected, performing full rebuild.")
+            self._remember_repo_id()
             try:
                 self._metadata_path.unlink(missing_ok=True)
             except OSError:
@@ -835,6 +870,7 @@ class IndexingPipeline:
             "codebase_path": str(codebase_paths[0]),
             "mtimes": mtimes,
             **self._embedding_metadata(),
+            **self._identity_metadata(codebase_paths[0]),
         }
         self._metadata_path.parent.mkdir(parents=True, exist_ok=True)
         self._metadata_path.write_text(json.dumps(metadata))
@@ -852,6 +888,7 @@ class IndexingPipeline:
             "codebase_path": str(codebase_path),
             "mtimes": mtimes,
             **self._embedding_metadata(),
+            **self._identity_metadata(codebase_path),
         }
         self._metadata_path.parent.mkdir(parents=True, exist_ok=True)
         self._metadata_path.write_text(json.dumps(metadata))

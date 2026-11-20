@@ -16,6 +16,7 @@ Nexus-MCP gives AI agents precise, token-efficient code understanding. It indexe
 
 - The server makes no network calls. Downloads: the package, and the embedding model once (`NEXUS_OFFLINE=1` after that).
 - Stored: index, memories and graph in `<project>/.nexus/`; model in `~/.cache/huggingface/`; eval results in `~/.nexus-mcp/evals/`.
+- `nexus-mcp-ci link <path>` links another repo (its own index, listed in `status` under `linked`); `links`, `unlink <name>` and `link --refresh` manage the links. Registry: `~/.nexus-mcp/links.json`.
 - `nexus-mcp-ci data where` lists every location; `nexus-mcp-ci data clear --all --yes` removes them. [Privacy guide](https://github.com/jaggernaut007/Nexus-MCP/blob/main/docs/PRIVACY.md)
 
 ## Core Tools (8 MCP tools)

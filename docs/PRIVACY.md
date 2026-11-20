@@ -32,6 +32,7 @@ Defaults that protect you:
 | Code graph (SQLite) | `<project>/.nexus/graph.db` | symbol names and paths | `NEXUS_STORAGE_DIR` |
 | Embedding model | `~/.cache/huggingface/hub/` | no | `HF_HOME` |
 | Audit log | stderr (your MCP client log); a file only if you set one | tool arguments, with secrets redacted | `NEXUS_AUDIT_LOG_FILE`, `NEXUS_AUDIT_ENABLED` |
+| Links registry: names, paths and repo ids of linked repos | `~/.nexus-mcp/links.json` | no: paths only | `NEXUS_LINKS_FILE` |
 | Eval results | `~/.nexus-mcp/evals/` | no: numbers only; question text stays local | `NEXUS_EVAL_HOME` |
 | Eval index | the OS temp folder, deleted at exit | yes, while the eval runs | `--keep-index` writes it to `<project>/.nexus/` |
 | Eval clones | `~/.cache/nexus-mcp/eval/repos/` | the public repo | `NEXUS_EVAL_CACHE` |
@@ -72,7 +73,7 @@ Shell commands that do the same, if you prefer not to run our code to remove our
 
 ```bash
 rm -rf .nexus
-rm -rf ~/.nexus-mcp ~/.cache/nexus-mcp
+rm -rf ~/.nexus-mcp ~/.cache/nexus-mcp   # also removes the links registry
 rm -rf ~/.cache/huggingface/hub/models--Xenova--bge-small-en-v1.5
 # with the torch extra:
 rm -rf ~/.cache/huggingface/hub/models--BAAI--bge-small-en-v1.5

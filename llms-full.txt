@@ -329,7 +329,7 @@ Run `nexus-mcp-ci eval doctor` first. It checks ripgrep, the cached model, the `
 ## Saved results
 
 Every run is saved in `~/.nexus-mcp/evals/<run-id>/` (`report.md`, `report.json`, `env.json`)
-and listed in `history.jsonl`.
+and listed in `history.jsonl`. The folder `~/.nexus-mcp/` also holds `links.json`, the registry of linked repos (see ADR-030).
 
 ```bash
 nexus-mcp-ci eval list
@@ -423,6 +423,7 @@ Defaults that protect you:
 | Code graph (SQLite) | `<project>/.nexus/graph.db` | symbol names and paths | `NEXUS_STORAGE_DIR` |
 | Embedding model | `~/.cache/huggingface/hub/` | no | `HF_HOME` |
 | Audit log | stderr (your MCP client log); a file only if you set one | tool arguments, with secrets redacted | `NEXUS_AUDIT_LOG_FILE`, `NEXUS_AUDIT_ENABLED` |
+| Links registry: names, paths and repo ids of linked repos | `~/.nexus-mcp/links.json` | no: paths only | `NEXUS_LINKS_FILE` |
 | Eval results | `~/.nexus-mcp/evals/` | no: numbers only; question text stays local | `NEXUS_EVAL_HOME` |
 | Eval index | the OS temp folder, deleted at exit | yes, while the eval runs | `--keep-index` writes it to `<project>/.nexus/` |
 | Eval clones | `~/.cache/nexus-mcp/eval/repos/` | the public repo | `NEXUS_EVAL_CACHE` |
@@ -463,7 +464,7 @@ Shell commands that do the same, if you prefer not to run our code to remove our
 
 ```bash
 rm -rf .nexus
-rm -rf ~/.nexus-mcp ~/.cache/nexus-mcp
+rm -rf ~/.nexus-mcp ~/.cache/nexus-mcp   # also removes the links registry
 rm -rf ~/.cache/huggingface/hub/models--Xenova--bge-small-en-v1.5
 # with the torch extra:
 rm -rf ~/.cache/huggingface/hub/models--BAAI--bge-small-en-v1.5
@@ -1058,6 +1059,20 @@ status()
 ```
 
 Returns version, indexing state, chunk counts, graph stats, peak RSS memory and a `hint` field. If files changed since the last index, the result includes `stale` and `staleness_warning`, and the server starts a background reindex. The staleness check runs at most once every `NEXUS_STALENESS_CHECK_INTERVAL` seconds (default 15).
+
+When the project has linked repos, the result also has a `linked` list. Each entry has `name`, `path`, `files`, `stale` and `skip_reason`. `skip_reason` is `null` when the repo is attached. A skipped link does not stop the project. When a linked repo is stale, the result has `linked_warning`. The server never changes a linked index. Run `nexus-mcp-ci link --refresh` to index it again.
+
+#### Linked repos
+Link another repo, such as the back end of a front end, from the folder of the project:
+
+```bash
+nexus-mcp-ci link ../backend --name backend   # index it if needed, then save the link
+nexus-mcp-ci links                            # show the links and their state
+nexus-mcp-ci link --refresh                   # index the changed files of every linked repo
+nexus-mcp-ci unlink backend                   # remove the link; the index stays on disk
+```
+
+The links are in `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`). Each repo keeps its own index in `<repo>/.nexus`. See [ADR-030](adr/ADR-030-linked-repos.md).
 
 #### `map`
 Project overview: files, languages, modules and structure. Use it before you list directories or open files one by one.

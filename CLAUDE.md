@@ -85,7 +85,9 @@ src/nexus_mcp/
 ├── core_api.py            # Transport-agnostic tool logic, input validation, _pipeline + lock
 ├── config.py              # Settings with NEXUS_ env prefix (security, audit, rate limit, auto-watch)
 ├── setup_clients.py       # `nexus-mcp-ci setup`: add the server and the skill to an MCP client
-├── state.py               # Session state singleton + shutdown()
+├── links.py               # Link registry (user-level file, atomic write), ADR-030
+├── linked.py              # Attach linked repo stores read-only, skip reasons, staleness
+├── state.py               # Session state singleton (+ `linked` list) + shutdown()
 ├── lifecycle.py           # Idle timeout, orphan exit, signals; finish() always ends the process
 ├── core/
 │   ├── models.py          # Symbol, ParsedFile, CodebaseIndex, Memory
@@ -184,6 +186,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 - Boundary edges: routes, edge functions and SQL tables join code with no call between them — [ADR-026](docs/adr/ADR-026-boundary-edges.md)
 - Stop hook and a user-started `check` skill in the plugin; silent unless a new `high` finding exists — [ADR-027](docs/adr/ADR-027-change-hook-and-skill.md)
 - Change-safety benchmark: tasks with hidden tests and a scorer with no model; the live runner is a dry run unless `--go` — [ADR-028](docs/adr/ADR-028-change-safety-benchmark.md)
+- Linked repos: one index per repo, a user-level registry, service calls as the connection (draft, phase 2.1) — [ADR-030](docs/adr/ADR-030-linked-repos.md)
 - MIT licence, commercial licence key removed again — [ADR-023](docs/adr/ADR-023-commercial-licence-check.md) (superseded by [ADR-024](docs/adr/ADR-024-mit-licence.md))
 
 ## Gotchas
@@ -216,6 +219,7 @@ claude mcp add nexus-mcp -- nexus-mcp-ci  # Add to Claude Code
 20. `NEXUS_AUTO_WATCH` (default `true`) starts a debounced file watcher per indexed root after `index()` completes; on change it triggers a background incremental reindex (skipped, not queued, if one is already in flight)
 21. `status()`/`search()` run a throttled staleness check (`NEXUS_STALENESS_CHECK_INTERVAL`, default 15s) and surface `stale`/`staleness_warning`/`warning` fields; a stale result still returns immediately and kicks a background reindex rather than blocking
 22. `multi_index()` is now incremental-aware: it only does a full rebuild the first time or when the set of indexed roots changes; otherwise it mtime-diffs like `incremental_index()`
+23. Linked repos (ADR-030): `nexus-mcp-ci link <path>` writes `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`), keyed by the root of the project that you run it in. The server attaches each linked store read-only into `state.linked` (restore and `index`), never writes to it, and trusts nothing in it: roots and `repo_id` must match the registry. A bad link is skipped with a `skip_reason` that `status` shows. A linked store is always `<repo>/.nexus`; `NEXUS_STORAGE_DIR` does not apply to it
 
 ## Embedding Models
 

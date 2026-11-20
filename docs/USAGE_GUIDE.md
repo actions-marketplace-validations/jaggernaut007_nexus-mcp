@@ -99,6 +99,20 @@ status()
 
 Returns version, indexing state, chunk counts, graph stats, peak RSS memory and a `hint` field. If files changed since the last index, the result includes `stale` and `staleness_warning`, and the server starts a background reindex. The staleness check runs at most once every `NEXUS_STALENESS_CHECK_INTERVAL` seconds (default 15).
 
+When the project has linked repos, the result also has a `linked` list. Each entry has `name`, `path`, `files`, `stale` and `skip_reason`. `skip_reason` is `null` when the repo is attached. A skipped link does not stop the project. When a linked repo is stale, the result has `linked_warning`. The server never changes a linked index. Run `nexus-mcp-ci link --refresh` to index it again.
+
+#### Linked repos
+Link another repo, such as the back end of a front end, from the folder of the project:
+
+```bash
+nexus-mcp-ci link ../backend --name backend   # index it if needed, then save the link
+nexus-mcp-ci links                            # show the links and their state
+nexus-mcp-ci link --refresh                   # index the changed files of every linked repo
+nexus-mcp-ci unlink backend                   # remove the link; the index stays on disk
+```
+
+The links are in `~/.nexus-mcp/links.json` (`NEXUS_LINKS_FILE`). Each repo keeps its own index in `<repo>/.nexus`. See [ADR-030](adr/ADR-030-linked-repos.md).
+
 #### `map`
 Project overview: files, languages, modules and structure. Use it before you list directories or open files one by one.
 

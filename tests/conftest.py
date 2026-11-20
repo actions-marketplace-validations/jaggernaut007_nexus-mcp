@@ -28,7 +28,7 @@ def _stop_watchers() -> None:
 
 
 @pytest.fixture(autouse=True)
-def clean_state(monkeypatch):
+def clean_state(monkeypatch, tmp_path):
     """Reset global state before each test.
 
     Session restore is off by default in tests: a stray `.nexus` directory in the
@@ -40,6 +40,8 @@ def clean_state(monkeypatch):
     """
     monkeypatch.setenv("NEXUS_AUTO_RESTORE", "false")
     monkeypatch.setenv("NEXUS_EXTRA_TOOLS", "all")
+    # Never read or write the real link registry of the developer.
+    monkeypatch.setenv("NEXUS_LINKS_FILE", str(tmp_path / "links-registry" / "links.json"))
     # server.main() now ends the process (lifecycle.finish -> os._exit). Record the
     # exit code instead, so a test of main() does not end pytest.
     from nexus_mcp import lifecycle
@@ -148,3 +150,24 @@ async def _setup_indexed(codebase_path, storage_dir):
 
         reset_settings()
         return mcp, mock_svc, result
+
+
+@pytest.fixture
+def fake_embeddings():
+    """A stub embedding service for tests that build real stores.
+
+    The stores are real (LanceDB, graph, metadata). Only the model is replaced, so no
+    test downloads or loads weights. All vectors are equal.
+    """
+    from nexus_mcp.config import Settings
+    from nexus_mcp.indexing.embedding_service import model_dimensions
+
+    model = Settings().embedding_model
+    dims = model_dimensions(model)
+    with patch("nexus_mcp.indexing.pipeline.get_embedding_service") as get_svc:
+        svc = MagicMock()
+        svc.model_name = model
+        svc.embed.return_value = [0.1] * dims
+        svc.embed_batch.side_effect = lambda texts, **kw: [[0.1] * dims for _ in texts]
+        get_svc.return_value = svc
+        yield svc

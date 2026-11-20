@@ -9,6 +9,7 @@ from nexus_mcp.evaluate import cli, data_cmd, paths
 def _homes(tmp_path, monkeypatch):
     monkeypatch.setenv("NEXUS_EVAL_HOME", str(tmp_path / "evals"))
     monkeypatch.setenv("NEXUS_EVAL_CACHE", str(tmp_path / "cache"))
+    monkeypatch.setenv("NEXUS_LINKS_FILE", str(tmp_path / "links.json"))
     monkeypatch.setenv("HF_HOME", str(tmp_path / "hf"))
     monkeypatch.delenv("NEXUS_STORAGE_DIR", raising=False)
 
@@ -167,3 +168,17 @@ def test_export_memories_without_store_raises(tmp_path):
 def test_human_size_units():
     assert paths.human_size(10) == "10 B"
     assert paths.human_size(2048) == "2.0 KB"
+
+
+def test_where_lists_the_link_registry(tmp_path):
+    row = {r["target"]: r for r in data_cmd.locations(tmp_path)}["links"]
+    assert row["path"] == str(tmp_path / "links.json")
+    assert row["exists"] is False
+
+
+def test_clear_links_removes_the_registry_and_no_index(tmp_path):
+    store = _make_store(tmp_path)
+    (tmp_path / "links.json").write_text("{}")
+    data_cmd.clear(tmp_path, ["links"], yes=True)
+    assert not (tmp_path / "links.json").exists()
+    assert (store / "graph.db").exists()

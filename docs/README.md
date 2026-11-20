@@ -12,7 +12,7 @@ Start with the group that matches what you want to do.
 
 - [INSTALLATION.md](INSTALLATION.md): prerequisites and setup for each MCP client
 - [USAGE_GUIDE.md](USAGE_GUIDE.md): the 8 tools, with examples and configuration
-- [CLI.md](CLI.md): `nexus-mcp-ci eval` and `nexus-mcp-ci data` (generated)
+- [CLI.md](CLI.md): `nexus-mcp-ci eval`, `data`, `link`, `unlink` and `links` (generated)
 - [CONFIGURATION.md](CONFIGURATION.md): every `NEXUS_*` variable, its default and its effect (generated)
 - [TROUBLESHOOTING.md](TROUBLESHOOTING.md): common problems and their fixes
 - [FAQ.md](FAQ.md): short answers to the questions people ask first
@@ -30,7 +30,7 @@ Start with the group that matches what you want to do.
 - [SUBMISSIONS.md](SUBMISSIONS.md): ready-to-paste text for each marketplace listing
 - [research/OSS-ADOPTION.md](research/OSS-ADOPTION.md): what makes developers adopt a tool, and the growth checklist
 - [GITHUB-ACTION.md](GITHUB-ACTION.md): run Nexus-MCP in a GitHub workflow
-- [adr/](adr/): architecture decision records (ADR-001 to ADR-029)
+- [adr/](adr/): architecture decision records (ADR-001 to ADR-030)
 
 ## Contribute
 

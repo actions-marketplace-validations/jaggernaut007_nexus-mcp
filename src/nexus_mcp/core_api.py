@@ -312,6 +312,20 @@ def warm_up() -> bool:
         return False
 
 
+def _attach_linked(state, settings) -> None:
+    """Attach the linked repos of the project, read-only (see linked.py, ADR-030).
+
+    A failure here never stops the primary project: the session then has no linked repo.
+    """
+    from nexus_mcp import linked
+
+    try:
+        state.linked = linked.attach_all(state.codebase_path, settings)
+    except Exception as e:  # noqa: BLE001 - the primary project must keep working
+        logger.warning("Could not attach the linked repos: %s", e)
+        state.linked = []
+
+
 def _restore_locked(state, settings, roots) -> bool:
     """The body of `restore_session`. The caller holds `_restore_lock`."""
     global _pipeline
@@ -335,6 +349,7 @@ def _restore_locked(state, settings, roots) -> bool:
         state.graph_engine = pipeline.graph_engine
         state._staleness_cache = None
         logger.info("Restored the index of %s from %s", roots[0], settings.storage_path)
+        _attach_linked(state, settings)
         return True
     except Exception as e:  # noqa: BLE001 - a bad saved index must not break the tool call
         logger.warning("Could not restore the saved index: %s", e)
@@ -703,6 +718,18 @@ def status() -> dict[str, Any]:
         else:
             result["staleness_warning"] = None
 
+        if state.linked:
+            from nexus_mcp import linked
+
+            interval = state.settings.staleness_check_interval_s
+            result["linked"] = [linked.describe(repo, interval) for repo in state.linked]
+            old = [entry["name"] for entry in result["linked"] if entry["stale"]]
+            if old:
+                result["linked_warning"] = (
+                    f"Linked repos out of date: {', '.join(old)}. "
+                    "Run `nexus-mcp-ci link --refresh` to index them again."
+                )
+
         result["hint"] = (
             "Codebase is indexed. Use 'search' to find code you cannot name, "
             "'find_symbol' for definitions, 'graph' for who calls what, "
@@ -822,6 +849,7 @@ async def index(
             state.bm25_engine = _pipeline.bm25_engine
             state.graph_engine = _pipeline.graph_engine
             state._staleness_cache = None
+            _attach_linked(state, settings)
             return result, state
 
     # shield: a cancelled caller stops waiting, but the thread finishes and releases the lock.
